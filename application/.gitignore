@@ -11,3 +11,11 @@ npm-debug.log
 yarn-error.log
 .env
 storage/framework
+storage/framework/v
+storage/framework/cache/data
+storage/framework/sessions
+storage/framework/testing
+storage/framework/views
+storage/logs
+storage/pail
+storage/temp
