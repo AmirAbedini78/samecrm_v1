@@ -65,6 +65,11 @@
 
     <!--USERS CUSTON CSS FILE-->
     <link href="public/css/custom.css?v={{ config('system.versioning') }}" rel="stylesheet">
+    
+    <!--RTL CSS FILE-->
+    @if(app()->getLocale() == 'ar' || app()->getLocale() == 'fa' || app()->getLocale() == 'ur' || app()->getLocale() == 'he')
+    <link href="public/css/rtl.css?v={{ config('system.versioning') }}" rel="stylesheet">
+    @endif
 
     <!--PRINTING CSS-->
     <link href="public/css/print.css?v={{ config('system.versioning') }}" rel="stylesheet">

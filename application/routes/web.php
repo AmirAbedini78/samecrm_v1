@@ -4,6 +4,11 @@
 Route::get("test", "Test@index");
 Route::post("test", "Test@index");
 
+//RTL TEST
+Route::get("test-rtl", function() {
+    return view('test-rtl');
+});
+
 //HOME PAGE
 Route::any('/', function () {
     return redirect('/home');

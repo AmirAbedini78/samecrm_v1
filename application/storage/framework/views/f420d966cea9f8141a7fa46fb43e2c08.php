@@ -65,6 +65,11 @@
 
     <!--USERS CUSTON CSS FILE-->
     <link href="public/css/custom.css?v=<?php echo e(config('system.versioning')); ?>" rel="stylesheet">
+    
+    <!--RTL CSS FILE-->
+    <?php if(app()->getLocale() == 'ar' || app()->getLocale() == 'fa' || app()->getLocale() == 'ur' || app()->getLocale() == 'he'): ?>
+    <link href="public/css/rtl.css?v=<?php echo e(config('system.versioning')); ?>" rel="stylesheet">
+    <?php endif; ?>
 
     <!--PRINTING CSS-->
     <link href="public/css/print.css?v=<?php echo e(config('system.versioning')); ?>" rel="stylesheet">

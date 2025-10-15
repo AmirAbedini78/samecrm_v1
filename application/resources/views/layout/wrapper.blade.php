@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" class="{{ auth()->user()->type ?? '' }} {{ config('visibility.page_rendering') }} {{ config('active_theme') }}">
+<html lang="{{ app()->getLocale() }}" dir="{{ app()->getLocale() == 'ar' || app()->getLocale() == 'fa' || app()->getLocale() == 'ur' || app()->getLocale() == 'he' ? 'rtl' : 'ltr' }}" class="{{ auth()->user()->type ?? '' }} {{ config('visibility.page_rendering') }} {{ config('active_theme') }} {{ app()->getLocale() == 'ar' || app()->getLocale() == 'fa' || app()->getLocale() == 'ur' || app()->getLocale() == 'he' ? 'rtl-layout' : 'ltr-layout' }}">
 
 <!--CRM - GROWCRM.IO-->
 @include('layout.header')
+@include('helpers.rtl')
 
 <body id="main-body"
     class="loggedin fix-header card-no-border fix-sidebar {{ config('settings.css_kanban') }} {{ runtimePreferenceLeftmenuPosition(auth()->user()->left_menu_position) }} {{ $page['page'] ?? '' }}">

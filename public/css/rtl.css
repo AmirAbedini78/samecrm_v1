@@ -1,0 +1,692 @@
+/* RTL Support for SameCRM */
+/* ========================= */
+
+/* RTL Layout Base */
+.rtl-layout {
+    direction: rtl;
+    text-align: right;
+}
+
+.rtl-layout * {
+    direction: rtl;
+}
+
+/* RTL Main Layout */
+.rtl-layout #main-wrapper {
+    direction: rtl;
+}
+
+.rtl-layout .page-wrapper {
+    margin-right: 250px;
+    margin-left: 0;
+}
+
+/* RTL Sidebar */
+.rtl-layout .left-sidebar {
+    right: 0;
+    left: auto;
+    border-right: 1px solid #e9ecef;
+    border-left: none;
+}
+
+.rtl-layout .scroll-sidebar {
+    direction: rtl;
+}
+
+.rtl-layout .sidebar-nav {
+    direction: rtl;
+}
+
+.rtl-layout .sidenav-menu-item {
+    text-align: right;
+}
+
+.rtl-layout .sidenav-menu-item a {
+    text-align: right;
+    padding-right: 15px;
+    padding-left: 10px;
+}
+
+.rtl-layout .sidenav-menu-item i {
+    margin-left: 10px;
+    margin-right: 0;
+}
+
+.rtl-layout .sidenav-submenu {
+    text-align: right;
+    padding-right: 30px;
+    padding-left: 0;
+}
+
+/* RTL Top Navigation */
+.rtl-layout .topbar {
+    direction: rtl;
+}
+
+.rtl-layout .navbar {
+    direction: rtl;
+}
+
+.rtl-layout .navbar-nav {
+    flex-direction: row-reverse;
+}
+
+.rtl-layout .navbar-nav.mr-auto {
+    margin-right: 0;
+    margin-left: auto;
+}
+
+.rtl-layout .navbar-nav.navbar-top-right {
+    margin-left: 0;
+    margin-right: auto;
+}
+
+.rtl-layout .nav-link {
+    text-align: right;
+}
+
+.rtl-layout .dropdown-menu {
+    right: 0;
+    left: auto;
+    text-align: right;
+}
+
+.rtl-layout .dropdown-menu-right {
+    right: auto;
+    left: 0;
+}
+
+/* RTL Search */
+.rtl-layout .top-search-container {
+    direction: rtl;
+}
+
+.rtl-layout .top-search-container input {
+    text-align: right;
+    padding-right: 40px;
+    padding-left: 10px;
+}
+
+.rtl-layout .top-search-container i {
+    right: 15px;
+    left: auto;
+}
+
+/* RTL Text Alignment */
+.rtl-layout .text-left {
+    text-align: right !important;
+}
+
+.rtl-layout .text-right {
+    text-align: left !important;
+}
+
+/* RTL Margins and Padding */
+.rtl-layout .ml-1, .rtl-layout .ml-2, .rtl-layout .ml-3, .rtl-layout .ml-4, .rtl-layout .ml-5,
+.rtl-layout .ml-6, .rtl-layout .ml-7, .rtl-layout .ml-8, .rtl-layout .ml-9, .rtl-layout .ml-10 {
+    margin-left: 0 !important;
+    margin-right: var(--margin-value) !important;
+}
+
+.rtl-layout .mr-1, .rtl-layout .mr-2, .rtl-layout .mr-3, .rtl-layout .mr-4, .rtl-layout .mr-5,
+.rtl-layout .mr-6, .rtl-layout .mr-7, .rtl-layout .mr-8, .rtl-layout .mr-9, .rtl-layout .mr-10 {
+    margin-right: 0 !important;
+    margin-left: var(--margin-value) !important;
+}
+
+.rtl-layout .pl-1, .rtl-layout .pl-2, .rtl-layout .pl-3, .rtl-layout .pl-4, .rtl-layout .pl-5,
+.rtl-layout .pl-6, .rtl-layout .pl-7, .rtl-layout .pl-8, .rtl-layout .pl-9, .rtl-layout .pl-10 {
+    padding-left: 0 !important;
+    padding-right: var(--padding-value) !important;
+}
+
+.rtl-layout .pr-1, .rtl-layout .pr-2, .rtl-layout .pr-3, .rtl-layout .pr-4, .rtl-layout .pr-5,
+.rtl-layout .pr-6, .rtl-layout .pr-7, .rtl-layout .pr-8, .rtl-layout .pr-9, .rtl-layout .pr-10 {
+    padding-right: 0 !important;
+    padding-left: var(--padding-value) !important;
+}
+
+/* RTL Sidebar */
+.rtl-layout .left-sidebar {
+    right: 0;
+    left: auto;
+    border-right: 1px solid #e9ecef;
+    border-left: none;
+}
+
+.rtl-layout .page-wrapper {
+    margin-right: 250px;
+    margin-left: 0;
+}
+
+/* RTL Navigation */
+.rtl-layout .navbar-nav {
+    flex-direction: row-reverse;
+}
+
+.rtl-layout .dropdown-menu {
+    right: 0;
+    left: auto;
+}
+
+/* RTL Forms */
+.rtl-layout .form-control {
+    text-align: right;
+    direction: rtl;
+}
+
+.rtl-layout .input-group {
+    flex-direction: row-reverse;
+}
+
+.rtl-layout .input-group-prepend {
+    order: 2;
+}
+
+.rtl-layout .input-group-append {
+    order: 1;
+}
+
+.rtl-layout .form-group {
+    text-align: right;
+}
+
+.rtl-layout .form-label {
+    text-align: right;
+}
+
+.rtl-layout .form-check {
+    text-align: right;
+}
+
+.rtl-layout .form-check-input {
+    margin-left: 0.25rem;
+    margin-right: 0;
+}
+
+.rtl-layout .form-check-label {
+    padding-right: 1.25rem;
+    padding-left: 0;
+}
+
+/* RTL Buttons */
+.rtl-layout .btn {
+    text-align: center;
+}
+
+.rtl-layout .btn-group {
+    flex-direction: row-reverse;
+}
+
+.rtl-layout .btn-group-vertical {
+    flex-direction: column-reverse;
+}
+
+/* RTL Cards */
+.rtl-layout .card {
+    text-align: right;
+}
+
+.rtl-layout .card-header {
+    text-align: right;
+}
+
+.rtl-layout .card-body {
+    text-align: right;
+}
+
+.rtl-layout .card-footer {
+    text-align: right;
+}
+
+.rtl-layout .card-title {
+    text-align: right;
+}
+
+.rtl-layout .card-text {
+    text-align: right;
+}
+
+/* RTL Tables */
+.rtl-layout .table {
+    direction: rtl;
+}
+
+.rtl-layout .table th,
+.rtl-layout .table td {
+    text-align: right;
+}
+
+.rtl-layout .table thead th {
+    text-align: right;
+}
+
+.rtl-layout .table tbody td {
+    text-align: right;
+}
+
+/* RTL Lists */
+.rtl-layout ul,
+.rtl-layout ol {
+    padding-right: 20px;
+    padding-left: 0;
+    text-align: right;
+}
+
+.rtl-layout li {
+    text-align: right;
+}
+
+/* RTL Breadcrumbs */
+.rtl-layout .breadcrumb {
+    flex-direction: row-reverse;
+    text-align: right;
+}
+
+.rtl-layout .breadcrumb-item {
+    text-align: right;
+}
+
+/* RTL Pagination */
+.rtl-layout .pagination {
+    flex-direction: row-reverse;
+}
+
+.rtl-layout .page-item {
+    text-align: center;
+}
+
+/* RTL Alerts */
+.rtl-layout .alert {
+    text-align: right;
+    direction: rtl;
+}
+
+.rtl-layout .alert-dismissible {
+    padding-right: 4rem;
+    padding-left: 1rem;
+}
+
+.rtl-layout .alert-dismissible .close {
+    right: auto;
+    left: 0;
+}
+
+/* RTL Modals */
+.rtl-layout .modal {
+    text-align: right;
+}
+
+.rtl-layout .modal-header {
+    text-align: right;
+}
+
+.rtl-layout .modal-body {
+    text-align: right;
+}
+
+.rtl-layout .modal-footer {
+    text-align: right;
+}
+
+.rtl-layout .modal-header .close {
+    margin: -1rem -1rem -1rem auto;
+}
+
+/* RTL Progress Bars */
+.rtl-layout .progress {
+    direction: rtl;
+}
+
+.rtl-layout .progress-bar {
+    text-align: right;
+}
+
+/* RTL Badges */
+.rtl-layout .badge {
+    margin-left: 5px;
+    margin-right: 0;
+}
+
+/* RTL Tooltips */
+.rtl-layout .tooltip {
+    direction: rtl;
+    text-align: right;
+}
+
+/* RTL Popovers */
+.rtl-layout .popover {
+    direction: rtl;
+    text-align: right;
+}
+
+/* RTL Dropdowns */
+.rtl-layout .dropdown-toggle::after {
+    margin-left: 0;
+    margin-right: 0.255em;
+}
+
+/* RTL Carousel */
+.rtl-layout .carousel-control-prev {
+    right: 0;
+    left: auto;
+}
+
+.rtl-layout .carousel-control-next {
+    left: 0;
+    right: auto;
+}
+
+/* RTL Flexbox */
+.rtl-layout .d-flex {
+    flex-direction: row-reverse;
+}
+
+.rtl-layout .flex-row {
+    flex-direction: row-reverse;
+}
+
+.rtl-layout .flex-row-reverse {
+    flex-direction: row;
+}
+
+/* RTL Grid */
+.rtl-layout .row {
+    direction: rtl;
+}
+
+.rtl-layout .col {
+    text-align: right;
+}
+
+/* RTL Utilities */
+.rtl-layout .float-left {
+    float: right !important;
+}
+
+.rtl-layout .float-right {
+    float: left !important;
+}
+
+.rtl-layout .text-left {
+    text-align: right !important;
+}
+
+.rtl-layout .text-right {
+    text-align: left !important;
+}
+
+.rtl-layout .ml-1, .rtl-layout .ml-2, .rtl-layout .ml-3, .rtl-layout .ml-4, .rtl-layout .ml-5,
+.rtl-layout .ml-6, .rtl-layout .ml-7, .rtl-layout .ml-8, .rtl-layout .ml-9, .rtl-layout .ml-10 {
+    margin-left: 0 !important;
+    margin-right: var(--margin-value) !important;
+}
+
+.rtl-layout .mr-1, .rtl-layout .mr-2, .rtl-layout .mr-3, .rtl-layout .mr-4, .rtl-layout .mr-5,
+.rtl-layout .mr-6, .rtl-layout .mr-7, .rtl-layout .mr-8, .rtl-layout .mr-9, .rtl-layout .mr-10 {
+    margin-right: 0 !important;
+    margin-left: var(--margin-value) !important;
+}
+
+.rtl-layout .pl-1, .rtl-layout .pl-2, .rtl-layout .pl-3, .rtl-layout .pl-4, .rtl-layout .pl-5,
+.rtl-layout .pl-6, .rtl-layout .pl-7, .rtl-layout .pl-8, .rtl-layout .pl-9, .rtl-layout .pl-10 {
+    padding-left: 0 !important;
+    padding-right: var(--padding-value) !important;
+}
+
+.rtl-layout .pr-1, .rtl-layout .pr-2, .rtl-layout .pr-3, .rtl-layout .pr-4, .rtl-layout .pr-5,
+.rtl-layout .pr-6, .rtl-layout .pr-7, .rtl-layout .pr-8, .rtl-layout .pr-9, .rtl-layout .pr-10 {
+    padding-right: 0 !important;
+    padding-left: var(--padding-value) !important;
+}
+
+/* RTL Tables */
+.rtl-layout table {
+    direction: rtl;
+}
+
+.rtl-layout th, .rtl-layout td {
+    text-align: right;
+}
+
+/* RTL Buttons */
+.rtl-layout .btn-group {
+    flex-direction: row-reverse;
+}
+
+/* RTL Icons */
+.rtl-layout .fa-chevron-left::before {
+    content: "\f054";
+}
+
+.rtl-layout .fa-chevron-right::before {
+    content: "\f053";
+}
+
+.rtl-layout .fa-arrow-left::before {
+    content: "\f061";
+}
+
+.rtl-layout .fa-arrow-right::before {
+    content: "\f060";
+}
+
+/* RTL Modals */
+.rtl-layout .modal-header .close {
+    margin: -1rem -1rem -1rem auto;
+}
+
+/* RTL Cards */
+.rtl-layout .card-header {
+    text-align: right;
+}
+
+/* RTL Lists */
+.rtl-layout ul, .rtl-layout ol {
+    padding-right: 20px;
+    padding-left: 0;
+}
+
+/* RTL Breadcrumbs */
+.rtl-layout .breadcrumb {
+    flex-direction: row-reverse;
+}
+
+/* RTL Pagination */
+.rtl-layout .pagination {
+    flex-direction: row-reverse;
+}
+
+/* RTL Progress Bars */
+.rtl-layout .progress {
+    direction: rtl;
+}
+
+/* RTL Alerts */
+.rtl-layout .alert {
+    text-align: right;
+}
+
+/* RTL Badges */
+.rtl-layout .badge {
+    margin-left: 5px;
+    margin-right: 0;
+}
+
+/* RTL Tooltips */
+.rtl-layout .tooltip {
+    direction: rtl;
+}
+
+/* RTL Popovers */
+.rtl-layout .popover {
+    direction: rtl;
+}
+
+/* RTL Dropdowns */
+.rtl-layout .dropdown-toggle::after {
+    margin-left: 0;
+    margin-right: 0.255em;
+}
+
+/* RTL Carousel */
+.rtl-layout .carousel-control-prev {
+    right: 0;
+    left: auto;
+}
+
+.rtl-layout .carousel-control-next {
+    left: 0;
+    right: auto;
+}
+
+/* RTL Flexbox */
+.rtl-layout .d-flex {
+    flex-direction: row-reverse;
+}
+
+/* RTL Grid */
+.rtl-layout .row {
+    direction: rtl;
+}
+
+/* RTL Utilities */
+.rtl-layout .float-left {
+    float: right !important;
+}
+
+.rtl-layout .float-right {
+    float: left !important;
+}
+
+.rtl-layout .text-left {
+    text-align: right !important;
+}
+
+.rtl-layout .text-right {
+    text-align: left !important;
+}
+
+/* RTL Specific Classes */
+.rtl-layout .rtl-text {
+    direction: rtl;
+    text-align: right;
+}
+
+.rtl-layout .rtl-margin-left {
+    margin-left: 0 !important;
+    margin-right: var(--margin-value) !important;
+}
+
+.rtl-layout .rtl-margin-right {
+    margin-right: 0 !important;
+    margin-left: var(--margin-value) !important;
+}
+
+.rtl-layout .rtl-padding-left {
+    padding-left: 0 !important;
+    padding-right: var(--padding-value) !important;
+}
+
+.rtl-layout .rtl-padding-right {
+    padding-right: 0 !important;
+    padding-left: var(--padding-value) !important;
+}
+
+/* RTL Font Support */
+.rtl-layout {
+    font-family: 'Tahoma', 'Arial', sans-serif;
+}
+
+.rtl-layout .arabic-font {
+    font-family: 'Tahoma', 'Arial', sans-serif;
+}
+
+.rtl-layout .persian-font {
+    font-family: 'Tahoma', 'Arial', sans-serif;
+}
+
+.rtl-layout .urdu-font {
+    font-family: 'Tahoma', 'Arial', sans-serif;
+}
+
+/* RTL Specific Components */
+.rtl-layout .rtl-sidebar {
+    right: 0;
+    left: auto;
+    border-right: 1px solid #e9ecef;
+    border-left: none;
+}
+
+.rtl-layout .rtl-topbar {
+    direction: rtl;
+}
+
+.rtl-layout .rtl-form {
+    text-align: right;
+    direction: rtl;
+}
+
+.rtl-layout .rtl-form .form-control {
+    text-align: right;
+    direction: rtl;
+}
+
+.rtl-layout .rtl-form .form-label {
+    text-align: right;
+}
+
+.rtl-layout .rtl-modal {
+    text-align: right;
+    direction: rtl;
+}
+
+.rtl-layout .rtl-modal-dialog {
+    direction: rtl;
+}
+
+.rtl-layout .rtl-table-responsive {
+    direction: rtl;
+}
+
+.rtl-layout .rtl-table {
+    direction: rtl;
+}
+
+.rtl-layout .rtl-table th,
+.rtl-layout .rtl-table td {
+    text-align: right;
+}
+
+.rtl-layout .rtl-cards-wrapper {
+    direction: rtl;
+}
+
+.rtl-layout .rtl-cards-grid {
+    direction: rtl;
+}
+
+.rtl-layout .rtl-kanban-card {
+    text-align: right;
+    direction: rtl;
+}
+
+.rtl-layout .rtl-kanban-card .x-title {
+    text-align: right;
+}
+
+.rtl-layout .rtl-kanban-card .x-action-button {
+    left: 10px;
+    right: auto;
+}
+
+/* RTL Print Styles */
+@media print {
+    .rtl-layout {
+        direction: rtl;
+    }
+    
+    .rtl-layout * {
+        direction: rtl;
+    }
+}

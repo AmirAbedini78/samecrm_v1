@@ -1,7 +1,7 @@
 <!-- ============================================================== -->
 <!-- Left Sidebar - style you can find in sidebar.scss  -->
 <!-- ============================================================== -->
-<aside class="left-sidebar" id="js-trigger-nav-team">
+<aside class="left-sidebar {{ app()->getLocale() == 'ar' || app()->getLocale() == 'fa' || app()->getLocale() == 'ur' || app()->getLocale() == 'he' ? 'rtl-sidebar' : '' }}" id="js-trigger-nav-team">
     <!-- Sidebar scroll-->
     <div class="scroll-sidebar" id="main-scroll-sidebar">
         <!-- Sidebar navigation-->

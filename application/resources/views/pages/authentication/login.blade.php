@@ -6,8 +6,8 @@
     </a>
 </div>
 
-<div class="login-box m-t-20">
-    <form class="form-horizontal form-material" id="loginForm">
+<div class="login-box m-t-20 {{ app()->getLocale() == 'ar' || app()->getLocale() == 'fa' || app()->getLocale() == 'ur' || app()->getLocale() == 'he' ? 'rtl-form' : '' }}">
+    <form class="form-horizontal form-material {{ app()->getLocale() == 'ar' || app()->getLocale() == 'fa' || app()->getLocale() == 'ur' || app()->getLocale() == 'he' ? 'rtl-form' : '' }}" id="loginForm">
         <div class="title">
             <h4 class="box-title m-t-10 text-center">{{ cleanLang(__('lang.sign_in_to_your_account')) }}</h4>
             <div class="text-center  m-b-20 ">

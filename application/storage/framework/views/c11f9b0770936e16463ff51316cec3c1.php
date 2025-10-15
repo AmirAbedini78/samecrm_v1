@@ -64,5 +64,10 @@
 <script src="/public/vendor/js/fullcalendar/index.global.min.js?v=<?php echo e(config('system.versioning')); ?>"></script>
 <!--IMPORTANT NOTES (June 2024) - any new JS libraries added here that are booted/initiated in boot.js should also be added to the landlord footerjs.blade.js, for saas-->
 
+<!--RTL JavaScript-->
+<?php if(app()->getLocale() == 'ar' || app()->getLocale() == 'fa' || app()->getLocale() == 'ur' || app()->getLocale() == 'he'): ?>
+<script src="public/js/rtl.js?v=<?php echo e(config('system.versioning')); ?>"></script>
+<?php endif; ?>
+
 <!--[modules] js includes-->
 <?php echo config('js.modules'); ?><?php /**PATH C:\laragon\www\samecrm_v1\application\resources\views/layout/footerjs.blade.php ENDPATH**/ ?>

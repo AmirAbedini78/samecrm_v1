@@ -17,6 +17,17 @@ body {
     font-size: 14px;
 }
 
+/*RTL Support*/
+.rtl-layout {
+    direction: rtl;
+    text-align: right;
+}
+
+.rtl-layout body {
+    direction: rtl;
+    text-align: right;
+}
+
 html {
     position: relative;
     min-height: 100%;

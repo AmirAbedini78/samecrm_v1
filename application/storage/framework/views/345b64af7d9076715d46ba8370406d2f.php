@@ -1,6 +1,6 @@
 <!--modal-->
-<div class="modal" role="dialog" aria-labelledby="foo" id="commonModal" <?php echo clean(runtimeAllowCloseModalOptions()); ?>>
-    <div class="modal-dialog" id="commonModalContainer">
+<div class="modal <?php echo e(app()->getLocale() == 'ar' || app()->getLocale() == 'fa' || app()->getLocale() == 'ur' || app()->getLocale() == 'he' ? 'rtl-modal' : ''); ?>" role="dialog" aria-labelledby="foo" id="commonModal" <?php echo clean(runtimeAllowCloseModalOptions()); ?>>
+    <div class="modal-dialog <?php echo e(app()->getLocale() == 'ar' || app()->getLocale() == 'fa' || app()->getLocale() == 'ur' || app()->getLocale() == 'he' ? 'rtl-modal-dialog' : ''); ?>" id="commonModalContainer">
         <form action="" method="post" id="commonModalForm" class="form-horizontal">
             <div class="modal-content">
                 <div class="modal-header" id="commonModalHeader">

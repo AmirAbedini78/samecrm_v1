@@ -1,4 +1,4 @@
-<header class="topbar">
+<header class="topbar {{ app()->getLocale() == 'ar' || app()->getLocale() == 'fa' || app()->getLocale() == 'ur' || app()->getLocale() == 'he' ? 'rtl-topbar' : '' }}">
 
     <nav class="navbar top-navbar navbar-expand-md navbar-light">
 

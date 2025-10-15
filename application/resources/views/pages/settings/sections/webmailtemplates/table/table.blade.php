@@ -1,6 +1,6 @@
-<div class="table-responsive">
+<div class="table-responsive {{ app()->getLocale() == 'ar' || app()->getLocale() == 'fa' || app()->getLocale() == 'ur' || app()->getLocale() == 'he' ? 'rtl-table-responsive' : '' }}">
     @if (@count($templates ?? []) > 0)
-    <table id="demo-webform-addrow" class="table m-t-0 m-b-0 table-hover no-wrap contact-list" data-page-size="10">
+    <table id="demo-webform-addrow" class="table m-t-0 m-b-0 table-hover no-wrap contact-list {{ app()->getLocale() == 'ar' || app()->getLocale() == 'fa' || app()->getLocale() == 'ur' || app()->getLocale() == 'he' ? 'rtl-table' : '' }}" data-page-size="10">
         <thead>
             <tr>
                 <th class="templates_col_name">@lang('lang.name')</th>

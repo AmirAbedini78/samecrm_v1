@@ -1,6 +1,6 @@
 @foreach($board['leads'] as $lead)
 <!--each card-->
-<div class="kanban-card show-modal-button reset-card-modal-form js-ajax-ux-request {{ $lead->pinned_status ?? '' }}"
+<div class="kanban-card show-modal-button reset-card-modal-form js-ajax-ux-request {{ $lead->pinned_status ?? '' }} {{ app()->getLocale() == 'ar' || app()->getLocale() == 'fa' || app()->getLocale() == 'ur' || app()->getLocale() == 'he' ? 'rtl-kanban-card' : '' }}"
     data-toggle="modal" data-target="#cardModal" data-url="{{ urlResource('/leads/'.$lead->lead_id) }}"
     data-lead-id="{{ $lead->lead_id }}" data-loading-target="main-top-nav-bar" id="card_lead_{{ $lead->lead_id }}">
     <!--cover image-->
