@@ -38,3 +38,4 @@
         locale: '{{ app()->getLocale() }}'
     };
 </script>
+

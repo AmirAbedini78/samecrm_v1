@@ -1,5 +1,17 @@
 <?php
 
+// Include debug routes
+require_once __DIR__ . '/debug.php';
+
+// Include test middleware routes
+require_once __DIR__ . '/test-middleware.php';
+
+// Include live debug routes
+require_once __DIR__ . '/debug-live.php';
+
+// Include test inventory routes
+require_once __DIR__ . '/test-inventory.php';
+
 //TESTING [DEV]
 Route::get("test", "Test@index");
 Route::post("test", "Test@index");
@@ -1365,3 +1377,39 @@ Route::resource('cs/affiliates/earnings', 'CS_Affiliates\Earnings');
 
 //AFFILATE PROFIT
 Route::get("/cs/affiliate/my/earnings", "CS_Affiliates\Profit@index");
+
+//ACCOUNTING
+Route::group(['prefix' => 'accounting'], function () {
+    Route::any("/search", "Accounting@index");
+    Route::post("/delete", "Accounting@destroy")->middleware(['demoModeCheck']);
+    Route::get("/change-category", "Accounting@changeCategory");
+    Route::post("/change-category", "Accounting@changeCategoryUpdate");
+    Route::get("/{accounting}/accounting-details", "Accounting@details")->where('accounting', '[0-9]+');
+    Route::post("/{accounting}/accounting-details", "Accounting@updateDescription")->where('accounting', '[0-9]+');
+    Route::get("/{accounting}/pinning", "Accounting@togglePinning")->where('accounting', '[0-9]+');
+});
+Route::resource('accounting', 'Accounting');
+
+//INVENTORY
+Route::group(['prefix' => 'inventory'], function () {
+    Route::any("/search", "InventoryController@index");
+    Route::post("/delete", "InventoryController@destroy")->middleware(['demoModeCheck']);
+    Route::get("/change-category", "InventoryController@changeCategory");
+    Route::post("/change-category", "InventoryController@changeCategoryUpdate");
+    Route::get("/{inventory}/inventory-details", "InventoryController@details")->where('inventory', '[0-9]+');
+    Route::post("/{inventory}/inventory-details", "InventoryController@updateDescription")->where('inventory', '[0-9]+');
+    Route::get("/{inventory}/pinning", "InventoryController@togglePinning")->where('inventory', '[0-9]+');
+});
+Route::resource('inventory', 'InventoryController');
+
+//SALES
+Route::group(['prefix' => 'sales'], function () {
+    Route::any("/search", "SalesController@index");
+    Route::post("/delete", "SalesController@destroy")->middleware(['demoModeCheck']);
+    Route::get("/change-category", "SalesController@changeCategory");
+    Route::post("/change-category", "SalesController@changeCategoryUpdate");
+    Route::get("/{sales}/sales-details", "SalesController@details")->where('sales', '[0-9]+');
+    Route::post("/{sales}/sales-details", "SalesController@updateDescription")->where('sales', '[0-9]+');
+    Route::get("/{sales}/pinning", "SalesController@togglePinning")->where('sales', '[0-9]+');
+});
+Route::resource('sales', 'SalesController');

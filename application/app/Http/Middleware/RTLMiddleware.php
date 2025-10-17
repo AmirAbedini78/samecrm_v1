@@ -28,3 +28,4 @@ class RTLMiddleware
         return $next($request);
     }
 }
+

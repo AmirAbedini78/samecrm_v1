@@ -2543,6 +2543,38 @@ function runtimeContractIdFormat($contract_id = '') {
 }
 
 /**
+ * return formatted inventory id  (e.g. INV000024)
+ * @param numeric inventory_id
+ * @return string checked | null
+ */
+function runtimeInventoryIdFormat($inventory_id = '') {
+    //add the zero's
+    $prefix = config('system.settings_inventory_prefix', 'INV');
+    //return
+    if (is_numeric($inventory_id)) {
+        return $prefix . str_pad($inventory_id, 6, '0', STR_PAD_LEFT);
+    } else {
+        return '---';
+    }
+}
+
+/**
+ * return formatted sales id  (e.g. SAL000024)
+ * @param numeric sales_id
+ * @return string checked | null
+ */
+function runtimeSalesIdFormat($sales_id = '') {
+    //add the zero's
+    $prefix = config('system.settings_sales_prefix', 'SAL');
+    //return
+    if (is_numeric($sales_id)) {
+        return $prefix . str_pad($sales_id, 6, '0', STR_PAD_LEFT);
+    } else {
+        return '---';
+    }
+}
+
+/**
  * bootstrap class, based on value
  * @param string value the status of the task
  * @param string type lable|background
@@ -3651,6 +3683,16 @@ function modulesSanitizeModuleName($module_name = '') {
  * @param string $currency_code ISO curreny code (i.e. USD)
  * @return string a formatted money string e.g. $1,324.99
  */
+/**
+ * Format currency with default currency
+ * @param float $amount
+ * @param string $currency_code
+ * @return string
+ */
+function formatCurrency($amount = 0, $currency_code = 'IRR') {
+    return moneyFormat($amount, $currency_code);
+}
+
 function moneyFormat($number = '', $currency_code = '') {
 
     //validate both required attributes have been passed to the function
