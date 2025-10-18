@@ -31,3 +31,4 @@ class AddInventorySalesPermissionsToRoles extends Migration
         });
     }
 }
+

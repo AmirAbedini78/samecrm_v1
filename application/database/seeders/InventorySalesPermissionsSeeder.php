@@ -45,3 +45,4 @@ class InventorySalesPermissionsSeeder extends Seeder
         $this->command->info('Inventory and Sales permissions have been set for all roles.');
     }
 }
+
