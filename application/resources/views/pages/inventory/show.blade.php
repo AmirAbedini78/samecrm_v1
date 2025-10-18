@@ -1,187 +1,258 @@
 @extends('layout.wrapper')
+
 @section('content')
-<!-- main content -->
-<div class="container-fluid">
-    <!-- page content -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-body">
-                    <!-- Header Actions -->
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <h4 class="card-title">{{ cleanLang(__('lang.inventory_details')) }}</h4>
-                        </div>
-                        <div class="col-md-6 text-right">
-                            <a href="{{ _url('/inventory/'.$inventory->inventory_id.'/edit') }}" class="btn btn-primary">
-                                <i class="ti-pencil"></i> {{ cleanLang(__('lang.edit')) }}
-                            </a>
-                            <a href="{{ _url('/inventory') }}" class="btn btn-secondary">
-                                <i class="ti-arrow-left"></i> {{ cleanLang(__('lang.back_to_list')) }}
-                            </a>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <!-- Basic Information -->
-                        <div class="col-md-6">
-                            <div class="card">
-                                <div class="card-header">
-                                    <h5 class="card-title">{{ cleanLang(__('lang.basic_information')) }}</h5>
+<!-- ============================================================== -->
+<!-- Page Content -->
+<!-- ============================================================== -->
+<div class="content">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="row">
+            <div class="col-md-4 col-sm-12">
+                <h3 class="page-title">{{ cleanLang(__('lang.view_inventory')) }}</h3>
+                <ul class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/home">{{ cleanLang(__('lang.dashboard')) }}</a></li>
+                    <li class="breadcrumb-item"><a href="/accounting">{{ cleanLang(__('lang.accounting')) }}</a></li>
+                    <li class="breadcrumb-item"><a href="/inventory">{{ cleanLang(__('lang.inventory')) }}</a></li>
+                    <li class="breadcrumb-item active">{{ cleanLang(__('lang.view_inventory')) }}</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <!-- Page Header -->
+
+    <!-- Page Content -->
+    <div class="page-content">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>{{ cleanLang(__('lang.inventory_name')) }}</label>
+                                    <p class="form-control-plaintext">{{ $inventory->inventory_name }}</p>
                                 </div>
-                                <div class="card-body">
-                                    <table class="table table-borderless">
-                                        <tr>
-                                            <td><strong>{{ cleanLang(__('lang.inventory_name')) }}:</strong></td>
-                                            <td>{{ $inventory->inventory_name }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>{{ cleanLang(__('lang.inventory_code')) }}:</strong></td>
-                                            <td>{{ $inventory->inventory_code }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>{{ cleanLang(__('lang.inventory_sku')) }}:</strong></td>
-                                            <td>{{ $inventory->inventory_sku ?? '-' }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>{{ cleanLang(__('lang.inventory_barcode')) }}:</strong></td>
-                                            <td>{{ $inventory->inventory_barcode ?? '-' }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>{{ cleanLang(__('lang.inventory_description')) }}:</strong></td>
-                                            <td>{{ $inventory->inventory_description ?? '-' }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>{{ cleanLang(__('lang.inventory_status')) }}:</strong></td>
-                                            <td>
-                                                <span class="badge badge-{{ $inventory->inventory_status == 'active' ? 'success' : 'secondary' }}">
-                                                    {{ $inventory->inventory_status }}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    </table>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>{{ cleanLang(__('lang.inventory_code')) }}</label>
+                                    <p class="form-control-plaintext">{{ $inventory->inventory_code }}</p>
                                 </div>
                             </div>
                         </div>
-                        
-                        <!-- Stock & Pricing -->
-                        <div class="col-md-6">
-                            <div class="card">
-                                <div class="card-header">
-                                    <h5 class="card-title">{{ cleanLang(__('lang.stock_pricing')) }}</h5>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>{{ cleanLang(__('lang.first_period_quantity')) }}</label>
+                                    <p class="form-control-plaintext">{{ number_format($inventory->first_period_quantity, 2) }}</p>
                                 </div>
-                                <div class="card-body">
-                                    <table class="table table-borderless">
-                                        <tr>
-                                            <td><strong>{{ cleanLang(__('lang.inventory_quantity')) }}:</strong></td>
-                                            <td>{{ $inventory->inventory_quantity }} {{ $inventory->inventory_unit }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>{{ cleanLang(__('lang.inventory_minimum_quantity')) }}:</strong></td>
-                                            <td>{{ $inventory->inventory_minimum_quantity ?? '-' }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>{{ cleanLang(__('lang.inventory_selling_price')) }}:</strong></td>
-                                            <td>{{ formatCurrency($inventory->inventory_selling_price, $inventory->inventory_currency) }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>{{ cleanLang(__('lang.inventory_cost_price')) }}:</strong></td>
-                                            <td>{{ formatCurrency($inventory->inventory_cost_price, $inventory->inventory_currency) }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>{{ cleanLang(__('lang.inventory_currency')) }}:</strong></td>
-                                            <td>{{ $inventory->inventory_currency }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>{{ cleanLang(__('lang.inventory_unit')) }}:</strong></td>
-                                            <td>{{ $inventory->inventory_unit }}</td>
-                                        </tr>
-                                    </table>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>{{ cleanLang(__('lang.first_period_sub_quantity')) }}</label>
+                                    <p class="form-control-plaintext">{{ number_format($inventory->first_period_sub_quantity, 2) }}</p>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    
-                    <!-- Additional Information -->
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="card">
-                                <div class="card-header">
-                                    <h5 class="card-title">{{ cleanLang(__('lang.additional_information')) }}</h5>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>{{ cleanLang(__('lang.first_period_amount')) }}</label>
+                                    <p class="form-control-plaintext">{{ formatCurrency($inventory->first_period_amount, 'IRR') }}</p>
                                 </div>
-                                <div class="card-body">
-                                    <table class="table table-borderless">
-                                        <tr>
-                                            <td><strong>{{ cleanLang(__('lang.inventory_supplier')) }}:</strong></td>
-                                            <td>{{ $inventory->inventory_supplier ?? '-' }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>{{ cleanLang(__('lang.inventory_location')) }}:</strong></td>
-                                            <td>{{ $inventory->inventory_location ?? '-' }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>{{ cleanLang(__('lang.inventory_brand')) }}:</strong></td>
-                                            <td>{{ $inventory->inventory_brand ?? '-' }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>{{ cleanLang(__('lang.inventory_model')) }}:</strong></td>
-                                            <td>{{ $inventory->inventory_model ?? '-' }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>{{ cleanLang(__('lang.inventory_serial_number')) }}:</strong></td>
-                                            <td>{{ $inventory->inventory_serial_number ?? '-' }}</td>
-                                        </tr>
-                                    </table>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>{{ cleanLang(__('lang.first_period_avg_price')) }}</label>
+                                    <p class="form-control-plaintext">{{ formatCurrency($inventory->first_period_avg_price, 'IRR') }}</p>
                                 </div>
                             </div>
                         </div>
-                        
-                        <div class="col-md-6">
-                            <div class="card">
-                                <div class="card-header">
-                                    <h5 class="card-title">{{ cleanLang(__('lang.notes')) }}</h5>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>{{ cleanLang(__('lang.input_quantity')) }}</label>
+                                    <p class="form-control-plaintext">{{ number_format($inventory->input_quantity, 2) }}</p>
                                 </div>
-                                <div class="card-body">
-                                    <p>{{ $inventory->inventory_notes ?? cleanLang(__('lang.no_notes_available')) }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>{{ cleanLang(__('lang.input_sub_quantity')) }}</label>
+                                    <p class="form-control-plaintext">{{ number_format($inventory->input_sub_quantity, 2) }}</p>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    
-                    <!-- System Information -->
-                    <div class="row">
-                        <div class="col-12">
-                            <div class="card">
-                                <div class="card-header">
-                                    <h5 class="card-title">{{ cleanLang(__('lang.system_information')) }}</h5>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>{{ cleanLang(__('lang.input_amount')) }}</label>
+                                    <p class="form-control-plaintext">{{ formatCurrency($inventory->input_amount, 'IRR') }}</p>
                                 </div>
-                                <div class="card-body">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <table class="table table-borderless">
-                                                <tr>
-                                                    <td><strong>{{ cleanLang(__('lang.created_by')) }}:</strong></td>
-                                                    <td>{{ $inventory->creator->name ?? '-' }}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td><strong>{{ cleanLang(__('lang.created_at')) }}:</strong></td>
-                                                    <td>{{ $inventory->formatted_inventory_created }}</td>
-                                                </tr>
-                                            </table>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <table class="table table-borderless">
-                                                <tr>
-                                                    <td><strong>{{ cleanLang(__('lang.updated_at')) }}:</strong></td>
-                                                    <td>{{ $inventory->formatted_inventory_updated }}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td><strong>{{ cleanLang(__('lang.inventory_id')) }}:</strong></td>
-                                                    <td>{{ $inventory->formatted_id }}</td>
-                                                </tr>
-                                            </table>
-                                        </div>
-                                    </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>{{ cleanLang(__('lang.input_avg_price')) }}</label>
+                                    <p class="form-control-plaintext">{{ formatCurrency($inventory->input_avg_price, 'IRR') }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>{{ cleanLang(__('lang.output_quantity')) }}</label>
+                                    <p class="form-control-plaintext">{{ number_format($inventory->output_quantity, 2) }}</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>{{ cleanLang(__('lang.output_sub_quantity')) }}</label>
+                                    <p class="form-control-plaintext">{{ number_format($inventory->output_sub_quantity, 2) }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>{{ cleanLang(__('lang.output_amount')) }}</label>
+                                    <p class="form-control-plaintext">{{ formatCurrency($inventory->output_amount, 'IRR') }}</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>{{ cleanLang(__('lang.output_avg_price')) }}</label>
+                                    <p class="form-control-plaintext">{{ formatCurrency($inventory->output_avg_price, 'IRR') }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>{{ cleanLang(__('lang.current_quantity')) }}</label>
+                                    <p class="form-control-plaintext">{{ number_format($inventory->current_quantity, 2) }}</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>{{ cleanLang(__('lang.current_sub_quantity')) }}</label>
+                                    <p class="form-control-plaintext">{{ number_format($inventory->current_sub_quantity, 2) }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>{{ cleanLang(__('lang.current_amount')) }}</label>
+                                    <p class="form-control-plaintext">{{ formatCurrency($inventory->current_amount, 'IRR') }}</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>{{ cleanLang(__('lang.current_avg_price')) }}</label>
+                                    <p class="form-control-plaintext">{{ formatCurrency($inventory->current_avg_price, 'IRR') }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>{{ cleanLang(__('lang.weighing_input')) }}</label>
+                                    <p class="form-control-plaintext">{{ number_format($inventory->weighing_input, 2) }}</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>{{ cleanLang(__('lang.weighing_output')) }}</label>
+                                    <p class="form-control-plaintext">{{ number_format($inventory->weighing_output, 2) }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>{{ cleanLang(__('lang.minimum_stock')) }}</label>
+                                    <p class="form-control-plaintext">{{ number_format($inventory->minimum_stock, 2) }}</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>{{ cleanLang(__('lang.maximum_stock')) }}</label>
+                                    <p class="form-control-plaintext">{{ number_format($inventory->maximum_stock, 2) }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>{{ cleanLang(__('lang.discrepancy')) }}</label>
+                                    <p class="form-control-plaintext">{{ number_format($inventory->discrepancy, 2) }}</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>{{ cleanLang(__('lang.main_unit')) }}</label>
+                                    <p class="form-control-plaintext">{{ $inventory->main_unit }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>{{ cleanLang(__('lang.sub_unit')) }}</label>
+                                    <p class="form-control-plaintext">{{ $inventory->sub_unit }}</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>{{ cleanLang(__('lang.status')) }}</label>
+                                    <p class="form-control-plaintext">
+                                        <span class="badge badge-{{ $inventory->inventory_status == 'active' ? 'success' : 'secondary' }}">
+                                            {{ $inventory->inventory_status }}
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label>{{ cleanLang(__('lang.created_at')) }}</label>
+                                    <p class="form-control-plaintext">{{ $inventory->created_at->format('Y-m-d H:i:s') }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label>{{ cleanLang(__('lang.updated_at')) }}</label>
+                                    <p class="form-control-plaintext">{{ $inventory->updated_at->format('Y-m-d H:i:s') }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <a href="{{ _url('/inventory') }}" class="btn btn-secondary">
+                                        {{ cleanLang(__('lang.back_to_inventory')) }}
+                                    </a>
+                                    <a href="{{ _url('/inventory/'.$inventory->inventory_id.'/edit') }}" class="btn btn-primary">
+                                        {{ cleanLang(__('lang.edit')) }}
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -190,8 +261,9 @@
             </div>
         </div>
     </div>
-    <!--page content -->
+    <!-- Page Content -->
 </div>
-<!--main content -->
+<!-- ============================================================== -->
+<!-- End Page Content -->
+<!-- ============================================================== -->
 @endsection
-

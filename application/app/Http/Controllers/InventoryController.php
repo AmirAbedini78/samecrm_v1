@@ -86,8 +86,8 @@ class InventoryController extends Controller {
         $stats = [
             'total_items' => $inventory->total(),
             'active_items' => Inventory::where('inventory_status', 'active')->count(),
-            'low_stock' => Inventory::whereRaw('inventory_quantity <= inventory_minimum_quantity')->count(),
-            'total_value' => Inventory::sum('inventory_selling_price') ?? 0,
+            'low_stock' => Inventory::whereRaw('current_quantity <= minimum_stock')->count(),
+            'total_value' => Inventory::sum('current_amount') ?? 0,
         ];
 
         //reponse payload

@@ -30,7 +30,7 @@ class SalesRepository {
         if (is_numeric($id)) {
             $sales->where('sales_id', $id);
             // For single record, return the query builder without pagination
-            $sales->with(['creator', 'category', 'client', 'project', 'tags']);
+            $sales->with(['creator', 'tags']);
             return $sales;
         }
 
@@ -39,51 +39,50 @@ class SalesRepository {
             $sales->where('sales_status', request('filter_sales_status'));
         }
 
-        //filter by type
-        if (request()->filled('filter_sales_type')) {
-            $sales->where('sales_type', request('filter_sales_type'));
-        }
-
-        //filter by payment status
-        if (request()->filled('filter_sales_payment_status')) {
-            $sales->where('sales_payment_status', request('filter_sales_payment_status'));
-        }
-
-        //filter by category
-        if (request()->filled('filter_sales_categoryid')) {
-            $sales->where('sales_categoryid', request('filter_sales_categoryid'));
-        }
-
-        //filter by client
-        if (request()->filled('filter_sales_clientid')) {
-            $sales->where('sales_clientid', request('filter_sales_clientid'));
-        }
-
-        //filter by project
-        if (request()->filled('filter_sales_projectid')) {
-            $sales->where('sales_projectid', request('filter_sales_projectid'));
-        }
-
         //filter by creator
         if (request()->filled('filter_sales_creatorid')) {
             $sales->where('sales_creatorid', request('filter_sales_creatorid'));
         }
 
         //filter by date
-        if (request()->filled('filter_sales_date_from')) {
-            $sales->where('sales_date', '>=', request('filter_sales_date_from'));
+        if (request()->filled('filter_document_date_from')) {
+            $sales->where('document_date', '>=', request('filter_document_date_from'));
         }
-        if (request()->filled('filter_sales_date_to')) {
-            $sales->where('sales_date', '<=', request('filter_sales_date_to'));
+        if (request()->filled('filter_document_date_to')) {
+            $sales->where('document_date', '<=', request('filter_document_date_to'));
         }
 
         //search: multiple sales fields
         if (request()->filled('search_query')) {
             $sales->where(function ($query) {
-                $query->where('sales_title', 'LIKE', '%' . request('search_query') . '%')
-                    ->orWhere('sales_description', 'LIKE', '%' . request('search_query') . '%')
-                    ->orWhere('sales_reference', 'LIKE', '%' . request('search_query') . '%');
+                $query->where('product_name', 'LIKE', '%' . request('search_query') . '%')
+                    ->orWhere('customer_name', 'LIKE', '%' . request('search_query') . '%')
+                    ->orWhere('document_number', 'LIKE', '%' . request('search_query') . '%');
             });
+        }
+        
+        //search: general search
+        if (request()->filled('search')) {
+            $sales->where(function ($query) {
+                $query->where('document_number', 'LIKE', '%' . request('search') . '%')
+                    ->orWhere('customer_name', 'LIKE', '%' . request('search') . '%')
+                    ->orWhere('product_name', 'LIKE', '%' . request('search') . '%');
+            });
+        }
+        
+        //filter by sales status
+        if (request()->filled('filter_sales_status')) {
+            $sales->where('sales_status', request('filter_sales_status'));
+        }
+        
+        //filter by document type
+        if (request()->filled('filter_document_type')) {
+            $sales->where('document_type', request('filter_document_type'));
+        }
+        
+        //filter by date from
+        if (request()->filled('filter_document_date_from')) {
+            $sales->where('document_date', '>=', request('filter_document_date_from'));
         }
 
         //sorting
@@ -96,9 +95,6 @@ class SalesRepository {
         //eager load
         $sales->with([
             'creator',
-            'category',
-            'client',
-            'project',
             'tags',
         ]);
 
@@ -117,34 +113,56 @@ class SalesRepository {
         $sales = new $this->sales;
 
         //data
-        $sales->sales_title = request('sales_title');
-        $sales->sales_description = request('sales_description');
-        $sales->sales_type = request('sales_type');
-        $sales->sales_quantity = request('sales_quantity');
-        $sales->sales_unit_price = request('sales_unit_price');
-        $sales->sales_total_amount = request('sales_total_amount');
-        $sales->sales_discount_amount = request('sales_discount_amount');
-        $sales->sales_tax_amount = request('sales_tax_amount');
-        $sales->sales_final_amount = request('sales_final_amount');
-        $sales->sales_currency = request('sales_currency');
-        $sales->sales_status = request('sales_status');
-        $sales->sales_payment_status = request('sales_payment_status');
-        $sales->sales_payment_method = request('sales_payment_method');
-        $sales->sales_date = request('sales_date');
-        $sales->sales_due_date = request('sales_due_date');
+        $sales->document_type = request('document_type', 'sale');
+        $sales->document_number = request('document_number');
+        $sales->document_date = request('document_date');
+        
+        // Customer Information
+        $sales->customer_code = request('customer_code');
+        $sales->customer_name = request('customer_name');
+        $sales->customer_full_name = request('customer_full_name');
+        $sales->sales_type = request('sales_type', 'sale');
+        
+        // Product/Service Information
+        $sales->product_code = request('product_code');
+        $sales->product_name = request('product_name');
+        $sales->product_barcode = request('product_barcode');
+        $sales->tracking_code = request('tracking_code');
+        $sales->main_unit = request('main_unit', 'pcs');
+        $sales->main_quantity = request('main_quantity', 0);
+        $sales->warehouse = request('warehouse');
+        
+        // Pricing (Base Currency)
+        $sales->base_price = request('base_price', 0);
+        $sales->base_sales_amount = request('base_sales_amount', 0);
+        $sales->base_tax_amount = request('base_tax_amount', 0);
+        $sales->base_duty_amount = request('base_duty_amount', 0);
+        $sales->base_additional_amount = request('base_additional_amount', 0);
+        $sales->base_increasing_factors = request('base_increasing_factors', 0);
+        $sales->base_net_amount = request('base_net_amount', 0);
+        
+        // Additional Information
+        $sales->month = request('month');
+        $sales->description = request('description');
+        
+        // Quantities
+        $sales->issued_main_quantity = request('issued_main_quantity', 0);
+        $sales->issued_sub_quantity = request('issued_sub_quantity', 0);
+        $sales->remaining_main_quantity = request('remaining_main_quantity', 0);
+        $sales->remaining_sub_quantity = request('remaining_sub_quantity', 0);
+        
+        // Currency
+        $sales->currency = request('currency', 'IRR');
+        
+        // System
+        $sales->sales_status = request('sales_status', 'pending');
         $sales->sales_creatorid = auth()->id();
-        $sales->sales_clientid = request('sales_clientid');
-        $sales->sales_projectid = request('sales_projectid');
-        $sales->sales_categoryid = request('sales_categoryid');
-        $sales->sales_reference = request('sales_reference');
-        $sales->sales_notes = request('sales_notes');
-        $sales->sales_salesperson = request('sales_salesperson');
 
         //save and return id
         if ($sales->save()) {
             return $sales->sales_id;
         } else {
-            Log::error("record could not be saved - database error", ['process' => '[SalesRepository]', config('app.debug_ref'), 'function' => __function__, 'file' => basename(__FILE__), 'line' => __line__, 'path' => __file__]);
+            Log::error("record could not be created - database error", ['process' => '[SalesRepository]', config('app.debug_ref'), 'function' => __function__, 'file' => basename(__FILE__), 'line' => __line__, 'path' => __file__]);
             return false;
         }
     }
@@ -158,33 +176,56 @@ class SalesRepository {
 
         //get the record
         if (!$sales = $this->sales->find($id)) {
+            Log::error("record could not be found - database error", ['process' => '[SalesRepository]', config('app.debug_ref'), 'function' => __function__, 'file' => basename(__FILE__), 'line' => __line__, 'path' => __file__]);
             return false;
         }
 
-        //general
-        $sales->sales_title = request('sales_title');
-        $sales->sales_description = request('sales_description');
-        $sales->sales_type = request('sales_type');
-        $sales->sales_quantity = request('sales_quantity');
-        $sales->sales_unit_price = request('sales_unit_price');
-        $sales->sales_total_amount = request('sales_total_amount');
-        $sales->sales_discount_amount = request('sales_discount_amount');
-        $sales->sales_tax_amount = request('sales_tax_amount');
-        $sales->sales_final_amount = request('sales_final_amount');
-        $sales->sales_currency = request('sales_currency');
-        $sales->sales_status = request('sales_status');
-        $sales->sales_payment_status = request('sales_payment_status');
-        $sales->sales_payment_method = request('sales_payment_method');
-        $sales->sales_date = request('sales_date');
-        $sales->sales_due_date = request('sales_due_date');
-        $sales->sales_clientid = request('sales_clientid');
-        $sales->sales_projectid = request('sales_projectid');
-        $sales->sales_categoryid = request('sales_categoryid');
-        $sales->sales_reference = request('sales_reference');
-        $sales->sales_notes = request('sales_notes');
-        $sales->sales_salesperson = request('sales_salesperson');
+        //data
+        $sales->document_type = request('document_type', 'sale');
+        $sales->document_number = request('document_number');
+        $sales->document_date = request('document_date');
+        
+        // Customer Information
+        $sales->customer_code = request('customer_code');
+        $sales->customer_name = request('customer_name');
+        $sales->customer_full_name = request('customer_full_name');
+        $sales->sales_type = request('sales_type', 'sale');
+        
+        // Product/Service Information
+        $sales->product_code = request('product_code');
+        $sales->product_name = request('product_name');
+        $sales->product_barcode = request('product_barcode');
+        $sales->tracking_code = request('tracking_code');
+        $sales->main_unit = request('main_unit', 'pcs');
+        $sales->main_quantity = request('main_quantity', 0);
+        $sales->warehouse = request('warehouse');
+        
+        // Pricing (Base Currency)
+        $sales->base_price = request('base_price', 0);
+        $sales->base_sales_amount = request('base_sales_amount', 0);
+        $sales->base_tax_amount = request('base_tax_amount', 0);
+        $sales->base_duty_amount = request('base_duty_amount', 0);
+        $sales->base_additional_amount = request('base_additional_amount', 0);
+        $sales->base_increasing_factors = request('base_increasing_factors', 0);
+        $sales->base_net_amount = request('base_net_amount', 0);
+        
+        // Additional Information
+        $sales->month = request('month');
+        $sales->description = request('description');
+        
+        // Quantities
+        $sales->issued_main_quantity = request('issued_main_quantity', 0);
+        $sales->issued_sub_quantity = request('issued_sub_quantity', 0);
+        $sales->remaining_main_quantity = request('remaining_main_quantity', 0);
+        $sales->remaining_sub_quantity = request('remaining_sub_quantity', 0);
+        
+        // Currency
+        $sales->currency = request('currency', 'IRR');
+        
+        // System
+        $sales->sales_status = request('sales_status', 'pending');
 
-        //save
+        //save and return id
         if ($sales->save()) {
             return $sales->sales_id;
         } else {
@@ -192,5 +233,4 @@ class SalesRepository {
             return false;
         }
     }
-
 }

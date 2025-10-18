@@ -15,38 +15,54 @@ class CreateSalesTable extends Migration
     {
         Schema::create('sales', function (Blueprint $table) {
             $table->bigIncrements('sales_id');
-            $table->string('sales_code')->unique(); // کد فروش - Sales Code
-            $table->string('sales_title'); // عنوان فروش - Sales Title
-            $table->text('sales_description')->nullable(); // توضیحات - Description
-            $table->string('sales_type')->default('sale'); // نوع - Type (sale, return, refund)
-            $table->decimal('sales_quantity', 15, 2)->default(1.00); // تعداد - Quantity
-            $table->decimal('sales_unit_price', 15, 2)->default(0.00); // قیمت واحد - Unit Price
-            $table->decimal('sales_total_amount', 15, 2)->default(0.00); // مبلغ کل - Total Amount
-            $table->decimal('sales_discount_amount', 15, 2)->default(0.00); // مبلغ تخفیف - Discount Amount
-            $table->decimal('sales_discount_percentage', 5, 2)->default(0.00); // درصد تخفیف - Discount Percentage
-            $table->decimal('sales_tax_amount', 15, 2)->default(0.00); // مبلغ مالیات - Tax Amount
-            $table->decimal('sales_tax_percentage', 5, 2)->default(0.00); // درصد مالیات - Tax Percentage
-            $table->decimal('sales_final_amount', 15, 2)->default(0.00); // مبلغ نهایی - Final Amount
-            $table->string('sales_currency', 3)->default('IRR'); // ارز - Currency
-            $table->string('sales_status')->default('pending'); // وضعیت - Status (pending, completed, cancelled, refunded)
-            $table->string('sales_payment_status')->default('unpaid'); // وضعیت پرداخت - Payment Status (unpaid, paid, partially_paid, overdue)
-            $table->string('sales_payment_method')->nullable(); // روش پرداخت - Payment Method
-            $table->date('sales_date'); // تاریخ فروش - Sales Date
-            $table->date('sales_due_date')->nullable(); // تاریخ سررسید - Due Date
-            $table->unsignedBigInteger('sales_creatorid');
-            $table->unsignedBigInteger('sales_clientid')->nullable();
-            $table->unsignedBigInteger('sales_projectid')->nullable();
-            $table->unsignedBigInteger('sales_categoryid')->nullable();
-            $table->unsignedBigInteger('sales_inventory_id')->nullable(); // ارتباط با موجودی - Inventory Link
-            $table->string('sales_reference')->nullable(); // مرجع - Reference
-            $table->text('sales_notes')->nullable(); // یادداشت - Notes
-            $table->string('sales_salesperson')->nullable(); // فروشنده - Salesperson
-            $table->string('sales_customer_name')->nullable(); // نام مشتری - Customer Name
-            $table->string('sales_customer_phone')->nullable(); // تلفن مشتری - Customer Phone
-            $table->string('sales_customer_address')->nullable(); // آدرس مشتری - Customer Address
-            $table->string('sales_invoice_number')->nullable(); // شماره فاکتور - Invoice Number
-            $table->timestamps();
             
+            // Document Information
+            $table->string('document_type')->default('sale'); // نوع سند
+            $table->string('document_number')->unique(); // شماره
+            $table->date('document_date'); // تاريخ
+            
+            // Customer Information
+            $table->string('customer_code')->nullable(); // كد مشتري
+            $table->string('customer_name'); // مشتري
+            $table->string('customer_full_name')->nullable(); // نام مشتري
+            $table->string('sales_type')->default('sale'); // نوع فروش
+            
+            // Product/Service Information
+            $table->string('product_code')->nullable(); // كد كالا/خدمت
+            $table->string('product_name'); // كالا/خدمت
+            $table->string('product_barcode')->nullable(); // بار كد كالا
+            $table->string('tracking_code')->nullable(); // رديابي
+            $table->string('main_unit')->default('pcs'); // واحد اصلي
+            $table->decimal('main_quantity', 15, 2)->default(0.00); // مقدار-اصلي
+            $table->string('warehouse')->nullable(); // انبار
+            
+            // Pricing (Base Currency)
+            $table->decimal('base_price', 15, 2)->default(0.00); // في به ارز پايه
+            $table->decimal('base_sales_amount', 15, 2)->default(0.00); // مبلغ فروش به ارز پايه
+            $table->decimal('base_tax_amount', 15, 2)->default(0.00); // ماليات به ارز پايه
+            $table->decimal('base_duty_amount', 15, 2)->default(0.00); // عوارض به ارز پايه
+            $table->decimal('base_additional_amount', 15, 2)->default(0.00); // اضافات به ارز پايه
+            $table->decimal('base_increasing_factors', 15, 2)->default(0.00); // عوامل افزاينده به ارز پايه
+            $table->decimal('base_net_amount', 15, 2)->default(0.00); // خالص به ارز پايه
+            
+            // Additional Information
+            $table->string('month')->nullable(); // ماه
+            $table->text('description')->nullable(); // توضيحات
+            
+            // Quantities
+            $table->decimal('issued_main_quantity', 15, 2)->default(0.00); // مقدار خارج شده اصلي
+            $table->decimal('issued_sub_quantity', 15, 2)->default(0.00); // مقدار خارج شده فرعي
+            $table->decimal('remaining_main_quantity', 15, 2)->default(0.00); // مانده خارج نشده اصلي
+            $table->decimal('remaining_sub_quantity', 15, 2)->default(0.00); // مانده خارج نشده فرعي
+            
+            // Currency
+            $table->string('currency', 3)->default('IRR'); // ارز
+            
+            // System Fields
+            $table->string('sales_status')->default('pending');
+            $table->unsignedBigInteger('sales_creatorid');
+            $table->timestamps();
+
             // Foreign key constraints will be added later if needed
             // $table->foreign('sales_creatorid')->references('id')->on('users')->onDelete('cascade');
             // $table->foreign('sales_clientid')->references('client_id')->on('clients')->onDelete('set null');

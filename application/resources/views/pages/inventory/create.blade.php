@@ -32,16 +32,16 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label>{{ cleanLang(__('lang.name')) }} <span class="text-danger">*</span></label>
+                                        <label>{{ cleanLang(__('lang.inventory_name')) }} <span class="text-danger">*</span></label>
                                         <input type="text" class="form-control" name="inventory_name" 
                                                value="{{ old('inventory_name') }}" required>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label>{{ cleanLang(__('lang.sku')) }} <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control" name="inventory_sku" 
-                                               value="{{ old('inventory_sku') }}" required>
+                                        <label>{{ cleanLang(__('lang.inventory_code')) }} <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" name="inventory_code" 
+                                               value="{{ old('inventory_code') }}" required>
                                     </div>
                                 </div>
                             </div>
@@ -97,45 +97,208 @@
                                 </div>
                             </div>
 
+                            <!-- First Period Section -->
+                            <h5 class="text-primary mb-3">{{ cleanLang(__('lang.first_period')) }}</h5>
                             <div class="row">
                                 <div class="col-md-3">
                                     <div class="form-group">
-                                        <label>{{ cleanLang(__('lang.quantity')) }} <span class="text-danger">*</span></label>
-                                        <input type="number" class="form-control" name="inventory_quantity" 
-                                               value="{{ old('inventory_quantity', 0) }}" step="0.01" required>
+                                        <label>{{ cleanLang(__('lang.first_period_quantity')) }}</label>
+                                        <input type="number" class="form-control" name="first_period_quantity" 
+                                               value="{{ old('first_period_quantity', 0) }}" step="0.01">
                                     </div>
                                 </div>
                                 <div class="col-md-3">
                                     <div class="form-group">
-                                        <label>{{ cleanLang(__('lang.minimum_quantity')) }}</label>
-                                        <input type="number" class="form-control" name="inventory_minimum_quantity" 
-                                               value="{{ old('inventory_minimum_quantity', 0) }}" step="0.01">
+                                        <label>{{ cleanLang(__('lang.first_period_sub_quantity')) }}</label>
+                                        <input type="number" class="form-control" name="first_period_sub_quantity" 
+                                               value="{{ old('first_period_sub_quantity', 0) }}" step="0.01">
                                     </div>
                                 </div>
                                 <div class="col-md-3">
                                     <div class="form-group">
-                                        <label>{{ cleanLang(__('lang.maximum_quantity')) }}</label>
-                                        <input type="number" class="form-control" name="inventory_maximum_quantity" 
-                                               value="{{ old('inventory_maximum_quantity') }}" step="0.01">
+                                        <label>{{ cleanLang(__('lang.first_period_amount')) }}</label>
+                                        <input type="number" class="form-control" name="first_period_amount" 
+                                               value="{{ old('first_period_amount', 0) }}" step="0.01">
                                     </div>
                                 </div>
                                 <div class="col-md-3">
                                     <div class="form-group">
-                                        <label>{{ cleanLang(__('lang.unit')) }}</label>
-                                        <select class="form-control" name="inventory_unit">
-                                            <option value="pcs" {{ old('inventory_unit', 'pcs') == 'pcs' ? 'selected' : '' }}>
+                                        <label>{{ cleanLang(__('lang.first_period_avg_price')) }}</label>
+                                        <input type="number" class="form-control" name="first_period_avg_price" 
+                                               value="{{ old('first_period_avg_price', 0) }}" step="0.01">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Input Section -->
+                            <h5 class="text-primary mb-3">{{ cleanLang(__('lang.input_section')) }}</h5>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.input_quantity')) }}</label>
+                                        <input type="number" class="form-control" name="input_quantity" 
+                                               value="{{ old('input_quantity', 0) }}" step="0.01">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.input_sub_quantity')) }}</label>
+                                        <input type="number" class="form-control" name="input_sub_quantity" 
+                                               value="{{ old('input_sub_quantity', 0) }}" step="0.01">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.input_amount')) }}</label>
+                                        <input type="number" class="form-control" name="input_amount" 
+                                               value="{{ old('input_amount', 0) }}" step="0.01">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.input_avg_price')) }}</label>
+                                        <input type="number" class="form-control" name="input_avg_price" 
+                                               value="{{ old('input_avg_price', 0) }}" step="0.01">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Output Section -->
+                            <h5 class="text-primary mb-3">{{ cleanLang(__('lang.output_section')) }}</h5>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.output_quantity')) }}</label>
+                                        <input type="number" class="form-control" name="output_quantity" 
+                                               value="{{ old('output_quantity', 0) }}" step="0.01">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.output_sub_quantity')) }}</label>
+                                        <input type="number" class="form-control" name="output_sub_quantity" 
+                                               value="{{ old('output_sub_quantity', 0) }}" step="0.01">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.output_amount')) }}</label>
+                                        <input type="number" class="form-control" name="output_amount" 
+                                               value="{{ old('output_amount', 0) }}" step="0.01">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.output_avg_price')) }}</label>
+                                        <input type="number" class="form-control" name="output_avg_price" 
+                                               value="{{ old('output_avg_price', 0) }}" step="0.01">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Current Stock Section -->
+                            <h5 class="text-primary mb-3">{{ cleanLang(__('lang.current_stock')) }}</h5>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.current_quantity')) }} <span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control" name="current_quantity" 
+                                               value="{{ old('current_quantity', 0) }}" step="0.01" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.current_sub_quantity')) }}</label>
+                                        <input type="number" class="form-control" name="current_sub_quantity" 
+                                               value="{{ old('current_sub_quantity', 0) }}" step="0.01">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.current_amount')) }}</label>
+                                        <input type="number" class="form-control" name="current_amount" 
+                                               value="{{ old('current_amount', 0) }}" step="0.01">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.current_avg_price')) }}</label>
+                                        <input type="number" class="form-control" name="current_avg_price" 
+                                               value="{{ old('current_avg_price', 0) }}" step="0.01">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Weighing Section -->
+                            <h5 class="text-primary mb-3">{{ cleanLang(__('lang.weighing_section')) }}</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.weighing_input')) }}</label>
+                                        <input type="number" class="form-control" name="weighing_input" 
+                                               value="{{ old('weighing_input', 0) }}" step="0.01">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.weighing_output')) }}</label>
+                                        <input type="number" class="form-control" name="weighing_output" 
+                                               value="{{ old('weighing_output', 0) }}" step="0.01">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Stock Limits & Units -->
+                            <h5 class="text-primary mb-3">{{ cleanLang(__('lang.stock_limits_units')) }}</h5>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.minimum_stock')) }}</label>
+                                        <input type="number" class="form-control" name="minimum_stock" 
+                                               value="{{ old('minimum_stock', 0) }}" step="0.01">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.maximum_stock')) }}</label>
+                                        <input type="number" class="form-control" name="maximum_stock" 
+                                               value="{{ old('maximum_stock') }}" step="0.01">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.discrepancy')) }}</label>
+                                        <input type="number" class="form-control" name="discrepancy" 
+                                               value="{{ old('discrepancy', 0) }}" step="0.01">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.main_unit')) }}</label>
+                                        <select class="form-control" name="main_unit">
+                                            <option value="pcs" {{ old('main_unit', 'pcs') == 'pcs' ? 'selected' : '' }}>
                                                 {{ cleanLang(__('lang.pieces')) }}
                                             </option>
-                                            <option value="kg" {{ old('inventory_unit') == 'kg' ? 'selected' : '' }}>
+                                            <option value="kg" {{ old('main_unit') == 'kg' ? 'selected' : '' }}>
                                                 {{ cleanLang(__('lang.kilograms')) }}
                                             </option>
-                                            <option value="liter" {{ old('inventory_unit') == 'liter' ? 'selected' : '' }}>
+                                            <option value="liter" {{ old('main_unit') == 'liter' ? 'selected' : '' }}>
                                                 {{ cleanLang(__('lang.liters')) }}
                                             </option>
-                                            <option value="box" {{ old('inventory_unit') == 'box' ? 'selected' : '' }}>
+                                            <option value="box" {{ old('main_unit') == 'box' ? 'selected' : '' }}>
                                                 {{ cleanLang(__('lang.boxes')) }}
                                             </option>
                                         </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.sub_unit')) }}</label>
+                                        <input type="text" class="form-control" name="sub_unit" 
+                                               value="{{ old('sub_unit') }}" placeholder="e.g., grams, ml">
                                     </div>
                                 </div>
                             </div>

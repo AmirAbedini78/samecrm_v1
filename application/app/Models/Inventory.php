@@ -20,6 +20,19 @@ class Inventory extends Model {
     protected $guarded = ['inventory_id'];
     const CREATED_AT = 'created_at';
     const UPDATED_AT = 'updated_at';
+    
+    // Fillable fields for mass assignment
+    protected $fillable = [
+        'inventory_code', 'inventory_name',
+        'first_period_quantity', 'first_period_sub_quantity', 'first_period_amount', 'first_period_avg_price',
+        'input_quantity', 'input_sub_quantity', 'input_amount', 'input_avg_price',
+        'output_quantity', 'output_sub_quantity', 'output_amount', 'output_avg_price',
+        'current_quantity', 'current_sub_quantity', 'current_amount', 'current_avg_price',
+        'weighing_input', 'weighing_output',
+        'minimum_stock', 'maximum_stock', 'discrepancy',
+        'main_unit', 'sub_unit',
+        'inventory_status', 'inventory_creatorid', 'inventory_categoryid'
+    ];
 
     // Relationships
     public function creator() {
@@ -30,9 +43,6 @@ class Inventory extends Model {
         return $this->belongsTo('App\Models\Category', 'inventory_categoryid', 'category_id');
     }
 
-    public function sales() {
-        return $this->hasMany('App\Models\Sales', 'sales_inventory_id', 'inventory_id');
-    }
 
 
     /**

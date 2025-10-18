@@ -20,27 +20,25 @@ class Sales extends Model {
     protected $guarded = ['sales_id'];
     const CREATED_AT = 'created_at';
     const UPDATED_AT = 'updated_at';
+    
+    // Fillable fields for mass assignment
+    protected $fillable = [
+        'document_type', 'document_number', 'document_date',
+        'customer_code', 'customer_name', 'customer_full_name', 'sales_type',
+        'product_code', 'product_name', 'product_barcode', 'tracking_code',
+        'main_unit', 'main_quantity', 'warehouse',
+        'base_price', 'base_sales_amount', 'base_tax_amount', 'base_duty_amount',
+        'base_additional_amount', 'base_increasing_factors', 'base_net_amount',
+        'month', 'description',
+        'issued_main_quantity', 'issued_sub_quantity', 'remaining_main_quantity', 'remaining_sub_quantity',
+        'currency', 'sales_status', 'sales_creatorid'
+    ];
 
     // Relationships
     public function creator() {
         return $this->belongsTo('App\Models\User', 'sales_creatorid', 'id');
     }
 
-    public function client() {
-        return $this->belongsTo('App\Models\Client', 'sales_clientid', 'client_id');
-    }
-
-    public function project() {
-        return $this->belongsTo('App\Models\Project', 'sales_projectid', 'project_id');
-    }
-
-    public function category() {
-        return $this->belongsTo('App\Models\Category', 'sales_categoryid', 'category_id');
-    }
-
-    public function inventory() {
-        return $this->belongsTo('App\Models\Inventory', 'sales_inventory_id', 'inventory_id');
-    }
 
     /**
      * relatioship business rules:

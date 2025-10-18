@@ -47,6 +47,8 @@ class Status {
             'messages' => 'settings_modules_messages',
             'reports' => 'settings_modules_reports',
             'calendar' => 'settings_modules_calendar',
+            'inventory' => 'settings_modules_inventory',
+            'sales' => 'settings_modules_sales',
         ];
 
         //set theglobal visibility of each module

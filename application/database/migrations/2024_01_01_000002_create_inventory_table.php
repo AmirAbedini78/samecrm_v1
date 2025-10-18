@@ -15,35 +15,54 @@ class CreateInventoryTable extends Migration
     {
         Schema::create('inventory', function (Blueprint $table) {
             $table->bigIncrements('inventory_id');
-            $table->string('inventory_code')->unique(); // کد کالا - Item Code
-            $table->string('inventory_name'); // نام کالا - Item Name
-            $table->text('inventory_description')->nullable(); // توضیحات - Description
-            $table->string('inventory_sku')->unique(); // SKU
-            $table->string('inventory_barcode')->nullable(); // بارکد - Barcode
-            $table->decimal('inventory_quantity', 15, 2)->default(0.00); // موجودی - Stock Quantity
-            $table->decimal('inventory_minimum_quantity', 15, 2)->default(0.00); // حداقل موجودی - Min Stock
-            $table->decimal('inventory_maximum_quantity', 15, 2)->nullable(); // حداکثر موجودی - Max Stock
-            $table->decimal('inventory_cost_price', 15, 2)->default(0.00); // قیمت خرید - Cost Price
-            $table->decimal('inventory_selling_price', 15, 2)->default(0.00); // قیمت فروش - Selling Price
-            $table->decimal('inventory_wholesale_price', 15, 2)->default(0.00); // قیمت عمده فروشی - Wholesale Price
-            $table->decimal('inventory_retail_price', 15, 2)->default(0.00); // قیمت خرده فروشی - Retail Price
-            $table->string('inventory_currency', 3)->default('IRR'); // ارز - Currency
-            $table->string('inventory_unit')->default('pcs'); // واحد - Unit (pcs, kg, liter, etc.)
-            $table->string('inventory_status')->default('active'); // وضعیت - Status (active, inactive, discontinued)
+            
+            // Basic Information
+            $table->string('inventory_code')->unique(); // کد کالا
+            $table->string('inventory_name'); // عنوان کالا
+            
+            // First Period (اول دوره)
+            $table->decimal('first_period_quantity', 15, 2)->default(0.00); // اول دوره-مقدار
+            $table->decimal('first_period_sub_quantity', 15, 2)->default(0.00); // اول دوره-مقدار واحد فرعي
+            $table->decimal('first_period_amount', 15, 2)->default(0.00); // اول دوره-مبلغ
+            $table->decimal('first_period_avg_price', 15, 2)->default(0.00); // اول دوره-في متوسط
+            
+            // Input (ورودي)
+            $table->decimal('input_quantity', 15, 2)->default(0.00); // ورودي-مقدار
+            $table->decimal('input_sub_quantity', 15, 2)->default(0.00); // ورودي-مقدار واحد فرعي
+            $table->decimal('input_amount', 15, 2)->default(0.00); // ورودي-مبلغ
+            $table->decimal('input_avg_price', 15, 2)->default(0.00); // ورودي-في متوسط
+            
+            // Output (خروجي)
+            $table->decimal('output_quantity', 15, 2)->default(0.00); // خروجي-مقدار
+            $table->decimal('output_sub_quantity', 15, 2)->default(0.00); // خروجي-مقدار واحد فرعي
+            $table->decimal('output_amount', 15, 2)->default(0.00); // خروجي-مبلغ
+            $table->decimal('output_avg_price', 15, 2)->default(0.00); // خروجي-في متوسط
+            
+            // Current Stock (موجودي)
+            $table->decimal('current_quantity', 15, 2)->default(0.00); // موجودي-مقدار
+            $table->decimal('current_sub_quantity', 15, 2)->default(0.00); // موجودي-مقدار واحد فرعي
+            $table->decimal('current_amount', 15, 2)->default(0.00); // موجودي-مبلغ
+            $table->decimal('current_avg_price', 15, 2)->default(0.00); // موجودي-في متوسط
+            
+            // Weighing (توزين)
+            $table->decimal('weighing_input', 15, 2)->default(0.00); // توزين - ورود
+            $table->decimal('weighing_output', 15, 2)->default(0.00); // توزين - خروج
+            
+            // Stock Limits
+            $table->decimal('minimum_stock', 15, 2)->default(0.00); // حداقل موجودي
+            $table->decimal('maximum_stock', 15, 2)->nullable(); // حداکثر موجودي
+            $table->decimal('discrepancy', 15, 2)->default(0.00); // مغايرت
+            
+            // Units
+            $table->string('main_unit')->default('pcs'); // واحد اصلي
+            $table->string('sub_unit')->nullable(); // واحد فرعي
+            
+            // System Fields
+            $table->string('inventory_status')->default('active');
             $table->unsignedBigInteger('inventory_creatorid');
             $table->unsignedBigInteger('inventory_categoryid')->nullable();
-            $table->string('inventory_supplier')->nullable(); // تامین کننده - Supplier
-            $table->text('inventory_notes')->nullable(); // یادداشت - Notes
-            $table->string('inventory_location')->nullable(); // مکان - Location
-            $table->date('inventory_last_restocked')->nullable(); // آخرین ورود - Last Restocked
-            $table->date('inventory_expiry_date')->nullable(); // تاریخ انقضا - Expiry Date
-            $table->string('inventory_brand')->nullable(); // برند - Brand
-            $table->string('inventory_model')->nullable(); // مدل - Model
-            $table->string('inventory_serial_number')->nullable(); // شماره سریال - Serial Number
-            $table->decimal('inventory_weight', 10, 3)->nullable(); // وزن - Weight
-            $table->string('inventory_dimensions')->nullable(); // ابعاد - Dimensions
             $table->timestamps();
-            
+
             // Foreign key constraints will be added later if needed
             // $table->foreign('inventory_creatorid')->references('id')->on('users')->onDelete('cascade');
             // $table->foreign('inventory_categoryid')->references('category_id')->on('categories')->onDelete('set null');

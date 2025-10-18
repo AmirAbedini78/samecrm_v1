@@ -31,8 +31,9 @@ class CreateAccountingTable extends Migration
             $table->date('accounting_due_date')->nullable();
             $table->timestamps();
             
-            $table->foreign('accounting_creatorid')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('accounting_categoryid')->references('category_id')->on('categories')->onDelete('set null');
+            // Foreign key constraints will be added later if needed
+            // $table->foreign('accounting_creatorid')->references('id')->on('users')->onDelete('cascade');
+            // $table->foreign('accounting_categoryid')->references('category_id')->on('categories')->onDelete('set null');
         });
     }
 

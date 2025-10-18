@@ -29,19 +29,96 @@
                     <div class="card-body">
                         <form id="sales-create-form" method="POST" action="/sales">
                             @csrf
+                            <!-- Document Information -->
+                            <h5 class="text-primary mb-3">{{ cleanLang(__('lang.document_information')) }}</h5>
                             <div class="row">
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <div class="form-group">
-                                        <label>{{ cleanLang(__('lang.title')) }} <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control" name="sales_title" 
-                                               value="{{ old('sales_title') }}" required>
+                                        <label>{{ cleanLang(__('lang.document_type')) }} <span class="text-danger">*</span></label>
+                                        <select class="form-control" name="document_type" required>
+                                            <option value="sale" {{ old('document_type', 'sale') == 'sale' ? 'selected' : '' }}>
+                                                {{ cleanLang(__('lang.sale')) }}
+                                            </option>
+                                            <option value="return" {{ old('document_type') == 'return' ? 'selected' : '' }}>
+                                                {{ cleanLang(__('lang.return')) }}
+                                            </option>
+                                            <option value="refund" {{ old('document_type') == 'refund' ? 'selected' : '' }}>
+                                                {{ cleanLang(__('lang.refund')) }}
+                                            </option>
+                                        </select>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <div class="form-group">
-                                        <label>{{ cleanLang(__('lang.reference')) }}</label>
-                                        <input type="text" class="form-control" name="sales_reference" 
-                                               value="{{ old('sales_reference') }}">
+                                        <label>{{ cleanLang(__('lang.document_number')) }} <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" name="document_number" 
+                                               value="{{ old('document_number') }}" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.document_date')) }} <span class="text-danger">*</span></label>
+                                        <input type="date" class="form-control" name="document_date" 
+                                               value="{{ old('document_date', date('Y-m-d')) }}" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Customer Information -->
+                            <h5 class="text-primary mb-3">{{ cleanLang(__('lang.customer_information')) }}</h5>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.customer_code')) }}</label>
+                                        <input type="text" class="form-control" name="customer_code" 
+                                               value="{{ old('customer_code') }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.customer_name')) }} <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" name="customer_name" 
+                                               value="{{ old('customer_name') }}" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.customer_full_name')) }}</label>
+                                        <input type="text" class="form-control" name="customer_full_name" 
+                                               value="{{ old('customer_full_name') }}">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Product Information -->
+                            <h5 class="text-primary mb-3">{{ cleanLang(__('lang.product_information')) }}</h5>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.product_code')) }}</label>
+                                        <input type="text" class="form-control" name="product_code" 
+                                               value="{{ old('product_code') }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.product_name')) }} <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" name="product_name" 
+                                               value="{{ old('product_name') }}" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.product_barcode')) }}</label>
+                                        <input type="text" class="form-control" name="product_barcode" 
+                                               value="{{ old('product_barcode') }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.tracking_code')) }}</label>
+                                        <input type="text" class="form-control" name="tracking_code" 
+                                               value="{{ old('tracking_code') }}">
                                     </div>
                                 </div>
                             </div>
@@ -55,53 +132,77 @@
                                 </div>
                             </div>
 
+
+                            <!-- Pricing & Quantity -->
+                            <h5 class="text-primary mb-3">{{ cleanLang(__('lang.pricing_quantity')) }}</h5>
                             <div class="row">
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <div class="form-group">
-                                        <label>{{ cleanLang(__('lang.client')) }}</label>
-                                        <select class="form-control" name="sales_clientid">
-                                            <option value="">{{ cleanLang(__('lang.select_client')) }}</option>
-                                            @if($clients)
-                                                @foreach($clients as $client)
-                                                    <option value="{{ $client->client_id }}" 
-                                                            {{ old('sales_clientid') == $client->client_id ? 'selected' : '' }}>
-                                                        {{ $client->client_company_name }}
-                                                    </option>
-                                                @endforeach
-                                            @endif
+                                        <label>{{ cleanLang(__('lang.main_unit')) }} <span class="text-danger">*</span></label>
+                                        <select class="form-control" name="main_unit" required>
+                                            <option value="pcs" {{ old('main_unit', 'pcs') == 'pcs' ? 'selected' : '' }}>Pieces</option>
+                                            <option value="kg" {{ old('main_unit') == 'kg' ? 'selected' : '' }}>Kilogram</option>
+                                            <option value="liter" {{ old('main_unit') == 'liter' ? 'selected' : '' }}>Liter</option>
+                                            <option value="meter" {{ old('main_unit') == 'meter' ? 'selected' : '' }}>Meter</option>
                                         </select>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <div class="form-group">
-                                        <label>{{ cleanLang(__('lang.project')) }}</label>
-                                        <select class="form-control" name="sales_projectid">
-                                            <option value="">{{ cleanLang(__('lang.select_project')) }}</option>
-                                            @if($projects)
-                                                @foreach($projects as $project)
-                                                    <option value="{{ $project->project_id }}" 
-                                                            {{ old('sales_projectid') == $project->project_id ? 'selected' : '' }}>
-                                                        {{ $project->project_title }}
-                                                    </option>
-                                                @endforeach
-                                            @endif
+                                        <label>{{ cleanLang(__('lang.main_quantity')) }} <span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control" name="main_quantity" 
+                                               value="{{ old('main_quantity', 1) }}" step="0.01" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.warehouse')) }}</label>
+                                        <input type="text" class="form-control" name="warehouse" 
+                                               value="{{ old('warehouse') }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.currency')) }}</label>
+                                        <select class="form-control" name="currency">
+                                            <option value="IRR" {{ old('currency', 'IRR') == 'IRR' ? 'selected' : '' }}>IRR</option>
+                                            <option value="USD" {{ old('currency') == 'USD' ? 'selected' : '' }}>USD</option>
+                                            <option value="EUR" {{ old('currency') == 'EUR' ? 'selected' : '' }}>EUR</option>
+                                            <option value="GBP" {{ old('currency') == 'GBP' ? 'selected' : '' }}>GBP</option>
                                         </select>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                            </div>
+
+                            <!-- Base Currency Pricing -->
+                            <h5 class="text-primary mb-3">{{ cleanLang(__('lang.base_currency_pricing')) }}</h5>
+                            <div class="row">
+                                <div class="col-md-3">
                                     <div class="form-group">
-                                        <label>{{ cleanLang(__('lang.category')) }}</label>
-                                        <select class="form-control" name="sales_categoryid">
-                                            <option value="">{{ cleanLang(__('lang.select_category')) }}</option>
-                                            @if($categories)
-                                                @foreach($categories as $category)
-                                                    <option value="{{ $category->category_id }}" 
-                                                            {{ old('sales_categoryid') == $category->category_id ? 'selected' : '' }}>
-                                                        {{ $category->category_name }}
-                                                    </option>
-                                                @endforeach
-                                            @endif
-                                        </select>
+                                        <label>{{ cleanLang(__('lang.base_price')) }} <span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control" name="base_price" 
+                                               value="{{ old('base_price', 0) }}" step="0.01" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.base_sales_amount')) }}</label>
+                                        <input type="number" class="form-control" name="base_sales_amount" 
+                                               value="{{ old('base_sales_amount', 0) }}" step="0.01">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.base_tax_amount')) }}</label>
+                                        <input type="number" class="form-control" name="base_tax_amount" 
+                                               value="{{ old('base_tax_amount', 0) }}" step="0.01">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.base_duty_amount')) }}</label>
+                                        <input type="number" class="form-control" name="base_duty_amount" 
+                                               value="{{ old('base_duty_amount', 0) }}" step="0.01">
                                     </div>
                                 </div>
                             </div>
@@ -109,43 +210,74 @@
                             <div class="row">
                                 <div class="col-md-3">
                                     <div class="form-group">
-                                        <label>{{ cleanLang(__('lang.type')) }}</label>
-                                        <select class="form-control" name="sales_type">
-                                            <option value="sale" {{ old('sales_type', 'sale') == 'sale' ? 'selected' : '' }}>
-                                                {{ cleanLang(__('lang.sale')) }}
-                                            </option>
-                                            <option value="return" {{ old('sales_type') == 'return' ? 'selected' : '' }}>
-                                                {{ cleanLang(__('lang.return')) }}
-                                            </option>
-                                            <option value="refund" {{ old('sales_type') == 'refund' ? 'selected' : '' }}>
-                                                {{ cleanLang(__('lang.refund')) }}
-                                            </option>
-                                        </select>
+                                        <label>{{ cleanLang(__('lang.base_additional_amount')) }}</label>
+                                        <input type="number" class="form-control" name="base_additional_amount" 
+                                               value="{{ old('base_additional_amount', 0) }}" step="0.01">
                                     </div>
                                 </div>
                                 <div class="col-md-3">
                                     <div class="form-group">
-                                        <label>{{ cleanLang(__('lang.quantity')) }} <span class="text-danger">*</span></label>
-                                        <input type="number" class="form-control" name="sales_quantity" 
-                                               value="{{ old('sales_quantity', 1) }}" step="0.01" required>
+                                        <label>{{ cleanLang(__('lang.base_increasing_factors')) }}</label>
+                                        <input type="number" class="form-control" name="base_increasing_factors" 
+                                               value="{{ old('base_increasing_factors', 0) }}" step="0.01">
                                     </div>
                                 </div>
                                 <div class="col-md-3">
                                     <div class="form-group">
-                                        <label>{{ cleanLang(__('lang.unit_price')) }} <span class="text-danger">*</span></label>
-                                        <input type="number" class="form-control" name="sales_unit_price" 
-                                               value="{{ old('sales_unit_price', 0) }}" step="0.01" required>
+                                        <label>{{ cleanLang(__('lang.base_net_amount')) }} <span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control" name="base_net_amount" 
+                                               value="{{ old('base_net_amount', 0) }}" step="0.01" required>
                                     </div>
                                 </div>
                                 <div class="col-md-3">
                                     <div class="form-group">
-                                        <label>{{ cleanLang(__('lang.currency')) }}</label>
-                                        <select class="form-control" name="sales_currency">
-                                            <option value="USD" {{ old('sales_currency', 'USD') == 'USD' ? 'selected' : '' }}>USD</option>
-                                            <option value="EUR" {{ old('sales_currency') == 'EUR' ? 'selected' : '' }}>EUR</option>
-                                            <option value="GBP" {{ old('sales_currency') == 'GBP' ? 'selected' : '' }}>GBP</option>
-                                            <option value="IRR" {{ old('sales_currency') == 'IRR' ? 'selected' : '' }}>IRR</option>
-                                        </select>
+                                        <label>{{ cleanLang(__('lang.month')) }}</label>
+                                        <input type="text" class="form-control" name="month" 
+                                               value="{{ old('month') }}" placeholder="e.g., 1403/01">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Additional Information -->
+                            <h5 class="text-primary mb-3">{{ cleanLang(__('lang.additional_information')) }}</h5>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.description')) }}</label>
+                                        <textarea class="form-control" name="description" rows="3">{{ old('description') }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Quantities -->
+                            <h5 class="text-primary mb-3">{{ cleanLang(__('lang.quantities')) }}</h5>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.issued_main_quantity')) }}</label>
+                                        <input type="number" class="form-control" name="issued_main_quantity" 
+                                               value="{{ old('issued_main_quantity', 0) }}" step="0.01">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.issued_sub_quantity')) }}</label>
+                                        <input type="number" class="form-control" name="issued_sub_quantity" 
+                                               value="{{ old('issued_sub_quantity', 0) }}" step="0.01">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.remaining_main_quantity')) }}</label>
+                                        <input type="number" class="form-control" name="remaining_main_quantity" 
+                                               value="{{ old('remaining_main_quantity', 0) }}" step="0.01">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>{{ cleanLang(__('lang.remaining_sub_quantity')) }}</label>
+                                        <input type="number" class="form-control" name="remaining_sub_quantity" 
+                                               value="{{ old('remaining_sub_quantity', 0) }}" step="0.01">
                                     </div>
                                 </div>
                             </div>

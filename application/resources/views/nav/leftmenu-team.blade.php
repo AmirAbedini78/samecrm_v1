@@ -405,18 +405,24 @@
                 <li data-modular-id="main_menu_team_accounting"
                     class="sidenav-menu-item {{ $page['mainmenu_accounting'] ?? '' }}">
                     <a class="has-arrow waves-effect waves-dark" href="javascript:void(0);" aria-expanded="false">
-                        <i class="ti-calculator"></i>
+                        <i class="ti-bar-chart"></i>
                         <span class="hide-menu">{{ cleanLang(__('lang.accounting')) }}
                         </span>
                     </a>
                     <ul aria-expanded="false" class="collapse">
                         <li class="sidenav-submenu {{ $page['submenu_inventory'] ?? '' }}" id="submenu_inventory">
                             <a href="{{ _url('/inventory') }}"
-                                class="{{ $page['submenu_inventory'] ?? '' }}">{{ cleanLang(__('lang.inventory')) }}</a>
+                                class="{{ $page['submenu_inventory'] ?? '' }}">
+                                <i class="ti-package"></i>
+                                {{ cleanLang(__('lang.inventory')) }}
+                            </a>
                         </li>
                         <li class="sidenav-submenu {{ $page['submenu_sales'] ?? '' }}" id="submenu_sales">
                             <a href="{{ _url('/sales') }}"
-                                class="{{ $page['submenu_sales'] ?? '' }}">{{ cleanLang(__('lang.sales')) }}</a>
+                                class="{{ $page['submenu_sales'] ?? '' }}">
+                                <i class="ti-shopping-cart"></i>
+                                {{ cleanLang(__('lang.sales')) }}
+                            </a>
                         </li>
                     </ul>
                 </li>

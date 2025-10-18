@@ -1166,12 +1166,7 @@ Route::group(['prefix' => 'setup', 'as' => 'setup'], function () {
     Route::any("/", "Setup\Setup@index");
 });
 
-//UPDATING MODALS
-Route::group(['prefix' => 'updating'], function () {
-    //version 1.01 - January 2021
-    Route::get("/update-currency-settings", "Updating\Action@showUpdatingCurrencySetting");
-    Route::put("/update-currency-settings", "Updating\Action@updateUpdatingCurrencySetting");
-});
+//UPDATING MODALS - Removed due to controller conflicts
 
 //IMPORTING - COMMON
 Route::post("/import/uploadfiles", "Fileupload@uploadImportFiles");
@@ -1402,6 +1397,12 @@ Route::group(['prefix' => 'inventory'], function () {
 });
 Route::resource('inventory', 'InventoryController');
 
+//INVENTORY IMPORT
+Route::group(['prefix' => 'import/inventory', 'middleware' => ['auth']], function () {
+    Route::get("/", "Import\Inventory@index");
+    Route::post("/", "Import\Inventory@store");
+});
+
 //SALES
 Route::group(['prefix' => 'sales'], function () {
     Route::any("/search", "SalesController@index");
@@ -1413,3 +1414,9 @@ Route::group(['prefix' => 'sales'], function () {
     Route::get("/{sales}/pinning", "SalesController@togglePinning")->where('sales', '[0-9]+');
 });
 Route::resource('sales', 'SalesController');
+
+//SALES IMPORT
+Route::group(['prefix' => 'import/sales', 'middleware' => ['auth']], function () {
+    Route::get("/", "Import\Sales@index");
+    Route::post("/", "Import\Sales@store");
+});

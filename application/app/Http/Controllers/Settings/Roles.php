@@ -123,6 +123,8 @@ class Roles extends Controller {
             'role_proposals' => 'required',
             'role_messages' => 'required',
             'role_canned' => 'required',
+            'role_inventory' => 'required',
+            'role_sales' => 'required',
         ]);
 
         if ($validator->fails()) {

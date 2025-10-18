@@ -3,5 +3,5 @@
     "Sandbox": false,
     "Services": false,
     "ActivityReport": false,
-    "Inventory": false
+    "Inventory": true
 }

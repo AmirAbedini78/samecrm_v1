@@ -1,4 +1,5 @@
 <!--table-->
+<div id="sales-table-wrapper">
 <div class="table-responsive">
     <table id="sales-table" class="table table-striped table-hover">
         <thead>
@@ -8,11 +9,13 @@
                         {{ $page['select_all'] ?? '' }}>
                     <label for="checkbox-all" class="p-0">&nbsp;</label>
                 </th>
-                <th class="w-10">{{ cleanLang(__('lang.id')) }}</th>
-                <th class="w-20">{{ cleanLang(__('lang.sales_title')) }}</th>
-                <th class="w-15">{{ cleanLang(__('lang.sales_code')) }}</th>
-                <th class="w-15">{{ cleanLang(__('lang.sales_quantity')) }}</th>
-                <th class="w-15">{{ cleanLang(__('lang.sales_total_amount')) }}</th>
+                <th class="w-5">{{ cleanLang(__('lang.id')) }}</th>
+                <th class="w-15">{{ cleanLang(__('lang.document_number')) }}</th>
+                <th class="w-15">{{ cleanLang(__('lang.customer_name')) }}</th>
+                <th class="w-15">{{ cleanLang(__('lang.product_name')) }}</th>
+                <th class="w-10">{{ cleanLang(__('lang.main_quantity')) }}</th>
+                <th class="w-10">{{ cleanLang(__('lang.base_price')) }}</th>
+                <th class="w-10">{{ cleanLang(__('lang.base_net_amount')) }}</th>
                 <th class="w-10">{{ cleanLang(__('lang.sales_status')) }}</th>
                 <th class="w-10">{{ cleanLang(__('lang.actions')) }}</th>
             </tr>
@@ -27,10 +30,12 @@
                     <label for="checkbox-{{ $item->sales_id }}" class="p-0">&nbsp;</label>
                 </td>
                 <td>{{ $item->formatted_id }}</td>
-                <td>{{ $item->sales_title }}</td>
-                <td>{{ $item->sales_code }}</td>
-                <td>{{ $item->sales_quantity }}</td>
-                <td>{{ formatCurrency($item->sales_total_amount, $item->sales_currency) }}</td>
+                <td>{{ $item->document_number }}</td>
+                <td>{{ $item->customer_name }}</td>
+                <td>{{ $item->product_name }}</td>
+                <td>{{ number_format($item->main_quantity, 2) }}</td>
+                <td>{{ formatCurrency($item->base_price, $item->currency) }}</td>
+                <td>{{ formatCurrency($item->base_net_amount, $item->currency) }}</td>
                 <td>
                     <span class="badge badge-{{ $item->sales_status == 'completed' ? 'success' : 'warning' }}">
                         {{ $item->sales_status }}
@@ -62,3 +67,21 @@
         </tbody>
     </table>
 </div>
+</div>
+
+<!-- Pagination -->
+@if($sales && $sales->hasPages())
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="text-muted">
+                {{ cleanLang(__('lang.showing')) }} {{ $sales->firstItem() }} {{ cleanLang(__('lang.to')) }} {{ $sales->lastItem() }} 
+                {{ cleanLang(__('lang.of')) }} {{ $sales->total() }} {{ cleanLang(__('lang.results')) }}
+            </div>
+            <div>
+                {{ $sales->links() }}
+            </div>
+        </div>
+    </div>
+</div>
+@endif

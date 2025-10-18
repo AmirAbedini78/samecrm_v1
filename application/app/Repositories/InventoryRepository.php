@@ -49,21 +49,41 @@ class InventoryRepository {
             $inventory->where('inventory_creatorid', request('filter_inventory_creatorid'));
         }
 
-        //filter by quantity
-        if (request()->filled('filter_inventory_quantity_min')) {
-            $inventory->where('inventory_quantity', '>=', request('filter_inventory_quantity_min'));
+        //filter by current quantity
+        if (request()->filled('filter_current_quantity_min')) {
+            $inventory->where('current_quantity', '>=', request('filter_current_quantity_min'));
         }
-        if (request()->filled('filter_inventory_quantity_max')) {
-            $inventory->where('inventory_quantity', '<=', request('filter_inventory_quantity_max'));
+        if (request()->filled('filter_current_quantity_max')) {
+            $inventory->where('current_quantity', '<=', request('filter_current_quantity_max'));
+        }
+
+        //filter by status
+        if (request()->filled('filter_inventory_status')) {
+            $inventory->where('inventory_status', request('filter_inventory_status'));
+        }
+        
+        //filter by stock level
+        if (request()->filled('filter_stock')) {
+            if (request('filter_stock') == 'low_stock') {
+                $inventory->whereRaw('current_quantity <= minimum_stock');
+            } elseif (request('filter_stock') == 'out_of_stock') {
+                $inventory->where('current_quantity', '<=', 0);
+            }
         }
 
         //search: multiple inventory fields
         if (request()->filled('search_query')) {
             $inventory->where(function ($query) {
                 $query->where('inventory_name', 'LIKE', '%' . request('search_query') . '%')
-                    ->orWhere('inventory_description', 'LIKE', '%' . request('search_query') . '%')
-                    ->orWhere('inventory_sku', 'LIKE', '%' . request('search_query') . '%')
-                    ->orWhere('inventory_barcode', 'LIKE', '%' . request('search_query') . '%');
+                    ->orWhere('inventory_code', 'LIKE', '%' . request('search_query') . '%');
+            });
+        }
+        
+        //search: general search
+        if (request()->filled('search')) {
+            $inventory->where(function ($query) {
+                $query->where('inventory_name', 'LIKE', '%' . request('search') . '%')
+                    ->orWhere('inventory_code', 'LIKE', '%' . request('search') . '%');
             });
         }
 
@@ -96,31 +116,56 @@ class InventoryRepository {
         $inventory = new $this->inventory;
 
         //data
+        $inventory->inventory_code = request('inventory_code');
         $inventory->inventory_name = request('inventory_name');
-        $inventory->inventory_description = request('inventory_description');
-        $inventory->inventory_sku = request('inventory_sku');
-        $inventory->inventory_barcode = request('inventory_barcode');
-        $inventory->inventory_quantity = request('inventory_quantity');
-        $inventory->inventory_minimum_quantity = request('inventory_minimum_quantity');
-        $inventory->inventory_maximum_quantity = request('inventory_maximum_quantity');
-        $inventory->inventory_cost_price = request('inventory_cost_price');
-        $inventory->inventory_selling_price = request('inventory_selling_price');
-        $inventory->inventory_currency = request('inventory_currency');
-        $inventory->inventory_unit = request('inventory_unit');
-        $inventory->inventory_status = request('inventory_status');
+        
+        // First Period
+        $inventory->first_period_quantity = request('first_period_quantity', 0);
+        $inventory->first_period_sub_quantity = request('first_period_sub_quantity', 0);
+        $inventory->first_period_amount = request('first_period_amount', 0);
+        $inventory->first_period_avg_price = request('first_period_avg_price', 0);
+        
+        // Input
+        $inventory->input_quantity = request('input_quantity', 0);
+        $inventory->input_sub_quantity = request('input_sub_quantity', 0);
+        $inventory->input_amount = request('input_amount', 0);
+        $inventory->input_avg_price = request('input_avg_price', 0);
+        
+        // Output
+        $inventory->output_quantity = request('output_quantity', 0);
+        $inventory->output_sub_quantity = request('output_sub_quantity', 0);
+        $inventory->output_amount = request('output_amount', 0);
+        $inventory->output_avg_price = request('output_avg_price', 0);
+        
+        // Current Stock
+        $inventory->current_quantity = request('current_quantity', 0);
+        $inventory->current_sub_quantity = request('current_sub_quantity', 0);
+        $inventory->current_amount = request('current_amount', 0);
+        $inventory->current_avg_price = request('current_avg_price', 0);
+        
+        // Weighing
+        $inventory->weighing_input = request('weighing_input', 0);
+        $inventory->weighing_output = request('weighing_output', 0);
+        
+        // Stock Limits
+        $inventory->minimum_stock = request('minimum_stock', 0);
+        $inventory->maximum_stock = request('maximum_stock');
+        $inventory->discrepancy = request('discrepancy', 0);
+        
+        // Units
+        $inventory->main_unit = request('main_unit', 'pcs');
+        $inventory->sub_unit = request('sub_unit');
+        
+        // System
+        $inventory->inventory_status = request('inventory_status', 'active');
         $inventory->inventory_creatorid = auth()->id();
         $inventory->inventory_categoryid = request('inventory_categoryid');
-        $inventory->inventory_supplier = request('inventory_supplier');
-        $inventory->inventory_notes = request('inventory_notes');
-        $inventory->inventory_location = request('inventory_location');
-        $inventory->inventory_last_restocked = request('inventory_last_restocked');
-        $inventory->inventory_expiry_date = request('inventory_expiry_date');
 
         //save and return id
         if ($inventory->save()) {
             return $inventory->inventory_id;
         } else {
-            Log::error("record could not be saved - database error", ['process' => '[InventoryRepository]', config('app.debug_ref'), 'function' => __function__, 'file' => basename(__FILE__), 'line' => __line__, 'path' => __file__]);
+            Log::error("record could not be created - database error", ['process' => '[InventoryRepository]', config('app.debug_ref'), 'function' => __function__, 'file' => basename(__FILE__), 'line' => __line__, 'path' => __file__]);
             return false;
         }
     }
@@ -134,30 +179,56 @@ class InventoryRepository {
 
         //get the record
         if (!$inventory = $this->inventory->find($id)) {
+            Log::error("record could not be found - database error", ['process' => '[InventoryRepository]', config('app.debug_ref'), 'function' => __function__, 'file' => basename(__FILE__), 'line' => __line__, 'path' => __file__]);
             return false;
         }
 
-        //general
+        //data
+        $inventory->inventory_code = request('inventory_code');
         $inventory->inventory_name = request('inventory_name');
-        $inventory->inventory_description = request('inventory_description');
-        $inventory->inventory_sku = request('inventory_sku');
-        $inventory->inventory_barcode = request('inventory_barcode');
-        $inventory->inventory_quantity = request('inventory_quantity');
-        $inventory->inventory_minimum_quantity = request('inventory_minimum_quantity');
-        $inventory->inventory_maximum_quantity = request('inventory_maximum_quantity');
-        $inventory->inventory_cost_price = request('inventory_cost_price');
-        $inventory->inventory_selling_price = request('inventory_selling_price');
-        $inventory->inventory_currency = request('inventory_currency');
-        $inventory->inventory_unit = request('inventory_unit');
-        $inventory->inventory_status = request('inventory_status');
+        
+        // First Period
+        $inventory->first_period_quantity = request('first_period_quantity', 0);
+        $inventory->first_period_sub_quantity = request('first_period_sub_quantity', 0);
+        $inventory->first_period_amount = request('first_period_amount', 0);
+        $inventory->first_period_avg_price = request('first_period_avg_price', 0);
+        
+        // Input
+        $inventory->input_quantity = request('input_quantity', 0);
+        $inventory->input_sub_quantity = request('input_sub_quantity', 0);
+        $inventory->input_amount = request('input_amount', 0);
+        $inventory->input_avg_price = request('input_avg_price', 0);
+        
+        // Output
+        $inventory->output_quantity = request('output_quantity', 0);
+        $inventory->output_sub_quantity = request('output_sub_quantity', 0);
+        $inventory->output_amount = request('output_amount', 0);
+        $inventory->output_avg_price = request('output_avg_price', 0);
+        
+        // Current Stock
+        $inventory->current_quantity = request('current_quantity', 0);
+        $inventory->current_sub_quantity = request('current_sub_quantity', 0);
+        $inventory->current_amount = request('current_amount', 0);
+        $inventory->current_avg_price = request('current_avg_price', 0);
+        
+        // Weighing
+        $inventory->weighing_input = request('weighing_input', 0);
+        $inventory->weighing_output = request('weighing_output', 0);
+        
+        // Stock Limits
+        $inventory->minimum_stock = request('minimum_stock', 0);
+        $inventory->maximum_stock = request('maximum_stock');
+        $inventory->discrepancy = request('discrepancy', 0);
+        
+        // Units
+        $inventory->main_unit = request('main_unit', 'pcs');
+        $inventory->sub_unit = request('sub_unit');
+        
+        // System
+        $inventory->inventory_status = request('inventory_status', 'active');
         $inventory->inventory_categoryid = request('inventory_categoryid');
-        $inventory->inventory_supplier = request('inventory_supplier');
-        $inventory->inventory_notes = request('inventory_notes');
-        $inventory->inventory_location = request('inventory_location');
-        $inventory->inventory_last_restocked = request('inventory_last_restocked');
-        $inventory->inventory_expiry_date = request('inventory_expiry_date');
 
-        //save
+        //save and return id
         if ($inventory->save()) {
             return $inventory->inventory_id;
         } else {
@@ -165,5 +236,4 @@ class InventoryRepository {
             return false;
         }
     }
-
 }

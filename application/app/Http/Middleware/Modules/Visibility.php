@@ -52,6 +52,8 @@ class Visibility {
         $this->viewMessages();
         $this->viewReports();
         $this->viewCalendar();
+        $this->viewInventory();
+        $this->viewSales();
 
         //done
         return $next($request);
@@ -473,6 +475,32 @@ class Visibility {
         if (auth()->user()->is_team) {
             if (config('modules.calendar')) {
                 config(['visibility.modules.calendar' => true]);
+            }
+        }
+    }
+
+    /**
+     * visibility of the inventory feature [team]
+     */
+    public function viewInventory() {
+        if (auth()->user()->is_team) {
+            if (auth()->user()->role->role_inventory >= 1) {
+                if (config('modules.inventory')) {
+                    config(['visibility.modules.inventory' => true]);
+                }
+            }
+        }
+    }
+
+    /**
+     * visibility of the sales feature [team]
+     */
+    public function viewSales() {
+        if (auth()->user()->is_team) {
+            if (auth()->user()->role->role_sales >= 1) {
+                if (config('modules.sales')) {
+                    config(['visibility.modules.sales' => true]);
+                }
             }
         }
     }

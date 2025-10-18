@@ -26,8 +26,6 @@ use App\Repositories\SalesRepository;
 use App\Repositories\CategoryRepository;
 use App\Repositories\TagRepository;
 use App\Repositories\UserRepository;
-use App\Repositories\ClientRepository;
-use App\Repositories\ProjectRepository;
 use Illuminate\Http\Request;
 use Validator;
 
@@ -48,17 +46,7 @@ class SalesController extends Controller {
      */
     protected $tagrepo;
 
-    /**
-     * The clients repository instance.
-     */
-    protected $clientrepo;
-
-    /**
-     * The projects repository instance.
-     */
-    protected $projectrepo;
-
-    public function __construct(UserRepository $userrepo, SalesRepository $salesrepo, TagRepository $tagrepo, ClientRepository $clientrepo, ProjectRepository $projectrepo) {
+    public function __construct(UserRepository $userrepo, SalesRepository $salesrepo, TagRepository $tagrepo) {
 
         //parent
         parent::__construct();
@@ -72,8 +60,6 @@ class SalesController extends Controller {
         $this->userrepo = $userrepo;
         $this->salesrepo = $salesrepo;
         $this->tagrepo = $tagrepo;
-        $this->clientrepo = $clientrepo;
-        $this->projectrepo = $projectrepo;
 
     }
 
@@ -96,18 +82,12 @@ class SalesController extends Controller {
         //get tags
         $tags = $this->tagrepo->getByType('sales');
 
-        //get clients
-        $clients = $this->clientrepo->search();
-
-        //get projects
-        $projects = $this->projectrepo->search();
-
         //calculate stats
         $stats = [
             'total_sales' => $sales->total(),
             'completed_sales' => Sales::where('sales_status', 'completed')->count(),
             'pending_sales' => Sales::where('sales_status', 'pending')->count(),
-            'total_revenue' => Sales::sum('sales_total_amount') ?? 0,
+            'total_revenue' => Sales::sum('base_net_amount') ?? 0,
         ];
 
         //reponse payload
@@ -116,8 +96,6 @@ class SalesController extends Controller {
             'sales' => $sales,
             'categories' => $categories,
             'tags' => $tags,
-            'clients' => $clients,
-            'projects' => $projects,
             'stats' => $stats,
         ];
 
@@ -141,19 +119,11 @@ class SalesController extends Controller {
         //get tags
         $tags = $this->tagrepo->getByType('sales');
 
-        //get clients
-        $clients = $this->clientrepo->search();
-
-        //get projects
-        $projects = $this->projectrepo->search();
-
         //reponse payload
         $payload = [
             'page' => $page,
             'categories' => $categories,
             'tags' => $tags,
-            'clients' => $clients,
-            'projects' => $projects,
         ];
 
         //show the view
