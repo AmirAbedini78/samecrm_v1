@@ -54,7 +54,8 @@ class InventoryController extends Controller {
         //authenticated
         $this->middleware('auth');
 
-        // Module-specific middleware can be added here if needed
+        // Module-specific middleware
+        $this->middleware('inventory.index')->only(['index']);
 
         //dependencies
         $this->userrepo = $userrepo;
@@ -69,6 +70,17 @@ class InventoryController extends Controller {
      * @return blade view | ajax view
      */
     public function index(CategoryRepository $categoryrepo) {
+
+        // Check if requesting unique values for a column
+        if (request()->get('action') === 'unique_values' && request()->has('column')) {
+            $column = request()->get('column');
+            $uniqueValues = $this->inventoryrepo->getUniqueValues($column);
+            
+            return response()->json([
+                'success' => true,
+                'data' => $uniqueValues
+            ]);
+        }
 
         //basic page settings
         $page = $this->pageSettings('inventory');

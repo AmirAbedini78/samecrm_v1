@@ -54,7 +54,8 @@ class SalesController extends Controller {
         //authenticated
         $this->middleware('auth');
 
-        // Module-specific middleware can be added here if needed
+        // Module-specific middleware
+        $this->middleware('sales.index')->only(['index']);
 
         //dependencies
         $this->userrepo = $userrepo;
@@ -69,6 +70,16 @@ class SalesController extends Controller {
      * @return blade view | ajax view
      */
     public function index(CategoryRepository $categoryrepo) {
+        // Check if requesting unique values for a column
+        if (request()->get('action') === 'unique_values' && request()->has('column')) {
+            $column = request()->get('column');
+            $uniqueValues = $this->salesrepo->getUniqueValues($column);
+            
+            return response()->json([
+                'success' => true,
+                'data' => $uniqueValues
+            ]);
+        }
 
         //basic page settings
         $page = $this->pageSettings('sales');
@@ -88,6 +99,8 @@ class SalesController extends Controller {
             'completed_sales' => Sales::where('sales_status', 'completed')->count(),
             'pending_sales' => Sales::where('sales_status', 'pending')->count(),
             'total_revenue' => Sales::sum('base_net_amount') ?? 0,
+            'total_sales_amount' => Sales::sum('base_sales_amount') ?? 0,
+            'average_sales_amount' => Sales::avg('base_sales_amount') ?? 0,
         ];
 
         //reponse payload

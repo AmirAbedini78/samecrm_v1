@@ -17,6 +17,9 @@
 <!--SEARCH-->
 <script src="/public/js/core/search.js?v=<?php echo e(config('system.versioning')); ?>"></script>
 
+<!--COLUMN SEARCH-->
+<script src="/public/js/core/column-search.js?v=<?php echo e(config('system.versioning')); ?>"></script>
+
 <!--BILLING-->
 <script src="/public/js/core/billing.js?v=<?php echo e(config('system.versioning')); ?>"></script>
 

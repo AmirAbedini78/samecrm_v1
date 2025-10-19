@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Models\Inventory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class InventoryRepository {
 
@@ -79,6 +80,42 @@ class InventoryRepository {
             });
         }
         
+        //column-specific search
+        foreach (request()->all() as $key => $value) {
+            if (strpos($key, 'column_search_') === 0) {
+                $column = str_replace('column_search_', '', $key);
+                
+                // Only apply search if value is not empty
+                if (!empty($value)) {
+                    // Handle different column types
+                    switch ($column) {
+                        case 'category':
+                            $inventory->whereHas('category', function ($query) use ($value) {
+                                $query->where('category_name', 'LIKE', '%' . $value . '%');
+                            });
+                            break;
+                        case 'creator':
+                            $inventory->whereHas('creator', function ($query) use ($value) {
+                                $query->where('first_name', 'LIKE', '%' . $value . '%')
+                                      ->orWhere('last_name', 'LIKE', '%' . $value . '%');
+                            });
+                            break;
+                        case 'tags':
+                            $inventory->whereHas('tags', function ($query) use ($value) {
+                                $query->where('tag_title', 'LIKE', '%' . $value . '%');
+                            });
+                            break;
+                        default:
+                            // Direct column search
+                            if (Schema::hasColumn('inventory', $column)) {
+                                $inventory->where($column, 'LIKE', '%' . $value . '%');
+                            }
+                            break;
+                    }
+                }
+            }
+        }
+        
         //search: general search
         if (request()->filled('search')) {
             $inventory->where(function ($query) {
@@ -88,7 +125,7 @@ class InventoryRepository {
         }
 
         //sorting
-        if (in_array(request('sortorder'), array('desc', 'asc')) && request()->filled('orderby')) {
+        if (in_array(request('sortorder'), array('desc', 'asc')) && request('orderby') != '') {
             $inventory->orderBy(request('orderby'), request('sortorder'));
         } else {
             $inventory->orderBy('created_at', 'desc');
@@ -235,5 +272,66 @@ class InventoryRepository {
             Log::error("record could not be updated - database error", ['process' => '[InventoryRepository]', config('app.debug_ref'), 'function' => __function__, 'file' => basename(__FILE__), 'line' => __line__, 'path' => __file__]);
             return false;
         }
+    }
+
+    /**
+     * Get unique values for a specific column
+     * @param string $column
+     * @return array
+     */
+    public function getUniqueValues($column) {
+        $inventory = new Inventory();
+        
+        // Handle different column types
+        switch ($column) {
+            case 'category':
+                $values = $inventory->join('categories', 'inventory.inventory_categoryid', '=', 'categories.category_id')
+                    ->select('categories.category_name')
+                    ->distinct()
+                    ->whereNotNull('categories.category_name')
+                    ->where('categories.category_name', '!=', '')
+                    ->pluck('categories.category_name')
+                    ->toArray();
+                break;
+            case 'creator':
+                $values = $inventory->join('users', 'inventory.inventory_creatorid', '=', 'users.id')
+                    ->select('users.first_name', 'users.last_name')
+                    ->distinct()
+                    ->whereNotNull('users.first_name')
+                    ->where('users.first_name', '!=', '')
+                    ->get()
+                    ->map(function($user) {
+                        return $user->first_name . ' ' . $user->last_name;
+                    })
+                    ->toArray();
+                break;
+            case 'tags':
+                $values = $inventory->join('inventory_tags', 'inventory.inventory_id', '=', 'inventory_tags.inventory_id')
+                    ->join('tags', 'inventory_tags.tag_id', '=', 'tags.tag_id')
+                    ->select('tags.tag_title')
+                    ->distinct()
+                    ->whereNotNull('tags.tag_title')
+                    ->where('tags.tag_title', '!=', '')
+                    ->pluck('tags.tag_title')
+                    ->toArray();
+                break;
+            default:
+                // Direct column search
+                if (Schema::hasColumn('inventory', $column)) {
+                    $values = $inventory->select($column)
+                        ->distinct()
+                        ->whereNotNull($column)
+                        ->where($column, '!=', '')
+                        ->pluck($column)
+                        ->toArray();
+                } else {
+                    $values = [];
+                }
+                break;
+        }
+        
+        // Sort values and return
+        sort($values);
+        return array_values(array_unique($values));
     }
 }

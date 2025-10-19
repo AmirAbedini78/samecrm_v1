@@ -1,25 +1,119 @@
 <?php
 
+/** --------------------------------------------------------------------------------
+ * This middleware handles the index process for the sales
+ * controller
+ * @package    Grow CRM
+ * @author     NextLoop
+ *----------------------------------------------------------------------------------*/
+
 namespace App\Http\Middleware\Sales;
 
 use Closure;
-use Illuminate\Http\Request;
+use Log;
 
-class Index
-{
+class Index {
+
     /**
-     * Handle an incoming request.
+     * This middleware handles the index process for the sales
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  \Closure  $next
      * @return mixed
      */
-    public function handle(Request $request, Closure $next)
-    {
-        // Basic middleware for sales index
-        // You can add specific logic here if needed
-        
+    public function handle($request, Closure $next) {
+
+        //set various data and settings
+        $this->setTableConfig();
+        $this->setFrontend();
+
+        //continue
         return $next($request);
     }
-}
 
+    /*
+     * Set table configuration
+     *
+     *
+     */
+    private function setTableConfig() {
+
+        //get current settings or create for user
+        if (!$table = \App\Models\TableConfig::Where('tableconfig_userid', auth()->id())->Where('tableconfig_table_name', 'sales')->first()) {
+
+            //create for this user and set the visible columns (by setting them to `null`)
+            $table = new \App\Models\TableConfig();
+            $table->tableconfig_userid = auth()->id();
+            $table->tableconfig_table_name = 'sales';
+            $table->tableconfig_column_1 = 'displayed'; //id
+            $table->tableconfig_column_2 = 'displayed'; //document number
+            $table->tableconfig_column_3 = 'displayed'; //customer name
+            $table->tableconfig_column_4 = 'displayed'; //product name
+            $table->tableconfig_column_5 = 'displayed'; //main quantity
+            $table->tableconfig_column_6 = 'displayed'; //base price
+            $table->tableconfig_column_7 = 'displayed'; //base net amount
+            $table->tableconfig_column_8 = 'hidden'; //document type
+            $table->tableconfig_column_9 = 'hidden'; //created by
+            $table->tableconfig_column_10 = 'hidden'; //document date
+            $table->tableconfig_column_11 = 'displayed'; //sales status
+            $table->save();
+        }
+
+        //get row
+        $table = \App\Models\TableConfig::Where('tableconfig_userid', auth()->id())->Where('tableconfig_table_name', 'sales')->first();
+
+        //default show some table columns
+        config(['table' => $table]);
+
+    }
+
+    /*
+     * various frontend and visibility settings
+     */
+    private function setFrontend() {
+
+        //default show some table columns
+        config([
+            'visibility.sales_col_client' => true,
+            'visibility.sales_col_category' => true,
+            'visibility.filter_panel_client_project' => true,
+        ]);
+
+        //permissions -viewing
+        if (auth()->user()->role->role_sales >= 1) {
+            config([
+                //visibility
+                'visibility.list_page_actions_filter_button' => true,
+                'visibility.list_page_actions_search' => true,
+                'visibility.stats_toggle_button' => true,
+            ]);
+        }
+        if (auth()->user()->is_client) {
+            config([
+                //visibility
+                'visibility.list_page_actions_search' => true,
+                'visibility.sales_col_client' => false,
+            ]);
+        }
+
+        //permissions -adding
+        if (auth()->user()->role->role_sales >= 2) {
+            config([
+                //visibility
+                'visibility.list_page_actions_add_button' => true,
+                'visibility.action_buttons_edit' => true,
+                'visibility.sales_col_checkboxes' => true,
+            ]);
+        }
+
+        //permissions -deleting
+        if (auth()->user()->role->role_sales >= 3) {
+            config([
+                //visibility
+                'visibility.action_buttons_delete' => true,
+            ]);
+        }
+
+    }
+
+}

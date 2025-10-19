@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Models\Sales;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class SalesRepository {
 
@@ -70,6 +71,40 @@ class SalesRepository {
             });
         }
         
+        //column-specific search
+        foreach (request()->all() as $key => $value) {
+            if (strpos($key, 'column_search_') === 0) {
+                $column = str_replace('column_search_', '', $key);
+                
+                // Only apply search if value is not empty
+                if (!empty($value)) {
+                    // Decode URL encoded values
+                    $value = urldecode($value);
+                    
+                    // Handle different column types
+                    switch ($column) {
+                        case 'creator':
+                            $sales->whereHas('creator', function ($query) use ($value) {
+                                $query->where('first_name', 'LIKE', '%' . $value . '%')
+                                      ->orWhere('last_name', 'LIKE', '%' . $value . '%');
+                            });
+                            break;
+                        case 'tags':
+                            $sales->whereHas('tags', function ($query) use ($value) {
+                                $query->where('tag_title', 'LIKE', '%' . $value . '%');
+                            });
+                            break;
+                        default:
+                            // Direct column search
+                            if (Schema::hasColumn('sales', $column)) {
+                                $sales->where($column, 'LIKE', '%' . $value . '%');
+                            }
+                            break;
+                    }
+                }
+            }
+        }
+        
         //filter by sales status
         if (request()->filled('filter_sales_status')) {
             $sales->where('sales_status', request('filter_sales_status'));
@@ -86,7 +121,7 @@ class SalesRepository {
         }
 
         //sorting
-        if (in_array(request('sortorder'), array('desc', 'asc')) && request()->filled('orderby')) {
+        if (in_array(request('sortorder'), array('desc', 'asc')) && request('orderby') != '') {
             $sales->orderBy(request('orderby'), request('sortorder'));
         } else {
             $sales->orderBy('created_at', 'desc');
@@ -232,5 +267,127 @@ class SalesRepository {
             Log::error("record could not be updated - database error", ['process' => '[SalesRepository]', config('app.debug_ref'), 'function' => __function__, 'file' => basename(__FILE__), 'line' => __line__, 'path' => __file__]);
             return false;
         }
+    }
+
+    /**
+     * Get unique values for a specific column
+     * @param string $column
+     * @return array
+     */
+    public function getUniqueValues($column) {
+        $sales = new Sales();
+        
+        // Handle different column types
+        switch ($column) {
+            case 'creator':
+                $values = $sales->join('users', 'sales.sales_creatorid', '=', 'users.id')
+                    ->select('users.first_name', 'users.last_name')
+                    ->distinct()
+                    ->whereNotNull('users.first_name')
+                    ->where('users.first_name', '!=', '')
+                    ->get()
+                    ->map(function($user) {
+                        return $user->first_name . ' ' . $user->last_name;
+                    })
+                    ->toArray();
+                break;
+            default:
+                // Direct column search
+                if (Schema::hasColumn('sales', $column)) {
+                    $values = $sales->select($column)
+                        ->distinct()
+                        ->whereNotNull($column)
+                        ->where($column, '!=', '')
+                        ->pluck($column)
+                        ->toArray();
+                } else {
+                    $values = [];
+                }
+                break;
+        }
+        
+        // Sort values and return
+        sort($values);
+        return array_values(array_unique($values));
+    }
+
+    /**
+     * Calculate stats for filtered sales
+     * @return array
+     */
+    public function calculateStats() {
+        $sales = $this->sales->newQuery();
+        
+        // Apply same filters as search method
+        if (request()->filled('filter_sales_status')) {
+            $sales->where('sales_status', request('filter_sales_status'));
+        }
+        
+        if (request()->filled('filter_sales_creatorid')) {
+            $sales->where('sales_creatorid', request('filter_sales_creatorid'));
+        }
+        
+        if (request()->filled('filter_document_date_from')) {
+            $sales->where('document_date', '>=', request('filter_document_date_from'));
+        }
+        if (request()->filled('filter_document_date_to')) {
+            $sales->where('document_date', '<=', request('filter_document_date_to'));
+        }
+        
+        if (request()->filled('search_query')) {
+            $sales->where(function ($query) {
+                $query->where('product_name', 'LIKE', '%' . request('search_query') . '%')
+                    ->orWhere('customer_name', 'LIKE', '%' . request('search_query') . '%')
+                    ->orWhere('document_number', 'LIKE', '%' . request('search_query') . '%');
+            });
+        }
+        
+        // Apply column-specific filters
+        foreach (request()->all() as $key => $value) {
+            if (strpos($key, 'column_search_') === 0) {
+                $column = str_replace('column_search_', '', $key);
+                
+                if (!empty($value)) {
+                    // Decode URL encoded values
+                    $value = urldecode($value);
+                    
+                    switch ($column) {
+                        case 'creator':
+                            $sales->whereHas('creator', function ($query) use ($value) {
+                                $query->where('first_name', 'LIKE', '%' . $value . '%')
+                                      ->orWhere('last_name', 'LIKE', '%' . $value . '%');
+                            });
+                            break;
+                        case 'tags':
+                            $sales->whereHas('tags', function ($query) use ($value) {
+                                $query->where('tag_title', 'LIKE', '%' . $value . '%');
+                            });
+                            break;
+                        default:
+                            if (Schema::hasColumn('sales', $column)) {
+                                $sales->where($column, 'LIKE', '%' . $value . '%');
+                            }
+                            break;
+                    }
+                }
+            }
+        }
+        
+        // Debug: Log the query
+        \Log::info('Sales stats query: ' . $sales->toSql());
+        \Log::info('Sales stats bindings: ' . json_encode($sales->getBindings()));
+        
+        // Get stats in one query to optimize performance
+        $stats = $sales->selectRaw('
+            COALESCE(SUM(base_sales_amount), 0) as total_sales_amount,
+            COALESCE(AVG(base_sales_amount), 0) as average_sales_amount,
+            COALESCE(SUM(base_net_amount), 0) as total_revenue
+        ')->first();
+        
+        return [
+            'total_sales_amount' => (float) $stats->total_sales_amount,
+            'average_sales_amount' => (float) $stats->average_sales_amount,
+            'total_revenue' => (float) $stats->total_revenue,
+        ];
     }
 }
