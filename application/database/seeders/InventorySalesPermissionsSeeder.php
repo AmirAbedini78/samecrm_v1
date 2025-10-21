@@ -46,3 +46,4 @@ class InventorySalesPermissionsSeeder extends Seeder
     }
 }
 
+

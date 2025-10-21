@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Reports;
 
 use App\Http\Controllers\Controller;
 use App\Models\Sales;
+use App\Helpers\PersianCalendarHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 
@@ -26,19 +27,49 @@ class SalesReports extends Controller {
         $range2_from = $request->get('range2_from');
         $range2_to   = $request->get('range2_to');
 
+        // Convert Persian dates to Gregorian for database query
+        $range1_from_gregorian = null;
+        $range1_to_gregorian = null;
+        $range2_from_gregorian = null;
+        $range2_to_gregorian = null;
+
+        if ($range1_from && PersianCalendarHelper::isValidPersianDate($range1_from)) {
+            $range1_from_gregorian = PersianCalendarHelper::persianToGregorian($range1_from);
+        }
+        if ($range1_to && PersianCalendarHelper::isValidPersianDate($range1_to)) {
+            $range1_to_gregorian = PersianCalendarHelper::persianToGregorian($range1_to);
+        }
+        if ($range2_from && PersianCalendarHelper::isValidPersianDate($range2_from)) {
+            $range2_from_gregorian = PersianCalendarHelper::persianToGregorian($range2_from);
+        }
+        if ($range2_to && PersianCalendarHelper::isValidPersianDate($range2_to)) {
+            $range2_to_gregorian = PersianCalendarHelper::persianToGregorian($range2_to);
+        }
+
         $query = Sales::query();
         $range1 = (clone $query)
-            ->when($range1_from, function($q) use($range1_from){ $q->where('document_date', '>=', $range1_from); })
-            ->when($range1_to, function($q) use($range1_to){ $q->where('document_date', '<=', $range1_to); });
+            ->when($range1_from_gregorian, function($q) use($range1_from_gregorian){ $q->where('document_date', '>=', $range1_from_gregorian); })
+            ->when($range1_to_gregorian, function($q) use($range1_to_gregorian){ $q->where('document_date', '<=', $range1_to_gregorian); });
 
         $query2 = Sales::query();
         $range2 = (clone $query2)
-            ->when($range2_from, function($q) use($range2_from){ $q->where('document_date', '>=', $range2_from); })
-            ->when($range2_to, function($q) use($range2_to){ $q->where('document_date', '<=', $range2_to); });
+            ->when($range2_from_gregorian, function($q) use($range2_from_gregorian){ $q->where('document_date', '>=', $range2_from_gregorian); })
+            ->when($range2_to_gregorian, function($q) use($range2_to_gregorian){ $q->where('document_date', '<=', $range2_to_gregorian); });
 
-        // rows for both ranges (basic fields for readability)
+        // Get rows for both ranges
         $rows1 = (clone $range1)->select(['sales_id','document_date','customer_name','product_name','main_quantity','base_sales_amount'])->orderBy('document_date','desc')->get();
         $rows2 = (clone $range2)->select(['sales_id','document_date','customer_name','product_name','main_quantity','base_sales_amount'])->orderBy('document_date','desc')->get();
+
+        // Convert document dates to Persian for display
+        $rows1->transform(function ($item) {
+            $item->document_date_persian = PersianCalendarHelper::gregorianToPersian($item->document_date);
+            return $item;
+        });
+
+        $rows2->transform(function ($item) {
+            $item->document_date_persian = PersianCalendarHelper::gregorianToPersian($item->document_date);
+            return $item;
+        });
 
         $result = [
             'range1' => [
