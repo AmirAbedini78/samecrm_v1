@@ -102,6 +102,7 @@ $(document).ready(function() {
                     updateStats(response.stats);
                 } else {
                     console.log('No stats in response');
+                    console.log('Full response:', response);
                 }
                 
                 // Restore input values after DOM update
@@ -147,6 +148,8 @@ $(document).ready(function() {
             if ($totalSalesAmount.length) {
                 $totalSalesAmount.text(formatCurrency(stats.total_sales_amount, 'IRR'));
                 console.log('Updated total sales amount:', stats.total_sales_amount);
+            } else {
+                console.log('Total sales amount element not found');
             }
         }
         
@@ -156,24 +159,20 @@ $(document).ready(function() {
             if ($averageSalesAmount.length) {
                 $averageSalesAmount.text(formatCurrency(stats.average_sales_amount, 'IRR'));
                 console.log('Updated average sales amount:', stats.average_sales_amount);
+            } else {
+                console.log('Average sales amount element not found');
             }
         }
         
-        // Update total revenue
-        if (stats.total_revenue !== undefined && stats.total_revenue !== null) {
-            var $totalRevenue = $('.stats-total-revenue');
-            if ($totalRevenue.length) {
-                $totalRevenue.text(formatCurrency(stats.total_revenue, 'IRR'));
-                console.log('Updated total revenue:', stats.total_revenue);
-            }
-        }
+        // Total revenue box removed - no need to update
     }
     
     // Function to format currency
     function formatCurrency(amount, currency) {
         if (currency === 'IRR') {
             // Simple formatting for Persian numbers
-            var formatted = parseInt(amount).toLocaleString('fa-IR');
+            var num = parseFloat(amount) || 0;
+            var formatted = num.toLocaleString('fa-IR');
             return formatted + ' تومان';
         }
         return amount;

@@ -52,7 +52,7 @@ class IndexResponse implements Responsable {
 
             //template and dom - for ajax initial loading
             default:
-                $template = 'pages.inventory.tabswrapper';
+                $template = 'pages.inventory.components.table.datatables-wrapper';
                 $dom_container = '#embed-content-container';
                 $dom_action = 'replace';
                 break;

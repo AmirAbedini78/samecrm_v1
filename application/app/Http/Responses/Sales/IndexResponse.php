@@ -49,16 +49,19 @@ class IndexResponse implements Responsable {
                 $dom_container = '#sales-table-wrapper';
                 $dom_action = 'replace-with';
                 
-                // Calculate filtered stats only if needed
-                if (request()->has('column_search_') || request()->filled('search_query')) {
+                // Always calculate filtered stats for search action
+                if (isset($salesrepo)) {
                     $filteredStats = $salesrepo->calculateStats();
                     $jsondata['stats'] = $filteredStats;
+                } else {
+                    // Fallback to original stats if salesrepo not available
+                    $jsondata['stats'] = $stats;
                 }
                 break;
 
             //template and dom - for ajax initial loading
             default:
-                $template = 'pages.sales.tabswrapper';
+                $template = 'pages.sales.components.table.datatables-wrapper';
                 $dom_container = '#embed-content-container';
                 $dom_action = 'replace';
                 break;
@@ -75,19 +78,16 @@ class IndexResponse implements Responsable {
             }
 
             //render the view and save to json
-            $html = view($template, compact('page', 'sales', 'stats', 'categories', 'tags'))->render();
+            $html = view($template, compact('page', 'sales', 'stats', 'categories', 'tags', 'salesrepo'))->render();
             $jsondata['dom_html'][] = array(
                 'selector' => $dom_container,
                 'action' => $dom_action,
                 'value' => $html);
 
-            // Add filtered stats to response if available
-            if (isset($filteredStats)) {
-                $jsondata['stats'] = $filteredStats;
+            // Debug: Log the response (only in debug mode)
+            if (config('app.debug')) {
+                \Log::info('Sales response stats: ' . json_encode($jsondata['stats'] ?? 'No stats'));
             }
-            
-            // Debug: Log the response
-            \Log::info('Sales response stats: ' . json_encode($jsondata['stats'] ?? 'No stats'));
 
             //ajax response
             return response()->json($jsondata);

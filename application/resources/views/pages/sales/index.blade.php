@@ -20,16 +20,12 @@
 
     <!-- Stats Cards -->
     <div class="row">
-        <div class="col-md-2">
+        <div class="col-lg-2 col-md-4 col-sm-6 col-12 mb-3">
             <div class="card">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
                         <div class="flex-shrink-0">
-                            <div class="avatar-sm rounded-circle bg-primary bg-soft">
-                                <span class="avatar-title rounded-circle bg-primary">
-                                    <i class="ti-shopping-cart font-20"></i>
-                                </span>
-                            </div>
+                            <i class="ti-shopping-cart font-24 text-primary"></i>
                         </div>
                         <div class="flex-grow-1 ms-3">
                             <p class="text-uppercase fw-medium text-muted mb-0">{{ cleanLang(__('lang.total_sales')) }}</p>
@@ -39,16 +35,12 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-2">
+        <div class="col-lg-2 col-md-4 col-sm-6 col-12 mb-3">
             <div class="card">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
                         <div class="flex-shrink-0">
-                            <div class="avatar-sm rounded-circle bg-success bg-soft">
-                                <span class="avatar-title rounded-circle bg-success">
-                                    <i class="ti-check font-20"></i>
-                                </span>
-                            </div>
+                            <i class="ti-check-circle font-24 text-success"></i>
                         </div>
                         <div class="flex-grow-1 ms-3">
                             <p class="text-uppercase fw-medium text-muted mb-0">{{ cleanLang(__('lang.completed_sales')) }}</p>
@@ -58,16 +50,12 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-2">
+        <div class="col-lg-2 col-md-4 col-sm-6 col-12 mb-3">
             <div class="card">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
                         <div class="flex-shrink-0">
-                            <div class="avatar-sm rounded-circle bg-warning bg-soft">
-                                <span class="avatar-title rounded-circle bg-warning">
-                                    <i class="ti-clock font-20"></i>
-                                </span>
-                            </div>
+                            <i class="ti-time font-24 text-warning"></i>
                         </div>
                         <div class="flex-grow-1 ms-3">
                             <p class="text-uppercase fw-medium text-muted mb-0">{{ cleanLang(__('lang.pending_sales')) }}</p>
@@ -77,35 +65,12 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-2">
+        <div class="col-lg-3 col-md-6 col-sm-12 col-12 mb-3">
             <div class="card">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
                         <div class="flex-shrink-0">
-                            <div class="avatar-sm rounded-circle bg-info bg-soft">
-                                <span class="avatar-title rounded-circle bg-info">
-                                    <i class="ti-money font-20"></i>
-                                </span>
-                            </div>
-                        </div>
-                        <div class="flex-grow-1 ms-3">
-                            <p class="text-uppercase fw-medium text-muted mb-0">{{ cleanLang(__('lang.total_revenue')) }}</p>
-                            <h4 class="my-1 stats-total-revenue">{{ formatCurrency($stats['total_revenue'] ?? 0, 'IRR') }}</h4>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="card">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-shrink-0">
-                            <div class="avatar-sm rounded-circle bg-danger bg-soft">
-                                <span class="avatar-title rounded-circle bg-danger">
-                                    <i class="ti-credit-card font-20"></i>
-                                </span>
-                            </div>
+                            <i class="ti-money font-24 text-danger"></i>
                         </div>
                         <div class="flex-grow-1 ms-3">
                             <p class="text-uppercase fw-medium text-muted mb-0">مجموع مبلغ فروش</p>
@@ -115,16 +80,12 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-2">
+        <div class="col-lg-3 col-md-6 col-sm-12 col-12 mb-3">
             <div class="card">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
                         <div class="flex-shrink-0">
-                            <div class="avatar-sm rounded-circle bg-secondary bg-soft">
-                                <span class="avatar-title rounded-circle bg-secondary">
-                                    <i class="ti-pie-chart font-20"></i>
-                                </span>
-                            </div>
+                            <i class="ti-bar-chart font-24 text-info"></i>
                         </div>
                         <div class="flex-grow-1 ms-3">
                             <p class="text-uppercase fw-medium text-muted mb-0">میانگین مبلغ فروش</p>

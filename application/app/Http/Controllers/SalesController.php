@@ -80,6 +80,11 @@ class SalesController extends Controller {
                 'data' => $uniqueValues
             ]);
         }
+        
+        // Check if requesting DataTables data
+        if (request()->get('action') === 'datatables') {
+            return $this->getDataTablesData();
+        }
 
         //basic page settings
         $page = $this->pageSettings('sales');
@@ -98,7 +103,6 @@ class SalesController extends Controller {
             'total_sales' => $sales->total(),
             'completed_sales' => Sales::where('sales_status', 'completed')->count(),
             'pending_sales' => Sales::where('sales_status', 'pending')->count(),
-            'total_revenue' => Sales::sum('base_net_amount') ?? 0,
             'total_sales_amount' => Sales::sum('base_sales_amount') ?? 0,
             'average_sales_amount' => Sales::avg('base_sales_amount') ?? 0,
         ];
@@ -110,10 +114,42 @@ class SalesController extends Controller {
             'categories' => $categories,
             'tags' => $tags,
             'stats' => $stats,
+            'salesrepo' => $this->salesrepo,
         ];
 
         //show the view
         return new IndexResponse($payload);
+    }
+    
+    /**
+     * Get DataTables data for sales
+     */
+    private function getDataTablesData() {
+        $sales = $this->salesrepo->search();
+        
+        $data = [];
+        foreach ($sales->items() as $item) {
+            $data[] = [
+                'sales_id' => $item->sales_id,
+                'product_name' => $item->product_name,
+                'customer_name' => $item->customer_name,
+                'document_number' => $item->document_number,
+                'main_quantity' => $item->main_quantity,
+                'base_sales_amount' => $item->base_sales_amount,
+                'base_net_amount' => $item->base_net_amount,
+                'sales_status' => $item->sales_status,
+                'document_date' => $item->document_date,
+                'creator' => $item->creator->first_name . ' ' . $item->creator->last_name,
+                'actions' => ''
+            ];
+        }
+        
+        return response()->json([
+            'draw' => request('draw'),
+            'recordsTotal' => $sales->total(),
+            'recordsFiltered' => $sales->total(),
+            'data' => $data
+        ]);
     }
 
     /**

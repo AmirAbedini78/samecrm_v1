@@ -203,6 +203,17 @@
             <!--[MODULES] - dynamic menu-->
             {!! config('modules.menus.reports.parent7') !!}
 
+            <!--sales (custom) -->
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle tabs-menu-item" data-loading-class="loading-tabs" data-toggle="dropdown" href="javascript:void(0)" role="button" aria-haspopup="true" id="reports_tabs_sales" aria-expanded="false">
+                    <span class="hidden-xs-down">گزارش فروش</span>
+                </a>
+                <div class="dropdown-menu" x-placement="bottom-start" id="fx-topnav-dropdown">
+                    <a class="dropdown-item js-dynamic-url js-ajax-ux-request" data-toggle="tab" data-loading-class="loading-tabs" data-loading-target="embed-content-container" data-dynamic-url="{{ url('/report/sales/comparison') }}" data-url="{{ url('/report/sales/comparison') }}" href="javascript:void(0);" role="tab">مقایسه بازه‌های تاریخ</a>
+                    <a class="dropdown-item js-dynamic-url js-ajax-ux-request" data-toggle="tab" data-loading-class="loading-tabs" data-loading-target="embed-content-container" data-dynamic-url="{{ url('/report/sales/aggregates') }}" data-url="{{ url('/report/sales/aggregates') }}" href="javascript:void(0);" role="tab">گزارش تجمیعی مبلغ فروش</a>
+                </div>
+            </li>
+
         </ul>
         <!-- Tab panes -->
     </div>

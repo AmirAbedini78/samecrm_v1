@@ -62,12 +62,16 @@ class SalesRepository {
             });
         }
         
-        //search: general search
-        if (request()->filled('search')) {
-            $sales->where(function ($query) {
-                $query->where('document_number', 'LIKE', '%' . request('search') . '%')
-                    ->orWhere('customer_name', 'LIKE', '%' . request('search') . '%')
-                    ->orWhere('product_name', 'LIKE', '%' . request('search') . '%');
+        //search: general search (support DataTables format: search[value])
+        $globalSearch = request('search');
+        if (is_array($globalSearch)) {
+            $globalSearch = $globalSearch['value'] ?? '';
+        }
+        if (!empty($globalSearch)) {
+            $sales->where(function ($query) use ($globalSearch) {
+                $query->where('document_number', 'LIKE', '%' . $globalSearch . '%')
+                    ->orWhere('customer_name', 'LIKE', '%' . $globalSearch . '%')
+                    ->orWhere('product_name', 'LIKE', '%' . $globalSearch . '%');
             });
         }
         
@@ -373,21 +377,21 @@ class SalesRepository {
             }
         }
         
-        // Debug: Log the query
-        \Log::info('Sales stats query: ' . $sales->toSql());
-        \Log::info('Sales stats bindings: ' . json_encode($sales->getBindings()));
+        // Debug: Log the query (only in debug mode)
+        if (config('app.debug')) {
+            \Log::info('Sales stats query: ' . $sales->toSql());
+            \Log::info('Sales stats bindings: ' . json_encode($sales->getBindings()));
+        }
         
         // Get stats in one query to optimize performance
         $stats = $sales->selectRaw('
             COALESCE(SUM(base_sales_amount), 0) as total_sales_amount,
-            COALESCE(AVG(base_sales_amount), 0) as average_sales_amount,
-            COALESCE(SUM(base_net_amount), 0) as total_revenue
+            COALESCE(AVG(base_sales_amount), 0) as average_sales_amount
         ')->first();
         
         return [
             'total_sales_amount' => (float) $stats->total_sales_amount,
             'average_sales_amount' => (float) $stats->average_sales_amount,
-            'total_revenue' => (float) $stats->total_revenue,
         ];
     }
 }

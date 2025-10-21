@@ -19,6 +19,11 @@
 
 <!--COLUMN SEARCH-->
 <script src="/public/js/core/column-search.js?v=<?php echo e(config('system.versioning')); ?>"></script>
+<!--COLUMN RESIZE (disabled) -->
+
+<!--DATATABLES (core only - default look) -->
+<link rel="stylesheet" href="https://cdn.datatables.net/2.3.4/css/dataTables.dataTables.css" />
+<script src="https://cdn.datatables.net/2.3.4/js/dataTables.js"></script>
 
 <!--BILLING-->
 <script src="/public/js/core/billing.js?v=<?php echo e(config('system.versioning')); ?>"></script>

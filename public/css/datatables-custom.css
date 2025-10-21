@@ -1,0 +1,186 @@
+/* DataTables Custom Styling */
+
+/* Table Styling */
+#inventory-table, #sales-table {
+    border-collapse: separate !important;
+    border-spacing: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Header Styling */
+#inventory-table thead th,
+#sales-table thead th {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    font-weight: 600;
+    text-align: center;
+    padding: 15px 10px;
+    border: none;
+    position: relative;
+}
+
+/* Header Hover Effect */
+#inventory-table thead th:hover,
+#sales-table thead th:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%) !important;
+    cursor: pointer;
+}
+
+/* Body Styling */
+#inventory-table tbody tr,
+#sales-table tbody tr {
+    transition: all 0.3s ease;
+}
+
+#inventory-table tbody tr:hover,
+#sales-table tbody tr:hover {
+    background-color: #f8f9fa !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Cell Styling */
+#inventory-table tbody td,
+#sales-table tbody td {
+    padding: 12px 10px;
+    border-bottom: 1px solid #e9ecef;
+    vertical-align: middle;
+}
+
+/* Action Buttons */
+.btn-sm {
+    margin: 2px;
+    border-radius: 4px;
+    font-size: 12px;
+    padding: 4px 8px;
+}
+
+/* DataTables Controls */
+.dataTables_wrapper {
+    padding: 20px 0;
+}
+
+.dataTables_length,
+.dataTables_filter {
+    margin-bottom: 15px;
+}
+
+.dataTables_length select,
+.dataTables_filter input {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 5px 10px;
+    margin: 0 5px;
+}
+
+/* Buttons Styling */
+.dt-buttons {
+    margin-bottom: 15px;
+}
+
+.dt-buttons .btn {
+    margin-right: 5px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+/* Pagination Styling */
+.dataTables_paginate {
+    margin-top: 15px;
+}
+
+.dataTables_paginate .paginate_button {
+    border: 1px solid #ddd !important;
+    border-radius: 4px !important;
+    margin: 0 2px !important;
+    padding: 8px 12px !important;
+    background: white !important;
+    color: #333 !important;
+}
+
+.dataTables_paginate .paginate_button:hover {
+    background: #007bff !important;
+    color: white !important;
+    border-color: #007bff !important;
+}
+
+.dataTables_paginate .paginate_button.current {
+    background: #007bff !important;
+    color: white !important;
+    border-color: #007bff !important;
+}
+
+/* Info Styling */
+.dataTables_info {
+    color: #6c757d;
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+/* Loading Spinner */
+.dataTables_processing {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid #ddd !important;
+    border-radius: 4px !important;
+    color: #333 !important;
+    font-weight: 500 !important;
+}
+
+/* Responsive Styling */
+@media (max-width: 768px) {
+    .dataTables_wrapper .dataTables_length,
+    .dataTables_wrapper .dataTables_filter {
+        text-align: center;
+        margin-bottom: 10px;
+    }
+    
+    .dt-buttons {
+        text-align: center;
+        margin-bottom: 10px;
+    }
+    
+    .dt-buttons .btn {
+        margin: 2px;
+        font-size: 11px;
+        padding: 4px 6px;
+    }
+}
+
+/* Status Badges */
+.badge {
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 12px;
+}
+
+/* Currency Formatting */
+.currency {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+    color: #28a745;
+}
+
+/* Table Card Styling */
+.card {
+    border: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 8px 8px 0 0;
+    border: none;
+}
+
+.card-header h5 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.card-header i {
+    font-size: 18px;
+}

@@ -81,6 +81,11 @@ class InventoryController extends Controller {
                 'data' => $uniqueValues
             ]);
         }
+        
+        // Check if requesting DataTables data
+        if (request()->get('action') === 'datatables') {
+            return $this->getDataTablesData();
+        }
 
         //basic page settings
         $page = $this->pageSettings('inventory');
@@ -113,6 +118,36 @@ class InventoryController extends Controller {
 
         //show the view
         return new IndexResponse($payload);
+    }
+    
+    /**
+     * Get DataTables data for inventory
+     */
+    private function getDataTablesData() {
+        $inventory = $this->inventoryrepo->search();
+        
+        $data = [];
+        foreach ($inventory->items() as $item) {
+            $data[] = [
+                'inventory_id' => $item->inventory_id,
+                'product_name' => $item->product_name,
+                'category' => $item->category->category_name ?? '',
+                'warehouse' => $item->warehouse,
+                'quantity' => $item->quantity,
+                'unit_price' => $item->unit_price,
+                'total_value' => $item->quantity * $item->unit_price,
+                'supplier' => $item->supplier,
+                'created_at' => $item->created_at,
+                'actions' => ''
+            ];
+        }
+        
+        return response()->json([
+            'draw' => request('draw'),
+            'recordsTotal' => $inventory->total(),
+            'recordsFiltered' => $inventory->total(),
+            'data' => $data
+        ]);
     }
 
     /**

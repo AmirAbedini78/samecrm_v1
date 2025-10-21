@@ -1295,6 +1295,12 @@ Route::group(['prefix' => 'report'], function () {
 
     //proposals
     Route::any("/proposals/client", "Reports\Proposals@client");
+
+    // sales - custom reports
+    Route::get("/sales/comparison", "Reports\\SalesReports@comparison");
+    Route::post("/sales/comparison/data", "Reports\\SalesReports@comparisonData");
+    Route::get("/sales/aggregates", "Reports\\SalesReports@aggregates");
+    Route::post("/sales/aggregates/data", "Reports\\SalesReports@aggregatesData");
 });
 
 //SPACES

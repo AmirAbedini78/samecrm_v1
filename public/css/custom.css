@@ -1,0 +1,96 @@
+/* DataTables base table width and centering */
+#inventory-list-table,
+#sales-list-table {
+	width: 100% !important;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+/* Ensure parent wrappers allow horizontal space */
+#inventory-table-wrapper .table-responsive,
+#sales-table-wrapper .table-responsive {
+	overflow-x: auto;
+	overflow-y: visible; /* allow dropdowns/menus to overflow vertically */
+}
+
+/* Keep fixed layout for resizing while preserving overall width */
+/* allow natural content-based widths */
+#inventory-list-table,
+#sales-list-table {
+	table-layout: auto;
+}
+
+/* Prevent content wrapping and keep columns readable */
+#inventory-list-table thead th,
+#inventory-list-table tbody td,
+#sales-list-table thead th,
+#sales-list-table tbody td {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* Narrower checkbox/select column */
+.list-checkbox-wrapper {
+	min-width: 40px !important;
+	width: 40px !important;
+}
+
+/* Fixed width for actions column (last column) */
+table thead th:last-child,
+table tbody td:last-child {
+	width: 180px !important;
+	min-width: 180px !important;
+	max-width: 180px !important;
+}
+
+/* Ensure action buttons don't shrink */
+.list-table-action .btn,
+td .btn {
+	white-space: nowrap;
+	transform: none !important;
+}
+
+/* Dropdowns and column filter menus on top */
+.dropdown-menu {
+    z-index: 2000 !important; /* ensure on top of table elements */
+}
+.table-config-dropdown,
+.column-filter-menu {
+	z-index: 2050 !important;
+}
+
+/* Column filter dropdown base position */
+.column-header-container {
+	position: relative;
+}
+.column-filter-menu {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	background: #fff;
+	border: 1px solid #e5e5e5;
+	border-radius: 4px;
+	box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+	padding: 6px 0;
+}
+
+/* Ensure dropdowns inside table cells are not clipped */
+.list-table-action,
+td .dropdown,
+td .btn-group {
+	position: relative;
+	overflow: visible;
+}
+
+/* Prevent header from clipping menus */
+thead, thead tr, thead th {
+	overflow: visible !important;
+}
+
+/* Column search inputs fill header cell */
+.column-search-row th .column-search-input {
+	width: 100% !important;
+	min-width: 110px;
+}
+
