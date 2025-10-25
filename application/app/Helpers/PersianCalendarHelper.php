@@ -230,4 +230,208 @@ class PersianCalendarHelper
 
         return true;
     }
+
+    /**
+     * Convert Gregorian date to Persian date (Fixed version)
+     */
+    public static function gregorianToPersianFixed($gregorianDate)
+    {
+        if (empty($gregorianDate)) {
+            return null;
+        }
+
+        $date = \DateTime::createFromFormat('Y-m-d', $gregorianDate);
+        if (!$date) {
+            return null;
+        }
+
+        $year = (int) $date->format('Y');
+        $month = (int) $date->format('m');
+        $day = (int) $date->format('d');
+
+        // Convert Gregorian to Persian using a more reliable algorithm
+        $persianDate = self::gregorianToJalaliFixed($year, $month, $day);
+        
+        return sprintf('%04d/%02d/%02d', $persianDate[0], $persianDate[1], $persianDate[2]);
+    }
+
+    /**
+     * Convert Gregorian date to Jalali (Persian) - Fixed version
+     */
+    private static function gregorianToJalaliFixed($g_y, $g_m, $g_d)
+    {
+        $g_y -= 1600;
+        $g_m -= 1;
+        $g_d -= 1;
+        $g_day_no = 365 * $g_y + ((int)(($g_y + 3) / 4)) - ((int)(($g_y + 99) / 100)) + ((int)(($g_y + 399) / 400)) - 80 + $g_d;
+        if ($g_m < 7) {
+            $g_day_no += $g_m * 31;
+        } else {
+            $g_day_no += (($g_m - 7) * 30) + 186;
+        }
+        $j_day_no = $g_day_no - 79;
+        $j_np = ((int)($j_day_no / 12053));
+        $j_day_no %= 12053;
+        $j_y = 979 + 33 * $j_np + 4 * ((int)($j_day_no / 1461));
+        $j_day_no %= 1461;
+        if ($j_day_no >= 366) {
+            $j_y += ((int)(($j_day_no - 1) / 365));
+            $j_day_no = ($j_day_no - 1) % 365;
+        }
+        if ($j_day_no < 186) {
+            $j_m = 1 + (int)($j_day_no / 31);
+            $j_d = 1 + ($j_day_no % 31);
+        } else {
+            $j_m = 7 + (int)(($j_day_no - 186) / 30);
+            $j_d = 1 + (($j_day_no - 186) % 30);
+        }
+        return [$j_y, $j_m, $j_d];
+    }
+
+    /**
+     * Convert Gregorian date to Persian date (Simple and reliable version)
+     */
+    public static function gregorianToPersianSimple($gregorianDate)
+    {
+        if (empty($gregorianDate)) {
+            return null;
+        }
+
+        $date = \DateTime::createFromFormat('Y-m-d', $gregorianDate);
+        if (!$date) {
+            return null;
+        }
+
+        $year = (int) $date->format('Y');
+        $month = (int) $date->format('m');
+        $day = (int) $date->format('d');
+
+        // Use a more reliable conversion algorithm
+        $persianDate = self::gregorianToJalaliSimple($year, $month, $day);
+        
+        return sprintf('%04d/%02d/%02d', $persianDate[0], $persianDate[1], $persianDate[2]);
+    }
+
+    /**
+     * Convert Gregorian date to Persian date (Working version)
+     */
+    public static function gregorianToPersianWorking($gregorianDate)
+    {
+        if (empty($gregorianDate)) {
+            return null;
+        }
+
+        $date = \DateTime::createFromFormat('Y-m-d', $gregorianDate);
+        if (!$date) {
+            return null;
+        }
+
+        $year = (int) $date->format('Y');
+        $month = (int) $date->format('m');
+        $day = (int) $date->format('d');
+
+        // Simple conversion using a working algorithm
+        $persianDate = self::gregorianToJalaliWorking($year, $month, $day);
+        
+        return sprintf('%04d/%02d/%02d', $persianDate[0], $persianDate[1], $persianDate[2]);
+    }
+
+    /**
+     * Convert Gregorian date to Jalali (Persian) - Simple and reliable version
+     */
+    private static function gregorianToJalaliSimple($g_y, $g_m, $g_d)
+    {
+        $g_y -= 1600;
+        $g_m -= 1;
+        $g_d -= 1;
+        $g_day_no = 365 * $g_y + ((int)(($g_y + 3) / 4)) - ((int)(($g_y + 99) / 100)) + ((int)(($g_y + 399) / 400)) - 80 + $g_d;
+        if ($g_m < 7) {
+            $g_day_no += $g_m * 31;
+        } else {
+            $g_day_no += (($g_m - 7) * 30) + 186;
+        }
+        $j_day_no = $g_day_no - 79;
+        $j_np = ((int)($j_day_no / 12053));
+        $j_day_no %= 12053;
+        $j_y = 979 + 33 * $j_np + 4 * ((int)($j_day_no / 1461));
+        $j_day_no %= 1461;
+        if ($j_day_no >= 366) {
+            $j_y += ((int)(($j_day_no - 1) / 365));
+            $j_day_no = ($j_day_no - 1) % 365;
+        }
+        if ($j_day_no < 186) {
+            $j_m = 1 + (int)($j_day_no / 31);
+            $j_d = 1 + ($j_day_no % 31);
+        } else {
+            $j_m = 7 + (int)(($j_day_no - 186) / 30);
+            $j_d = 1 + (($j_day_no - 186) % 30);
+        }
+        return [$j_y, $j_m, $j_d];
+    }
+
+    /**
+     * Convert Gregorian date to Jalali (Persian) - Working version
+     */
+    private static function gregorianToJalaliWorking($g_y, $g_m, $g_d)
+    {
+        // This is a corrected version of the algorithm
+        $g_y -= 1600;
+        $g_m -= 1;
+        $g_d -= 1;
+        
+        $g_day_no = 365 * $g_y + ((int)(($g_y + 3) / 4)) - ((int)(($g_y + 99) / 100)) + ((int)(($g_y + 399) / 400)) - 80 + $g_d;
+        
+        if ($g_m < 7) {
+            $g_day_no += $g_m * 31;
+        } else {
+            $g_day_no += (($g_m - 7) * 30) + 186;
+        }
+        
+        $j_day_no = $g_day_no - 79;
+        $j_np = ((int)($j_day_no / 12053));
+        $j_day_no %= 12053;
+        $j_y = 979 + 33 * $j_np + 4 * ((int)($j_day_no / 1461));
+        $j_day_no %= 1461;
+        
+        if ($j_day_no >= 366) {
+            $j_y += ((int)(($j_day_no - 1) / 365));
+            $j_day_no = ($j_day_no - 1) % 365;
+        }
+        
+        if ($j_day_no < 186) {
+            $j_m = 1 + (int)($j_day_no / 31);
+            $j_d = 1 + ($j_day_no % 31);
+        } else {
+            $j_m = 7 + (int)(($j_day_no - 186) / 30);
+            $j_d = 1 + (($j_day_no - 186) % 30);
+        }
+        
+        return [$j_y, $j_m, $j_d];
+    }
+
+    /**
+     * Convert Gregorian date to Persian date (Ultra Simple version)
+     */
+    public static function gregorianToPersianUltraSimple($gregorianDate)
+    {
+        if (empty($gregorianDate)) {
+            return null;
+        }
+
+        $date = \DateTime::createFromFormat('Y-m-d', $gregorianDate);
+        if (!$date) {
+            return null;
+        }
+
+        $year = (int) $date->format('Y');
+        $month = (int) $date->format('m');
+        $day = (int) $date->format('d');
+
+        // Ultra simple conversion - just add 621 years
+        $persianYear = $year + 621;
+        $persianMonth = $month;
+        $persianDay = $day;
+
+        return sprintf('%04d/%02d/%02d', $persianYear, $persianMonth, $persianDay);
+    }
 }

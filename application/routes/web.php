@@ -1299,8 +1299,12 @@ Route::group(['prefix' => 'report'], function () {
     // sales - custom reports
     Route::get("/sales/comparison", "Reports\\SalesReports@comparison");
     Route::post("/sales/comparison/data", "Reports\\SalesReports@comparisonData");
+    Route::get("/sales/comparison/datatables", "Reports\\SalesReports@comparisonDataTables");
     Route::get("/sales/aggregates", "Reports\\SalesReports@aggregates");
     Route::post("/sales/aggregates/data", "Reports\\SalesReports@aggregatesData");
+    Route::get("/sales/test-date-conversion", "Reports\\SalesReports@testDateConversion");
+    Route::get("/sales/simple-date-test", "Reports\\SalesReports@simpleDateTest");
+    Route::get("/sales/check-database-data", "Reports\\SalesReports@checkDatabaseData");
 });
 
 //SPACES

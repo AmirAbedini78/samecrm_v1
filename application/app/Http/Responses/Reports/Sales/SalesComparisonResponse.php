@@ -25,6 +25,11 @@ class SalesComparisonResponse implements Responsable {
             $$key = $value;
         }
 
+        // For normal page load, return the view directly
+        if (!request()->ajax() && !request('action')) {
+            return response()->view('pages.reports.sales.comparison', compact('page', 'report'));
+        }
+
         if (request('action') == 'load' || request('action') == 'sort') {
 
             if (request('action') == 'load') {
