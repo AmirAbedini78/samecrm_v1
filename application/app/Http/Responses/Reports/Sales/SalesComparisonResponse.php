@@ -30,39 +30,15 @@ class SalesComparisonResponse implements Responsable {
             return response()->view('pages.reports.sales.comparison', compact('page', 'report'));
         }
 
-        if (request('action') == 'load' || request('action') == 'sort') {
+        // For AJAX requests, return the wrapper
+        $html = view('pages.reports.sales.comparison-wrapper', compact('report'))->render();
+        $jsondata['dom_html'][] = [
+            'selector' => '#embed-content-container',
+            'action' => 'replace',
+            'value' => $html,
+        ];
 
-            if (request('action') == 'load') {
-                $html = view('pages/reports/sales/comparison-table', compact('report'))->render();
-                $jsondata['dom_html'][] = [
-                    'selector' => '#report-results-container',
-                    'action' => 'replace-with',
-                    'value' => $html,
-                ];
-            }
-
-            if (request('action') == 'sort') {
-                $html = view('pages/reports/sales/comparison-ajax', compact('report'))->render();
-                $jsondata['dom_html'][] = [
-                    'selector' => '#report-results-ajax-container',
-                    'action' => 'replace',
-                    'value' => $html,
-                ];
-            }
-
-            //skip don update
-            $jsondata['skip_dom_reset'] = true;
-
-        } else {
-            $html = view('pages/reports/sales/comparison-wrapper', compact('report'))->render();
-            $jsondata['dom_html'][] = [
-                'selector' => '#embed-content-container',
-                'action' => 'replace',
-                'value' => $html,
-            ];
-        }
-
-        //crummbs
+        //breadcrumbs
         $jsondata['dom_classes'][] = [
             'selector' => '.reports-breadcrumbs',
             'action' => 'remove',
@@ -76,12 +52,12 @@ class SalesComparisonResponse implements Responsable {
         $jsondata['dom_html'][] = [
             'selector' => '#reports-breadcrumbs-heading',
             'action' => 'replace',
-            'value' => $page['breadcrumbs-heading'],
+            'value' => 'گزارش فروش',
         ];
         $jsondata['dom_html'][] = [
             'selector' => '#reports-breadcrumbs-sub-heading',
             'action' => 'replace',
-            'value' => $page['breadcrumbs-sub-heading'],
+            'value' => 'مقایسه بازه‌های تاریخ',
         ];
         $jsondata['dom_classes'][] = [
             'selector' => '#reports-breadcrumbs-sub-heading',
