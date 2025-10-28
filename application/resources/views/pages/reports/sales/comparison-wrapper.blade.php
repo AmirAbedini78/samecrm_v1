@@ -118,10 +118,16 @@
                 <!-- DataTables Section -->
                 <div id="tables-section" class="mt-4" style="display: none;">
                     <!-- Range 1 Table -->
-                    <div class="card mb-4">
+                    <div class="card mb-4" id="sales-table-range1-wrapper">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">گزارش بازه 1</h5>
                             <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-sm btn-outline-info js-toggle-table-config" data-target="table-config-report-range1">
+                                    <i class="ti-settings"></i> تنظیمات ستون‌ها
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-warning clear-column-searches-range1">
+                                    <i class="ti-refresh"></i> پاک کردن فیلترها
+                                </button>
                                 <button type="button" class="btn btn-sm btn-outline-primary" onclick="exportTable('range1', 'excel')">
                                     <i class="ti-file"></i> Excel
                                 </button>
@@ -131,21 +137,148 @@
                             </div>
                         </div>
                         <div class="card-body">
-                            <div class="table-responsive">
-                                <table id="sales-table-range1" class="table table-striped table-bordered table-hover" style="width:100%">
-                                    <thead class="table-dark">
+                            <div class="table-responsive list-table-wrapper">
+                                <table id="sales-table-range1" class="table m-t-0 m-b-0 table-hover no-wrap" data-page-size="10">
+                                    <thead>
+                                        <!-- Header Row with Sort and Filter -->
                                         <tr>
-                                            <th>ID</th>
-                                            <th>نام محصول</th>
-                                            <th>نام مشتری</th>
-                                            <th>شماره سند</th>
-                                            <th>مقدار اصلی</th>
-                                            <th>مبلغ فروش</th>
-                                            <th>خالص</th>
-                                            <th>وضعیت</th>
-                                            <th>تاریخ سند</th>
-                                            <th>ایجادکننده</th>
-                                            <th>عملیات</th>
+                                            <th class="sales_col_id">
+                                                <div class="column-header-container">
+                                                    <a class="js-ajax-ux-request js-sort-link" data-range="1" data-orderby="sales_id" href="javascript:void(0)">
+                                                        @lang('lang.id')<span class="sorting-icons"><i class="ti-arrows-vertical"></i></span>
+                                                    </a>
+                                                    <span class="column-filter-dropdown" data-column="sales_id" data-range="1" title="فیلتر بر اساس مقادیر">
+                                                        <i class="ti-angle-down"></i>
+                                                    </span>
+                                                </div>
+                                            </th>
+                                            <th class="sales_col_document_number">
+                                                <div class="column-header-container">
+                                                    <a class="js-ajax-ux-request js-sort-link" data-range="1" data-orderby="document_number" href="javascript:void(0)">
+                                                        @lang('lang.document_number')<span class="sorting-icons"><i class="ti-arrows-vertical"></i></span>
+                                                    </a>
+                                                    <span class="column-filter-dropdown" data-column="document_number" data-range="1" title="فیلتر بر اساس مقادیر">
+                                                        <i class="ti-angle-down"></i>
+                                                    </span>
+                                                </div>
+                                            </th>
+                                            <th class="sales_col_customer_name">
+                                                <div class="column-header-container">
+                                                    <a class="js-ajax-ux-request js-sort-link" data-range="1" data-orderby="customer_name" href="javascript:void(0)">
+                                                        @lang('lang.customer_name')<span class="sorting-icons"><i class="ti-arrows-vertical"></i></span>
+                                                    </a>
+                                                    <span class="column-filter-dropdown" data-column="customer_name" data-range="1" title="فیلتر بر اساس مقادیر">
+                                                        <i class="ti-angle-down"></i>
+                                                    </span>
+                                                </div>
+                                            </th>
+                                            <th class="sales_col_product_name">
+                                                <div class="column-header-container">
+                                                    <a class="js-ajax-ux-request js-sort-link" data-range="1" data-orderby="product_name" href="javascript:void(0)">
+                                                        @lang('lang.product_name')<span class="sorting-icons"><i class="ti-arrows-vertical"></i></span>
+                                                    </a>
+                                                    <span class="column-filter-dropdown" data-column="product_name" data-range="1" title="فیلتر بر اساس مقادیر">
+                                                        <i class="ti-angle-down"></i>
+                                                    </span>
+                                                </div>
+                                            </th>
+                                            <th class="sales_col_main_quantity">
+                                                <div class="column-header-container">
+                                                    <a class="js-ajax-ux-request js-sort-link" data-range="1" data-orderby="main_quantity" href="javascript:void(0)">
+                                                        @lang('lang.main_quantity')<span class="sorting-icons"><i class="ti-arrows-vertical"></i></span>
+                                                    </a>
+                                                    <span class="column-filter-dropdown" data-column="main_quantity" data-range="1" title="فیلتر بر اساس مقادیر">
+                                                        <i class="ti-angle-down"></i>
+                                                    </span>
+                                                </div>
+                                            </th>
+                                            <th class="sales_col_base_price">
+                                                <div class="column-header-container">
+                                                    <a class="js-ajax-ux-request js-sort-link" data-range="1" data-orderby="base_price" href="javascript:void(0)">
+                                                        @lang('lang.base_price')<span class="sorting-icons"><i class="ti-arrows-vertical"></i></span>
+                                                    </a>
+                                                    <span class="column-filter-dropdown" data-column="base_price" data-range="1" title="فیلتر بر اساس مقادیر">
+                                                        <i class="ti-angle-down"></i>
+                                                    </span>
+                                                </div>
+                                            </th>
+                                            <th class="sales_col_base_sales_amount">
+                                                <div class="column-header-container">
+                                                    <a class="js-ajax-ux-request js-sort-link" data-range="1" data-orderby="base_sales_amount" href="javascript:void(0)">
+                                                        مبلغ فروش<span class="sorting-icons"><i class="ti-arrows-vertical"></i></span>
+                                                    </a>
+                                                    <span class="column-filter-dropdown" data-column="base_sales_amount" data-range="1" title="فیلتر بر اساس مقادیر">
+                                                        <i class="ti-angle-down"></i>
+                                                    </span>
+                                                </div>
+                                            </th>
+                                            <th class="sales_col_base_net_amount">
+                                                <div class="column-header-container">
+                                                    <a class="js-ajax-ux-request js-sort-link" data-range="1" data-orderby="base_net_amount" href="javascript:void(0)">
+                                                        @lang('lang.base_net_amount')<span class="sorting-icons"><i class="ti-arrows-vertical"></i></span>
+                                                    </a>
+                                                    <span class="column-filter-dropdown" data-column="base_net_amount" data-range="1" title="فیلتر بر اساس مقادیر">
+                                                        <i class="ti-angle-down"></i>
+                                                    </span>
+                                                </div>
+                                            </th>
+                                            <th class="sales_col_document_type">
+                                                <div class="column-header-container">
+                                                    <a class="js-ajax-ux-request js-sort-link" data-range="1" data-orderby="document_type" href="javascript:void(0)">
+                                                        @lang('lang.document_type')<span class="sorting-icons"><i class="ti-arrows-vertical"></i></span>
+                                                    </a>
+                                                    <span class="column-filter-dropdown" data-column="document_type" data-range="1" title="فیلتر بر اساس مقادیر">
+                                                        <i class="ti-angle-down"></i>
+                                                    </span>
+                                                </div>
+                                            </th>
+                                            <th class="sales_col_document_date">
+                                                <div class="column-header-container">
+                                                    <a class="js-ajax-ux-request js-sort-link" data-range="1" data-orderby="document_date" href="javascript:void(0)">
+                                                        @lang('lang.document_date')<span class="sorting-icons"><i class="ti-arrows-vertical"></i></span>
+                                                    </a>
+                                                    <span class="column-filter-dropdown" data-column="document_date" data-range="1" title="فیلتر بر اساس مقادیر">
+                                                        <i class="ti-angle-down"></i>
+                                                    </span>
+                                                </div>
+                                            </th>
+                                            <th class="sales_col_sales_status">
+                                                <div class="column-header-container">
+                                                    <a class="js-ajax-ux-request js-sort-link" data-range="1" data-orderby="sales_status" href="javascript:void(0)">
+                                                        @lang('lang.sales_status')<span class="sorting-icons"><i class="ti-arrows-vertical"></i></span>
+                                                    </a>
+                                                    <span class="column-filter-dropdown" data-column="sales_status" data-range="1" title="فیلتر بر اساس مقادیر">
+                                                        <i class="ti-angle-down"></i>
+                                                    </span>
+                                                </div>
+                                            </th>
+                                            <th class="sales_col_creator">
+                                                <div class="column-header-container">
+                                                    <a class="js-ajax-ux-request js-sort-link" data-range="1" data-orderby="creator" href="javascript:void(0)">
+                                                        @lang('lang.created_by')<span class="sorting-icons"><i class="ti-arrows-vertical"></i></span>
+                                                    </a>
+                                                    <span class="column-filter-dropdown" data-column="creator" data-range="1" title="فیلتر بر اساس مقادیر">
+                                                        <i class="ti-angle-down"></i>
+                                                    </span>
+                                                </div>
+                                            </th>
+                                            <th class="sales_col_actions">عملیات</th>
+                                        </tr>
+                                        <!-- Search Row -->
+                                        <tr class="search-row">
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="sales_id" data-range="1"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="document_number" data-range="1"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="customer_name" data-range="1"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="product_name" data-range="1"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="main_quantity" data-range="1"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="base_price" data-range="1"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="base_sales_amount" data-range="1"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="base_net_amount" data-range="1"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="document_type" data-range="1"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="document_date" data-range="1"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="sales_status" data-range="1"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="creator" data-range="1"></th>
+                                            <th></th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -157,10 +290,16 @@
                     </div>
                     
                     <!-- Range 2 Table -->
-                    <div class="card">
+                    <div class="card" id="sales-table-range2-wrapper">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">گزارش بازه 2</h5>
                             <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-sm btn-outline-info js-toggle-table-config" data-target="table-config-report-range2">
+                                    <i class="ti-settings"></i> تنظیمات ستون‌ها
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-warning clear-column-searches-range2">
+                                    <i class="ti-refresh"></i> پاک کردن فیلترها
+                                </button>
                                 <button type="button" class="btn btn-sm btn-outline-primary" onclick="exportTable('range2', 'excel')">
                                     <i class="ti-file"></i> Excel
                                 </button>
@@ -170,21 +309,148 @@
                             </div>
                         </div>
                         <div class="card-body">
-                            <div class="table-responsive">
-                                <table id="sales-table-range2" class="table table-striped table-bordered table-hover" style="width:100%">
-                                    <thead class="table-dark">
+                            <div class="table-responsive list-table-wrapper">
+                                <table id="sales-table-range2" class="table m-t-0 m-b-0 table-hover no-wrap" data-page-size="10">
+                                    <thead>
+                                        <!-- Header Row with Sort and Filter -->
                                         <tr>
-                                            <th>ID</th>
-                                            <th>نام محصول</th>
-                                            <th>نام مشتری</th>
-                                            <th>شماره سند</th>
-                                            <th>مقدار اصلی</th>
-                                            <th>مبلغ فروش</th>
-                                            <th>خالص</th>
-                                            <th>وضعیت</th>
-                                            <th>تاریخ سند</th>
-                                            <th>ایجادکننده</th>
-                                            <th>عملیات</th>
+                                            <th class="sales_col_id">
+                                                <div class="column-header-container">
+                                                    <a class="js-ajax-ux-request js-sort-link" data-range="2" data-orderby="sales_id" href="javascript:void(0)">
+                                                        @lang('lang.id')<span class="sorting-icons"><i class="ti-arrows-vertical"></i></span>
+                                                    </a>
+                                                    <span class="column-filter-dropdown" data-column="sales_id" data-range="2" title="فیلتر بر اساس مقادیر">
+                                                        <i class="ti-angle-down"></i>
+                                                    </span>
+                                                </div>
+                                            </th>
+                                            <th class="sales_col_document_number">
+                                                <div class="column-header-container">
+                                                    <a class="js-ajax-ux-request js-sort-link" data-range="2" data-orderby="document_number" href="javascript:void(0)">
+                                                        @lang('lang.document_number')<span class="sorting-icons"><i class="ti-arrows-vertical"></i></span>
+                                                    </a>
+                                                    <span class="column-filter-dropdown" data-column="document_number" data-range="2" title="فیلتر بر اساس مقادیر">
+                                                        <i class="ti-angle-down"></i>
+                                                    </span>
+                                                </div>
+                                            </th>
+                                            <th class="sales_col_customer_name">
+                                                <div class="column-header-container">
+                                                    <a class="js-ajax-ux-request js-sort-link" data-range="2" data-orderby="customer_name" href="javascript:void(0)">
+                                                        @lang('lang.customer_name')<span class="sorting-icons"><i class="ti-arrows-vertical"></i></span>
+                                                    </a>
+                                                    <span class="column-filter-dropdown" data-column="customer_name" data-range="2" title="فیلتر بر اساس مقادیر">
+                                                        <i class="ti-angle-down"></i>
+                                                    </span>
+                                                </div>
+                                            </th>
+                                            <th class="sales_col_product_name">
+                                                <div class="column-header-container">
+                                                    <a class="js-ajax-ux-request js-sort-link" data-range="2" data-orderby="product_name" href="javascript:void(0)">
+                                                        @lang('lang.product_name')<span class="sorting-icons"><i class="ti-arrows-vertical"></i></span>
+                                                    </a>
+                                                    <span class="column-filter-dropdown" data-column="product_name" data-range="2" title="فیلتر بر اساس مقادیر">
+                                                        <i class="ti-angle-down"></i>
+                                                    </span>
+                                                </div>
+                                            </th>
+                                            <th class="sales_col_main_quantity">
+                                                <div class="column-header-container">
+                                                    <a class="js-ajax-ux-request js-sort-link" data-range="2" data-orderby="main_quantity" href="javascript:void(0)">
+                                                        @lang('lang.main_quantity')<span class="sorting-icons"><i class="ti-arrows-vertical"></i></span>
+                                                    </a>
+                                                    <span class="column-filter-dropdown" data-column="main_quantity" data-range="2" title="فیلتر بر اساس مقادیر">
+                                                        <i class="ti-angle-down"></i>
+                                                    </span>
+                                                </div>
+                                            </th>
+                                            <th class="sales_col_base_price">
+                                                <div class="column-header-container">
+                                                    <a class="js-ajax-ux-request js-sort-link" data-range="2" data-orderby="base_price" href="javascript:void(0)">
+                                                        @lang('lang.base_price')<span class="sorting-icons"><i class="ti-arrows-vertical"></i></span>
+                                                    </a>
+                                                    <span class="column-filter-dropdown" data-column="base_price" data-range="2" title="فیلتر بر اساس مقادیر">
+                                                        <i class="ti-angle-down"></i>
+                                                    </span>
+                                                </div>
+                                            </th>
+                                            <th class="sales_col_base_sales_amount">
+                                                <div class="column-header-container">
+                                                    <a class="js-ajax-ux-request js-sort-link" data-range="2" data-orderby="base_sales_amount" href="javascript:void(0)">
+                                                        مبلغ فروش<span class="sorting-icons"><i class="ti-arrows-vertical"></i></span>
+                                                    </a>
+                                                    <span class="column-filter-dropdown" data-column="base_sales_amount" data-range="2" title="فیلتر بر اساس مقادیر">
+                                                        <i class="ti-angle-down"></i>
+                                                    </span>
+                                                </div>
+                                            </th>
+                                            <th class="sales_col_base_net_amount">
+                                                <div class="column-header-container">
+                                                    <a class="js-ajax-ux-request js-sort-link" data-range="2" data-orderby="base_net_amount" href="javascript:void(0)">
+                                                        @lang('lang.base_net_amount')<span class="sorting-icons"><i class="ti-arrows-vertical"></i></span>
+                                                    </a>
+                                                    <span class="column-filter-dropdown" data-column="base_net_amount" data-range="2" title="فیلتر بر اساس مقادیر">
+                                                        <i class="ti-angle-down"></i>
+                                                    </span>
+                                                </div>
+                                            </th>
+                                            <th class="sales_col_document_type">
+                                                <div class="column-header-container">
+                                                    <a class="js-ajax-ux-request js-sort-link" data-range="2" data-orderby="document_type" href="javascript:void(0)">
+                                                        @lang('lang.document_type')<span class="sorting-icons"><i class="ti-arrows-vertical"></i></span>
+                                                    </a>
+                                                    <span class="column-filter-dropdown" data-column="document_type" data-range="2" title="فیلتر بر اساس مقادیر">
+                                                        <i class="ti-angle-down"></i>
+                                                    </span>
+                                                </div>
+                                            </th>
+                                            <th class="sales_col_document_date">
+                                                <div class="column-header-container">
+                                                    <a class="js-ajax-ux-request js-sort-link" data-range="2" data-orderby="document_date" href="javascript:void(0)">
+                                                        @lang('lang.document_date')<span class="sorting-icons"><i class="ti-arrows-vertical"></i></span>
+                                                    </a>
+                                                    <span class="column-filter-dropdown" data-column="document_date" data-range="2" title="فیلتر بر اساس مقادیر">
+                                                        <i class="ti-angle-down"></i>
+                                                    </span>
+                                                </div>
+                                            </th>
+                                            <th class="sales_col_sales_status">
+                                                <div class="column-header-container">
+                                                    <a class="js-ajax-ux-request js-sort-link" data-range="2" data-orderby="sales_status" href="javascript:void(0)">
+                                                        @lang('lang.sales_status')<span class="sorting-icons"><i class="ti-arrows-vertical"></i></span>
+                                                    </a>
+                                                    <span class="column-filter-dropdown" data-column="sales_status" data-range="2" title="فیلتر بر اساس مقادیر">
+                                                        <i class="ti-angle-down"></i>
+                                                    </span>
+                                                </div>
+                                            </th>
+                                            <th class="sales_col_creator">
+                                                <div class="column-header-container">
+                                                    <a class="js-ajax-ux-request js-sort-link" data-range="2" data-orderby="creator" href="javascript:void(0)">
+                                                        @lang('lang.created_by')<span class="sorting-icons"><i class="ti-arrows-vertical"></i></span>
+                                                    </a>
+                                                    <span class="column-filter-dropdown" data-column="creator" data-range="2" title="فیلتر بر اساس مقادیر">
+                                                        <i class="ti-angle-down"></i>
+                                                    </span>
+                                                </div>
+                                            </th>
+                                            <th class="sales_col_actions">عملیات</th>
+                                        </tr>
+                                        <!-- Search Row -->
+                                        <tr class="search-row">
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="sales_id" data-range="2"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="document_number" data-range="2"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="customer_name" data-range="2"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="product_name" data-range="2"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="main_quantity" data-range="2"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="base_price" data-range="2"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="base_sales_amount" data-range="2"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="base_net_amount" data-range="2"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="document_type" data-range="2"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="document_date" data-range="2"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="sales_status" data-range="2"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="creator" data-range="2"></th>
+                                            <th></th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -196,6 +462,237 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Table Configuration Sidebars -->
+<!-- Range 1 Table Config -->
+<div class="right-sidebar table-config-sidebar" id="table-config-report-range1" style="display: none;">
+    <div class="slimscrollright">
+        <div class="rpanel-title">
+            <i class="ti-settings"></i> تنظیمات ستون‌ها - بازه 1
+            <span>
+                <i class="ti-close js-close-table-config" data-target="table-config-report-range1"></i>
+            </span>
+        </div>
+
+        <div class="r-panel-body">
+            <div class="p-b-5">
+                <label class="custom-control custom-checkbox table-config-checkbox-container">
+                    <input type="checkbox" class="custom-control-input table-config-checkbox" data-column="0" data-range="1" checked>
+                    <span class="custom-control-indicator"></span>
+                    <span class="custom-control-description">شناسه</span>
+                </label>
+            </div>
+            
+            <div class="p-b-5">
+                <label class="custom-control custom-checkbox table-config-checkbox-container">
+                    <input type="checkbox" class="custom-control-input table-config-checkbox" data-column="1" data-range="1" checked>
+                    <span class="custom-control-indicator"></span>
+                    <span class="custom-control-description">شماره سند</span>
+                </label>
+            </div>
+            
+            <div class="p-b-5">
+                <label class="custom-control custom-checkbox table-config-checkbox-container">
+                    <input type="checkbox" class="custom-control-input table-config-checkbox" data-column="2" data-range="1" checked>
+                    <span class="custom-control-indicator"></span>
+                    <span class="custom-control-description">نام مشتری</span>
+                </label>
+            </div>
+            
+            <div class="p-b-5">
+                <label class="custom-control custom-checkbox table-config-checkbox-container">
+                    <input type="checkbox" class="custom-control-input table-config-checkbox" data-column="3" data-range="1" checked>
+                    <span class="custom-control-indicator"></span>
+                    <span class="custom-control-description">نام محصول</span>
+                </label>
+            </div>
+            
+            <div class="p-b-5">
+                <label class="custom-control custom-checkbox table-config-checkbox-container">
+                    <input type="checkbox" class="custom-control-input table-config-checkbox" data-column="4" data-range="1" checked>
+                    <span class="custom-control-indicator"></span>
+                    <span class="custom-control-description">مقدار اصلی</span>
+                </label>
+            </div>
+            
+            <div class="p-b-5">
+                <label class="custom-control custom-checkbox table-config-checkbox-container">
+                    <input type="checkbox" class="custom-control-input table-config-checkbox" data-column="5" data-range="1" checked>
+                    <span class="custom-control-indicator"></span>
+                    <span class="custom-control-description">قیمت پایه</span>
+                </label>
+            </div>
+            
+            <div class="p-b-5">
+                <label class="custom-control custom-checkbox table-config-checkbox-container">
+                    <input type="checkbox" class="custom-control-input table-config-checkbox" data-column="6" data-range="1" checked>
+                    <span class="custom-control-indicator"></span>
+                    <span class="custom-control-description">مبلغ فروش</span>
+                </label>
+            </div>
+            
+            <div class="p-b-5">
+                <label class="custom-control custom-checkbox table-config-checkbox-container">
+                    <input type="checkbox" class="custom-control-input table-config-checkbox" data-column="7" data-range="1" checked>
+                    <span class="custom-control-indicator"></span>
+                    <span class="custom-control-description">مبلغ خالص</span>
+                </label>
+            </div>
+            
+            <div class="p-b-5">
+                <label class="custom-control custom-checkbox table-config-checkbox-container">
+                    <input type="checkbox" class="custom-control-input table-config-checkbox" data-column="8" data-range="1" checked>
+                    <span class="custom-control-indicator"></span>
+                    <span class="custom-control-description">نوع سند</span>
+                </label>
+            </div>
+            
+            <div class="p-b-5">
+                <label class="custom-control custom-checkbox table-config-checkbox-container">
+                    <input type="checkbox" class="custom-control-input table-config-checkbox" data-column="9" data-range="1" checked>
+                    <span class="custom-control-indicator"></span>
+                    <span class="custom-control-description">تاریخ سند</span>
+                </label>
+            </div>
+            
+            <div class="p-b-5">
+                <label class="custom-control custom-checkbox table-config-checkbox-container">
+                    <input type="checkbox" class="custom-control-input table-config-checkbox" data-column="10" data-range="1" checked>
+                    <span class="custom-control-indicator"></span>
+                    <span class="custom-control-description">وضعیت فروش</span>
+                </label>
+            </div>
+            
+            <div class="p-b-5">
+                <label class="custom-control custom-checkbox table-config-checkbox-container">
+                    <input type="checkbox" class="custom-control-input table-config-checkbox" data-column="11" data-range="1" checked>
+                    <span class="custom-control-indicator"></span>
+                    <span class="custom-control-description">ایجاد کننده</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="buttons-block">
+            <button type="button" class="btn btn-rounded-x btn-secondary js-close-table-config" data-target="table-config-report-range1">بستن</button>
+            <button type="button" class="btn btn-rounded-x btn-primary js-reset-table-config" data-range="1">بازنشانی</button>
+        </div>
+    </div>
+</div>
+
+<!-- Range 2 Table Config -->
+<div class="right-sidebar table-config-sidebar" id="table-config-report-range2" style="display: none;">
+    <div class="slimscrollright">
+        <div class="rpanel-title">
+            <i class="ti-settings"></i> تنظیمات ستون‌ها - بازه 2
+            <span>
+                <i class="ti-close js-close-table-config" data-target="table-config-report-range2"></i>
+            </span>
+        </div>
+
+        <div class="r-panel-body">
+            <div class="p-b-5">
+                <label class="custom-control custom-checkbox table-config-checkbox-container">
+                    <input type="checkbox" class="custom-control-input table-config-checkbox" data-column="0" data-range="2" checked>
+                    <span class="custom-control-indicator"></span>
+                    <span class="custom-control-description">شناسه</span>
+                </label>
+            </div>
+            
+            <div class="p-b-5">
+                <label class="custom-control custom-checkbox table-config-checkbox-container">
+                    <input type="checkbox" class="custom-control-input table-config-checkbox" data-column="1" data-range="2" checked>
+                    <span class="custom-control-indicator"></span>
+                    <span class="custom-control-description">شماره سند</span>
+                </label>
+            </div>
+            
+            <div class="p-b-5">
+                <label class="custom-control custom-checkbox table-config-checkbox-container">
+                    <input type="checkbox" class="custom-control-input table-config-checkbox" data-column="2" data-range="2" checked>
+                    <span class="custom-control-indicator"></span>
+                    <span class="custom-control-description">نام مشتری</span>
+                </label>
+            </div>
+            
+            <div class="p-b-5">
+                <label class="custom-control custom-checkbox table-config-checkbox-container">
+                    <input type="checkbox" class="custom-control-input table-config-checkbox" data-column="3" data-range="2" checked>
+                    <span class="custom-control-indicator"></span>
+                    <span class="custom-control-description">نام محصول</span>
+                </label>
+            </div>
+            
+            <div class="p-b-5">
+                <label class="custom-control custom-checkbox table-config-checkbox-container">
+                    <input type="checkbox" class="custom-control-input table-config-checkbox" data-column="4" data-range="2" checked>
+                    <span class="custom-control-indicator"></span>
+                    <span class="custom-control-description">مقدار اصلی</span>
+                </label>
+            </div>
+            
+            <div class="p-b-5">
+                <label class="custom-control custom-checkbox table-config-checkbox-container">
+                    <input type="checkbox" class="custom-control-input table-config-checkbox" data-column="5" data-range="2" checked>
+                    <span class="custom-control-indicator"></span>
+                    <span class="custom-control-description">قیمت پایه</span>
+                </label>
+            </div>
+            
+            <div class="p-b-5">
+                <label class="custom-control custom-checkbox table-config-checkbox-container">
+                    <input type="checkbox" class="custom-control-input table-config-checkbox" data-column="6" data-range="2" checked>
+                    <span class="custom-control-indicator"></span>
+                    <span class="custom-control-description">مبلغ فروش</span>
+                </label>
+            </div>
+            
+            <div class="p-b-5">
+                <label class="custom-control custom-checkbox table-config-checkbox-container">
+                    <input type="checkbox" class="custom-control-input table-config-checkbox" data-column="7" data-range="2" checked>
+                    <span class="custom-control-indicator"></span>
+                    <span class="custom-control-description">مبلغ خالص</span>
+                </label>
+            </div>
+            
+            <div class="p-b-5">
+                <label class="custom-control custom-checkbox table-config-checkbox-container">
+                    <input type="checkbox" class="custom-control-input table-config-checkbox" data-column="8" data-range="2" checked>
+                    <span class="custom-control-indicator"></span>
+                    <span class="custom-control-description">نوع سند</span>
+                </label>
+            </div>
+            
+            <div class="p-b-5">
+                <label class="custom-control custom-checkbox table-config-checkbox-container">
+                    <input type="checkbox" class="custom-control-input table-config-checkbox" data-column="9" data-range="2" checked>
+                    <span class="custom-control-indicator"></span>
+                    <span class="custom-control-description">تاریخ سند</span>
+                </label>
+            </div>
+            
+            <div class="p-b-5">
+                <label class="custom-control custom-checkbox table-config-checkbox-container">
+                    <input type="checkbox" class="custom-control-input table-config-checkbox" data-column="10" data-range="2" checked>
+                    <span class="custom-control-indicator"></span>
+                    <span class="custom-control-description">وضعیت فروش</span>
+                </label>
+            </div>
+            
+            <div class="p-b-5">
+                <label class="custom-control custom-checkbox table-config-checkbox-container">
+                    <input type="checkbox" class="custom-control-input table-config-checkbox" data-column="11" data-range="2" checked>
+                    <span class="custom-control-indicator"></span>
+                    <span class="custom-control-description">ایجاد کننده</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="buttons-block">
+            <button type="button" class="btn btn-rounded-x btn-secondary js-close-table-config" data-target="table-config-report-range2">بستن</button>
+            <button type="button" class="btn btn-rounded-x btn-primary js-reset-table-config" data-range="2">بازنشانی</button>
         </div>
     </div>
 </div>
@@ -703,7 +1200,7 @@ $('#run-comparison').on('click', function() {
     });
 });
 
-// Initialize DataTables
+// Initialize Advanced DataTables with sort, filter, and search
 function initializeTables(r1_from, r1_to, r2_from, r2_to, status, customer, product) {
     // Destroy existing tables
     if (table1) {
@@ -736,16 +1233,18 @@ function initializeTables(r1_from, r1_to, r2_from, r2_to, status, customer, prod
         },
         columns: [
             { data: 'sales_id' },
-            { data: 'product_name' },
-            { data: 'customer_name' },
             { data: 'document_number' },
+            { data: 'customer_name' },
+            { data: 'product_name' },
             { data: 'main_quantity' },
+            { data: 'base_price', render: function(data) { return fmt(data); } },
             { data: 'base_sales_amount', render: function(data) { return fmt(data); } },
             { data: 'base_net_amount', render: function(data) { return fmt(data); } },
+            { data: 'document_type' },
+            { data: 'document_date' },
             { data: 'sales_status' },
-            { data: 'document_date_persian' },
             { data: 'creator' },
-            { data: 'actions' }
+            { data: 'actions', orderable: false, searchable: false }
         ],
         language: {
             "processing": "در حال پردازش...",
@@ -764,13 +1263,14 @@ function initializeTables(r1_from, r1_to, r2_from, r2_to, status, customer, prod
         },
         pageLength: 10,
         lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
-        dom: 'Bfrtip',
+        dom: 'Blfrtip',
         buttons: [
             'copy', 'csv', 'excel', 'pdf', 'print'
         ],
         responsive: true,
         autoWidth: false,
-        scrollX: true
+        scrollX: true,
+        order: [[9, 'desc']] // Sort by document_date descending
     });
     
     // Initialize Range 2 Table
@@ -794,16 +1294,18 @@ function initializeTables(r1_from, r1_to, r2_from, r2_to, status, customer, prod
         },
         columns: [
             { data: 'sales_id' },
-            { data: 'product_name' },
-            { data: 'customer_name' },
             { data: 'document_number' },
+            { data: 'customer_name' },
+            { data: 'product_name' },
             { data: 'main_quantity' },
+            { data: 'base_price', render: function(data) { return fmt(data); } },
             { data: 'base_sales_amount', render: function(data) { return fmt(data); } },
             { data: 'base_net_amount', render: function(data) { return fmt(data); } },
+            { data: 'document_type' },
+            { data: 'document_date' },
             { data: 'sales_status' },
-            { data: 'document_date_persian' },
             { data: 'creator' },
-            { data: 'actions' }
+            { data: 'actions', orderable: false, searchable: false }
         ],
         language: {
             "processing": "در حال پردازش...",
@@ -822,13 +1324,343 @@ function initializeTables(r1_from, r1_to, r2_from, r2_to, status, customer, prod
         },
         pageLength: 10,
         lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
-        dom: 'Bfrtip',
+        dom: 'Blfrtip',
         buttons: [
             'copy', 'csv', 'excel', 'pdf', 'print'
         ],
         responsive: true,
         autoWidth: false,
-        scrollX: true
+        scrollX: true,
+        order: [[9, 'desc']] // Sort by document_date descending
+    });
+    
+    // Setup advanced features after tables are initialized
+    setupAdvancedTableFeatures(r1_from, r1_to, r2_from, r2_to, status, customer, product);
+    
+    // Setup table column configuration
+    setupTableColumnConfig();
+}
+
+// Setup advanced table features: sort, filter, search
+function setupAdvancedTableFeatures(r1_from, r1_to, r2_from, r2_to, status, customer, product) {
+    
+    // Handle sort links
+    $(document).off('click', '.js-sort-link');
+    $(document).on('click', '.js-sort-link', function(e) {
+        e.preventDefault();
+        var $link = $(this);
+        var range = $link.data('range');
+        var orderby = $link.data('orderby');
+        var currentSortOrder = $link.data('sortorder') || 'asc';
+        var newSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+        
+        // Update link data
+        $link.data('sortorder', newSortOrder);
+        
+        // Update sorting icons
+        var $parentTh = $link.closest('th');
+        $parentTh.siblings().find('.sorting-icons i').removeClass('ti-angle-up ti-angle-down').addClass('ti-arrows-vertical');
+        $link.find('.sorting-icons i').removeClass('ti-arrows-vertical').addClass(newSortOrder === 'asc' ? 'ti-angle-up' : 'ti-angle-down');
+        
+        // Send sort request to server
+        $.ajax({
+            url: '/report/sales/comparison',
+            type: 'GET',
+            data: {
+                action: 'sort',
+                orderby: orderby,
+                sortorder: newSortOrder,
+                range: range,
+                range1_from: r1_from,
+                range1_to: r1_to,
+                range2_from: r2_from,
+                range2_to: r2_to
+            },
+            success: function(response) {
+                // Reload the appropriate table
+                if (range == 1 && table1) {
+                    table1.ajax.reload();
+                } else if (range == 2 && table2) {
+                    table2.ajax.reload();
+                }
+            }
+        });
+    });
+    
+    // Handle column filter dropdowns
+    $(document).off('click', '.column-filter-dropdown');
+    $(document).on('click', '.column-filter-dropdown', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        var $dropdown = $(this);
+        var column = $dropdown.data('column');
+        var range = $dropdown.data('range');
+        
+        // Close other dropdowns
+        $('.column-filter-menu').removeClass('show');
+        $('.column-filter-dropdown').removeClass('active');
+        
+        // Toggle current dropdown
+        if ($dropdown.hasClass('active')) {
+            $dropdown.removeClass('active');
+            return;
+        }
+        
+        $dropdown.addClass('active');
+        
+        // Check if menu already exists
+        var $existingMenu = $dropdown.siblings('.column-filter-menu');
+        if ($existingMenu.length > 0) {
+            $existingMenu.addClass('show');
+            return;
+        }
+        
+        // Create and show loading menu
+        var $menu = $('<div class="column-filter-menu"><div class="column-filter-item">در حال بارگذاری...</div></div>');
+        $dropdown.parent().append($menu);
+        $menu.addClass('show');
+        
+        // Load unique values for this column
+        loadColumnUniqueValues(column, range, $menu, r1_from, r1_to, r2_from, r2_to);
+    });
+    
+    // Close dropdowns when clicking outside
+    $(document).off('click.filter-dropdown');
+    $(document).on('click.filter-dropdown', function(e) {
+        if (!$(e.target).closest('.column-filter-dropdown, .column-filter-menu').length) {
+            $('.column-filter-menu').removeClass('show');
+            $('.column-filter-dropdown').removeClass('active');
+        }
+    });
+    
+    // Handle column search inputs
+    $(document).off('input', '.column-search-input');
+    $(document).on('input', '.column-search-input', function() {
+        var $input = $(this);
+        var column = $input.data('column');
+        var range = $input.data('range');
+        var searchValue = $input.val();
+        
+        // Clear previous timeout
+        clearTimeout($input.data('search-timeout'));
+        
+        // Set new timeout for live search
+        $input.data('search-timeout', setTimeout(function() {
+            performColumnSearch(column, range, searchValue, r1_from, r1_to, r2_from, r2_to);
+        }, 800));
+    });
+    
+    // Handle enter key on search inputs
+    $(document).off('keypress', '.column-search-input');
+    $(document).on('keypress', '.column-search-input', function(e) {
+        if (e.which === 13) { // Enter key
+            e.preventDefault();
+            var $input = $(this);
+            var column = $input.data('column');
+            var range = $input.data('range');
+            var searchValue = $input.val();
+            
+            clearTimeout($input.data('search-timeout'));
+            performColumnSearch(column, range, searchValue, r1_from, r1_to, r2_from, r2_to);
+        }
+    });
+    
+    // Handle clear searches buttons
+    $('.clear-column-searches-range1').off('click').on('click', function() {
+        $('#sales-table-range1 .column-search-input').val('');
+        if (table1) {
+            table1.ajax.reload();
+        }
+    });
+    
+    $('.clear-column-searches-range2').off('click').on('click', function() {
+        $('#sales-table-range2 .column-search-input').val('');
+        if (table2) {
+            table2.ajax.reload();
+        }
+    });
+}
+
+// Load unique values for column filter
+function loadColumnUniqueValues(column, range, $menu, r1_from, r1_to, r2_from, r2_to) {
+    $.ajax({
+        url: '/report/sales/comparison',
+        type: 'GET',
+        data: {
+            action: 'unique_values',
+            column: column,
+            range: range,
+            range1_from: r1_from,
+            range1_to: r1_to,
+            range2_from: r2_from,
+            range2_to: r2_to
+        },
+        success: function(response) {
+            if (response.success && response.data) {
+                var html = '';
+                if (response.data.length === 0) {
+                    html = '<div class="column-filter-item">مقداری یافت نشد</div>';
+                } else {
+                    // Add "All" option
+                    html += '<div class="column-filter-item" data-value=""><i class="ti-reload"></i> همه</div>';
+                    
+                    // Add unique values
+                    response.data.forEach(function(value) {
+                        html += '<div class="column-filter-item" data-value="' + escapeHtml(value) + '">' + escapeHtml(value) + '</div>';
+                    });
+                }
+                $menu.html(html);
+                
+                // Handle filter item clicks
+                $menu.find('.column-filter-item').off('click').on('click', function() {
+                    var filterValue = $(this).data('value');
+                    var $input = $menu.closest('th').find('.column-search-input');
+                    if ($input.length) {
+                        $input.val(filterValue);
+                        $input.trigger('input');
+                    }
+                    $menu.removeClass('show');
+                    $menu.siblings('.column-filter-dropdown').removeClass('active');
+                });
+            }
+        },
+        error: function() {
+            $menu.html('<div class="column-filter-item">خطا در بارگذاری</div>');
+        }
+    });
+}
+
+// Perform column search
+function performColumnSearch(column, range, searchValue, r1_from, r1_to, r2_from, r2_to) {
+    var searchParams = {
+        action: 'search',
+        range: range,
+        range1_from: r1_from,
+        range1_to: r1_to,
+        range2_from: r2_from,
+        range2_to: r2_to
+    };
+    searchParams['column_search_' + column] = searchValue;
+    
+    $.ajax({
+        url: '/report/sales/comparison',
+        type: 'GET',
+        data: searchParams,
+        success: function(response) {
+            // Reload the appropriate table
+            if (range == 1 && table1) {
+                table1.ajax.reload();
+            } else if (range == 2 && table2) {
+                table2.ajax.reload();
+            }
+        }
+    });
+}
+
+// Utility function to escape HTML
+function escapeHtml(text) {
+    if (typeof text !== 'string') return text;
+    var map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+}
+
+// Setup Table Column Configuration
+function setupTableColumnConfig() {
+    // Toggle table config sidebar
+    $(document).off('click', '.js-toggle-table-config');
+    $(document).on('click', '.js-toggle-table-config', function() {
+        var target = $(this).data('target');
+        $('#' + target).fadeToggle(300);
+        $('body').toggleClass('show-table-config-sidebar');
+    });
+    
+    // Close table config sidebar
+    $(document).off('click', '.js-close-table-config');
+    $(document).on('click', '.js-close-table-config', function() {
+        var target = $(this).data('target');
+        $('#' + target).fadeOut(300);
+        $('body').removeClass('show-table-config-sidebar');
+    });
+    
+    // Handle column visibility toggle
+    $(document).off('change', '.table-config-checkbox');
+    $(document).on('change', '.table-config-checkbox', function() {
+        var $checkbox = $(this);
+        var columnIndex = $checkbox.data('column');
+        var range = $checkbox.data('range');
+        var isVisible = $checkbox.is(':checked');
+        
+        // Get the appropriate table
+        var table = range == 1 ? table1 : table2;
+        
+        if (table) {
+            // Toggle column visibility
+            var column = table.column(columnIndex);
+            column.visible(isVisible);
+            
+            // Save to localStorage
+            saveColumnConfig(range, columnIndex, isVisible);
+        }
+    });
+    
+    // Reset table config
+    $(document).off('click', '.js-reset-table-config');
+    $(document).on('click', '.js-reset-table-config', function() {
+        var range = $(this).data('range');
+        
+        // Reset all checkboxes to checked
+        $('[data-range="' + range + '"].table-config-checkbox').prop('checked', true).trigger('change');
+        
+        // Clear localStorage
+        localStorage.removeItem('sales_report_columns_range' + range);
+        
+        // Show success message
+        alert('تنظیمات ستون‌ها بازنشانی شد');
+    });
+    
+    // Load saved column config from localStorage
+    loadColumnConfigs();
+}
+
+// Save column configuration to localStorage
+function saveColumnConfig(range, columnIndex, isVisible) {
+    var storageKey = 'sales_report_columns_range' + range;
+    var config = JSON.parse(localStorage.getItem(storageKey) || '{}');
+    config[columnIndex] = isVisible;
+    localStorage.setItem(storageKey, JSON.stringify(config));
+}
+
+// Load column configurations from localStorage
+function loadColumnConfigs() {
+    // Load for range 1
+    var config1 = JSON.parse(localStorage.getItem('sales_report_columns_range1') || '{}');
+    Object.keys(config1).forEach(function(columnIndex) {
+        var isVisible = config1[columnIndex];
+        var $checkbox = $('[data-range="1"][data-column="' + columnIndex + '"]');
+        $checkbox.prop('checked', isVisible);
+        
+        if (table1) {
+            table1.column(parseInt(columnIndex)).visible(isVisible);
+        }
+    });
+    
+    // Load for range 2
+    var config2 = JSON.parse(localStorage.getItem('sales_report_columns_range2') || '{}');
+    Object.keys(config2).forEach(function(columnIndex) {
+        var isVisible = config2[columnIndex];
+        var $checkbox = $('[data-range="2"][data-column="' + columnIndex + '"]');
+        $checkbox.prop('checked', isVisible);
+        
+        if (table2) {
+            table2.column(parseInt(columnIndex)).visible(isVisible);
+        }
     });
 }
 
@@ -904,6 +1736,241 @@ function exportTable(range, format) {
 
 <!-- Custom Persian Date Picker -->
 <style>
+/* Advanced Table Styles */
+.column-header-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.column-header-container a {
+    flex: 1;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.column-header-container a:hover {
+    color: #007bff;
+}
+
+.sorting-icons {
+    display: inline-flex;
+    align-items: center;
+}
+
+.sorting-icons i {
+    font-size: 12px;
+    margin-left: 3px;
+}
+
+.column-filter-dropdown {
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 3px;
+    transition: all 0.2s;
+}
+
+.column-filter-dropdown:hover {
+    background: rgba(0, 123, 255, 0.1);
+    color: #007bff;
+}
+
+.column-filter-dropdown.active {
+    background: #007bff;
+    color: white;
+}
+
+.column-filter-menu {
+    position: absolute;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1000;
+    min-width: 180px;
+    display: none;
+    top: 100%;
+    right: 0;
+    margin-top: 5px;
+}
+
+.column-filter-menu.show {
+    display: block;
+}
+
+.column-filter-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background 0.2s;
+}
+
+.column-filter-item:last-child {
+    border-bottom: none;
+}
+
+.column-filter-item:hover {
+    background: #f8f9fa;
+}
+
+.column-filter-item i {
+    margin-right: 5px;
+}
+
+.column-search-input {
+    width: 100%;
+    min-width: 80px;
+}
+
+.column-search-input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.search-row th {
+    padding: 5px;
+    background: #f8f9fa;
+}
+
+.list-table-wrapper {
+    min-height: 400px;
+}
+
+thead th {
+    position: relative;
+    white-space: nowrap;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .column-header-container {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .column-filter-dropdown {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+    }
+}
+
+/* Table Configuration Sidebar */
+.table-config-sidebar {
+    position: fixed;
+    top: 0;
+    left: -300px;
+    width: 300px;
+    height: 100%;
+    background: white;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    z-index: 9999;
+    transition: left 0.3s ease;
+    overflow-y: auto;
+}
+
+.table-config-sidebar.show,
+body.show-table-config-sidebar .table-config-sidebar {
+    left: 0;
+}
+
+.table-config-sidebar .rpanel-title {
+    background: #007bff;
+    color: white;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+}
+
+.table-config-sidebar .rpanel-title i.ti-close {
+    cursor: pointer;
+    font-size: 18px;
+}
+
+.table-config-sidebar .rpanel-title i.ti-close:hover {
+    color: #ffdddd;
+}
+
+.table-config-sidebar .r-panel-body {
+    padding: 20px;
+}
+
+.table-config-sidebar .buttons-block {
+    padding: 15px;
+    background: #f8f9fa;
+    border-top: 1px solid #ddd;
+    position: sticky;
+    bottom: 0;
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+}
+
+.table-config-sidebar .buttons-block button {
+    flex: 1;
+}
+
+.table-config-checkbox-container {
+    display: flex;
+    align-items: center;
+    padding: 8px 0;
+    cursor: pointer;
+    user-select: none;
+}
+
+.table-config-checkbox-container:hover {
+    background: #f8f9fa;
+    padding-left: 10px;
+    padding-right: 10px;
+    margin-left: -10px;
+    margin-right: -10px;
+    border-radius: 4px;
+}
+
+.custom-control-indicator {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #ddd;
+    border-radius: 3px;
+    margin-left: 10px;
+    display: inline-block;
+    position: relative;
+    transition: all 0.2s;
+}
+
+.custom-control-input:checked ~ .custom-control-indicator {
+    background: #007bff;
+    border-color: #007bff;
+}
+
+.custom-control-input:checked ~ .custom-control-indicator::after {
+    content: '\2713';
+    position: absolute;
+    top: -2px;
+    left: 3px;
+    color: white;
+    font-size: 14px;
+}
+
+.custom-control-description {
+    font-size: 14px;
+}
+
+/* Hide checkbox input */
+.custom-control-input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+}
+
 .persian-datepicker-popup {
     position: absolute;
     background: white;
