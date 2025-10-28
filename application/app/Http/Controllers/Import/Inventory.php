@@ -108,7 +108,7 @@ class Inventory extends Controller {
         try {
             // Handle Excel/CSV files
             if (in_array($extension, ['xlsx', 'xls', 'csv'])) {
-                $import = new InventoryImport(1000); // Import limit
+                $import = new InventoryImport(); // No import limit
 
                 try {
                     $import->import($file_path);
@@ -119,10 +119,6 @@ class Inventory extends Controller {
                         'skipped' => $import->getSkippedCount(),
                         'message' => "Successfully imported {$import->getRowCount()} inventory items",
                     ];
-
-                    if ($import->maxLimitReached()) {
-                        $import_results['message'] .= __('lang.maximum_importing_limit_reached') . ": " . $import->getMaxItems();
-                    }
 
                 } catch (\Exception $e) {
                     $import_results = [

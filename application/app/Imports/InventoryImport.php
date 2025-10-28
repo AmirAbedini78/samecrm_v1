@@ -9,19 +9,20 @@ use Maatwebsite\Excel\Concerns\SkipsOnFailure;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithStartRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
+use Maatwebsite\Excel\Concerns\WithBatchInserts;
+use Maatwebsite\Excel\Concerns\WithProgressBar;
 use Illuminate\Support\Facades\Log;
 
-class InventoryImport implements ToModel, WithStartRow, WithValidation, SkipsOnFailure {
+class InventoryImport implements ToModel, WithStartRow, WithValidation, SkipsOnFailure, WithChunkReading, WithBatchInserts, WithProgressBar {
 
     use Importable, SkipsFailures;
 
     private $rows = 0;
     private $skipped = 0;
-    private $import_limit;
-    private $max_limit_reached = false;
 
-    public function __construct($import_limit = 1000) {
-        $this->import_limit = $import_limit;
+    public function __construct() {
+        // No import limit - process all records
     }
 
     /**
@@ -31,12 +32,7 @@ class InventoryImport implements ToModel, WithStartRow, WithValidation, SkipsOnF
      */
     public function model(array $row) {
 
-        // Check if we've reached the import limit
-        if ($this->rows >= $this->import_limit) {
-            $this->max_limit_reached = true;
-            $this->skipped++;
-            return null;
-        }
+        // No import limit - process all records
 
         // Skip empty rows
         if (empty($row[0]) && empty($row[1])) {
@@ -147,16 +143,18 @@ class InventoryImport implements ToModel, WithStartRow, WithValidation, SkipsOnF
     }
 
     /**
-     * Check if max limit reached
+     * Chunk size for processing
      */
-    public function maxLimitReached() {
-        return $this->max_limit_reached;
+    public function chunkSize(): int
+    {
+        return 1000;
     }
 
     /**
-     * Get max items
+     * Batch size for database inserts
      */
-    public function getMaxItems() {
-        return $this->import_limit;
+    public function batchSize(): int
+    {
+        return 1000;
     }
 }

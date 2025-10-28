@@ -9,20 +9,20 @@ use Maatwebsite\Excel\Concerns\SkipsOnFailure;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithStartRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
+use Maatwebsite\Excel\Concerns\WithBatchInserts;
+use Maatwebsite\Excel\Concerns\WithProgressBar;
 
-class TasksChecklistImport implements ToModel, WithStartRow, WithValidation, SkipsOnFailure {
+class TasksChecklistImport implements ToModel, WithStartRow, WithValidation, SkipsOnFailure, WithChunkReading, WithBatchInserts, WithProgressBar {
 
     use Importable, SkipsFailures;
 
     private $rows = 0;
     private $skipped = 0;
     private $task_id;
-    private $import_limit;
-    private $max_limit_reached = false;
 
-    public function __construct($task_id, $import_limit = 500) {
+    public function __construct($task_id) {
         $this->task_id = $task_id;
-        $this->import_limit = $import_limit;
     }
 
     /**
@@ -32,12 +32,7 @@ class TasksChecklistImport implements ToModel, WithStartRow, WithValidation, Ski
      */
     public function model(array $row) {
 
-        // Check if we've reached the import limit
-        if ($this->rows >= $this->import_limit) {
-            $this->max_limit_reached = true;
-            $this->skipped++;
-            return null;
-        }
+        // No import limit - process all records
 
         // Check for duplicates before creating the checklist item
         if ($this->isDuplicate($row)) {
@@ -134,16 +129,6 @@ class TasksChecklistImport implements ToModel, WithStartRow, WithValidation, Ski
 
         //14 june 2025 - lets ignore this functionality for now
         return false;
-
-        // Check for duplicate checklist text in the same task
-        if (\App\Models\Checklist::where('checklistresource_type', 'task')
-            ->where('checklistresource_id', $this->task_id)
-            ->where('checklist_text', $checklist_text)
-            ->exists()) {
-            return true;
-        }
-
-        return false;
     }
 
     public function rules(): array
@@ -178,18 +163,18 @@ class TasksChecklistImport implements ToModel, WithStartRow, WithValidation, Ski
     }
 
     /**
-     * Check if maximum import limit was reached
-     * @return bool
+     * Chunk size for processing
      */
-    public function maxLimitReached(): bool {
-        return $this->max_limit_reached;
+    public function chunkSize(): int
+    {
+        return 1000;
     }
 
     /**
-     * Get the maximum number of items that can be imported
-     * @return int
+     * Batch size for database inserts
      */
-    public function getMaxItems(): int {
-        return $this->import_limit;
+    public function batchSize(): int
+    {
+        return 1000;
     }
 }

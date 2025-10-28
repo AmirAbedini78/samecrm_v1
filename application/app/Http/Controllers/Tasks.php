@@ -3612,7 +3612,7 @@ class Tasks extends Controller {
             // Handle different file types
             if (in_array($extension, ['xlsx', 'xls', 'csv'])) {
                 // Handle Excel/CSV files using existing TasksChecklistImport class
-                $import = new TasksChecklistImport($id, $import_limit);
+                $import = new TasksChecklistImport($id);
 
                 try {
                     $import->import($file_path);
@@ -3624,9 +3624,6 @@ class Tasks extends Controller {
                         'message' => "Successfully imported {$import->getRowCount()} checklist items",
                     ];
 
-                    if ($import->maxLimitReached()) {
-                        $import_results['message'] .= __('lang.maximum_importing_limit_reached') . ": " . $import->getMaxItems();
-                    }
 
                 } catch (Exception $e) {
                     $import_results = [

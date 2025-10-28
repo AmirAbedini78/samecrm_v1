@@ -108,7 +108,7 @@ class Sales extends Controller {
         try {
             // Handle Excel/CSV files
             if (in_array($extension, ['xlsx', 'xls', 'csv'])) {
-                $import = new SalesImport(1000); // Import limit
+                $import = new SalesImport(); // No import limit
 
                 try {
                     $import->import($file_path);
@@ -117,12 +117,9 @@ class Sales extends Controller {
                         'success' => true,
                         'imported' => $import->getRowCount(),
                         'skipped' => $import->getSkippedCount(),
+                        'skipped_details' => $import->getSkippedDetails(),
                         'message' => "Successfully imported {$import->getRowCount()} sales records",
                     ];
-
-                    if ($import->maxLimitReached()) {
-                        $import_results['message'] .= __('lang.maximum_importing_limit_reached') . ": " . $import->getMaxItems();
-                    }
 
                 } catch (\Exception $e) {
                     $import_results = [
@@ -153,6 +150,7 @@ class Sales extends Controller {
             return response()->json($import_results);
         }
 
+        // For non-AJAX requests, store results in session
         return redirect()->back()->with('import_results', $import_results);
     }
 }

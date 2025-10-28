@@ -1921,7 +1921,7 @@ class Leads extends Controller {
             //handle different file types
             if (in_array($extension, ['xlsx', 'xls', 'csv'])) {
                 //handle Excel/CSV files using LeadsChecklistImport class
-                $import = new LeadsChecklistImport($id, $import_limit);
+                $import = new LeadsChecklistImport($id);
 
                 try {
                     $import->import($file_path);
@@ -1933,9 +1933,6 @@ class Leads extends Controller {
                         'message' => "Successfully imported {$import->getRowCount()} checklist items",
                     ];
 
-                    if ($import->maxLimitReached()) {
-                        $import_results['message'] .= __('lang.maximum_importing_limit_reached') . ": " . $import->getMaxItems();
-                    }
 
                 } catch (\Exception$e) {
                     $import_results = [

@@ -8,20 +8,23 @@ use Maatwebsite\Excel\Concerns\SkipsFailures;
 use Maatwebsite\Excel\Concerns\SkipsOnFailure;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithStartRow;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
+use Maatwebsite\Excel\Concerns\WithBatchInserts;
+use Maatwebsite\Excel\Concerns\WithProgressBar;
 // use Maatwebsite\Excel\Concerns\WithValidation;
 use Illuminate\Support\Facades\Log;
 
-class SalesImport implements ToModel, WithStartRow, SkipsOnFailure {
+class SalesImport implements ToModel, WithStartRow, SkipsOnFailure, WithChunkReading, WithBatchInserts, WithProgressBar {
 
     use Importable, SkipsFailures;
 
     private $rows = 0;
     private $skipped = 0;
-    private $import_limit;
-    private $max_limit_reached = false;
-
-    public function __construct($import_limit = 1000) {
-        $this->import_limit = $import_limit;
+    private $rowIndex = 0; // counts every row seen by model()
+    private $skippedDetails = [];
+ 
+    public function __construct() {
+        // No import limit - process all records
     }
 
     /**
@@ -31,26 +34,22 @@ class SalesImport implements ToModel, WithStartRow, SkipsOnFailure {
      */
     public function model(array $row) {
 
-        // Debug information
-        \Log::info("SalesImport Debug", [
-            'row' => $row,
-            'row_count' => count($row),
-            'current_rows' => $this->rows,
-            'import_limit' => $this->import_limit,
-            'first_cell' => $row[0] ?? 'empty',
-            'second_cell' => $row[1] ?? 'empty'
-        ]);
+        // track current excel row number (considering startRow)
+        $this->rowIndex++;
 
-        // Check if we've reached the import limit
-        if ($this->rows >= $this->import_limit) {
-            $this->max_limit_reached = true;
-            $this->skipped++;
-            return null;
+        // Debug information (reduced logging for performance)
+        if ($this->rows % 1000 == 0) {
+            \Log::info("SalesImport Progress", [
+                'processed_rows' => $this->rows,
+                'first_cell' => $row[0] ?? 'empty',
+                'second_cell' => $row[1] ?? 'empty'
+            ]);
         }
 
         // Skip empty rows
         if (empty($row[0]) && empty($row[1])) {
             $this->skipped++;
+            $this->recordSkip('empty_row', $row);
             return null;
         }
 
@@ -99,6 +98,7 @@ class SalesImport implements ToModel, WithStartRow, SkipsOnFailure {
         } catch (\Exception $e) {
             Log::error("Sales import error: " . $e->getMessage(), ['row' => $row]);
             $this->skipped++;
+            $this->recordSkip('exception: ' . $e->getMessage(), $row);
             return null;
         }
     }
@@ -184,16 +184,41 @@ class SalesImport implements ToModel, WithStartRow, SkipsOnFailure {
     }
 
     /**
-     * Check if max limit reached
+     * Chunk size for processing
      */
-    public function maxLimitReached() {
-        return $this->max_limit_reached;
+    public function chunkSize(): int
+    {
+        return 1000;
     }
 
     /**
-     * Get max items
+     * Batch size for database inserts
      */
-    public function getMaxItems() {
-        return $this->import_limit;
+    public function batchSize(): int
+    {
+        return 1000;
+    }
+
+    /**
+     * Return detailed skipped rows
+     */
+    public function getSkippedDetails(): array
+    {
+        return $this->skippedDetails;
+    }
+
+    /**
+     * Record a skipped row with details
+     */
+    private function recordSkip(string $reason, array $row): void
+    {
+        $excelRowNumber = $this->startRow() + $this->rowIndex - 1;
+        $this->skippedDetails[] = [
+            'row_number' => $excelRowNumber,
+            'reason' => $reason,
+            'document_number' => $row[1] ?? null,
+            'product_code' => $row[7] ?? null,
+            'product_name' => $row[8] ?? null,
+        ];
     }
 }

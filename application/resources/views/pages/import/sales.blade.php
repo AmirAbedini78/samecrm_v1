@@ -41,6 +41,36 @@
                                     <strong>{{ cleanLang(__('lang.imported')) }}:</strong> {{ $results['imported'] }} | 
                                     <strong>{{ cleanLang(__('lang.skipped')) }}:</strong> {{ $results['skipped'] }}
                                 </p>
+                                
+                                @if(isset($results['skipped_details']) && count($results['skipped_details']) > 0)
+                                    <hr>
+                                    <h6 class="text-warning">{{ cleanLang(__('lang.skipped_details')) }}</h6>
+                                    <div class="table-responsive mt-2">
+                                        <table class="table table-sm table-bordered">
+                                            <thead class="table-warning">
+                                                <tr>
+                                                    <th>{{ cleanLang(__('lang.row_number')) }}</th>
+                                                    <th>{{ cleanLang(__('lang.reason')) }}</th>
+                                                    <th>{{ cleanLang(__('lang.document_number')) }}</th>
+                                                    <th>{{ cleanLang(__('lang.product_code')) }}</th>
+                                                    <th>{{ cleanLang(__('lang.product_name')) }}</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($results['skipped_details'] as $detail)
+                                                <tr>
+                                                    <td>{{ $detail['row_number'] }}</td>
+                                                    <td><span class="badge bg-warning">{{ $detail['reason'] }}</span></td>
+                                                    <td>{{ $detail['document_number'] ?? '-' }}</td>
+                                                    <td>{{ $detail['product_code'] ?? '-' }}</td>
+                                                    <td>{{ $detail['product_name'] ?? '-' }}</td>
+                                                </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                @endif
+                                
                                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                             </div>
                         @endif
@@ -193,8 +223,22 @@ $(document).ready(function() {
             contentType: false,
             success: function(response) {
                 if (response.success) {
-                    alert('Import successful: ' + response.message);
-                    location.reload();
+                    // Show success message with skipped details
+                    var message = 'Import successful: ' + response.message;
+                    if (response.skipped_details && response.skipped_details.length > 0) {
+                        message += '\n\nSkipped rows details:\n';
+                        response.skipped_details.forEach(function(detail) {
+                            message += 'Row ' + detail.row_number + ': ' + detail.reason + 
+                                     ' (Doc: ' + (detail.document_number || 'N/A') + 
+                                     ', Product: ' + (detail.product_name || 'N/A') + ')\n';
+                        });
+                    }
+                    
+                    // Show alert and then reload to show the results on page
+                    alert(message);
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1000);
                 } else {
                     alert('Import failed: ' + response.message);
                 }

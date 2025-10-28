@@ -9,20 +9,20 @@ use Maatwebsite\Excel\Concerns\SkipsOnFailure;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithStartRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
+use Maatwebsite\Excel\Concerns\WithBatchInserts;
+use Maatwebsite\Excel\Concerns\WithProgressBar;
 
-class LeadsChecklistImport implements ToModel, WithStartRow, WithValidation, SkipsOnFailure {
+class LeadsChecklistImport implements ToModel, WithStartRow, WithValidation, SkipsOnFailure, WithChunkReading, WithBatchInserts, WithProgressBar {
 
     use Importable, SkipsFailures;
 
     private $rows = 0;
     private $skipped = 0;
     private $lead_id;
-    private $import_limit;
-    private $max_limit_reached = false;
 
-    public function __construct($lead_id, $import_limit = 500) {
+    public function __construct($lead_id) {
         $this->lead_id = $lead_id;
-        $this->import_limit = $import_limit;
     }
 
     /**
@@ -32,12 +32,7 @@ class LeadsChecklistImport implements ToModel, WithStartRow, WithValidation, Ski
      */
     public function model(array $row) {
 
-        //check if we've reached the import limit
-        if ($this->rows >= $this->import_limit) {
-            $this->max_limit_reached = true;
-            $this->skipped++;
-            return null;
-        }
+        // No import limit - process all records
 
         //check for duplicates before creating the checklist item
         if ($this->isDuplicate($row)) {
@@ -147,17 +142,6 @@ class LeadsChecklistImport implements ToModel, WithStartRow, WithValidation, Ski
 
         //lets ignore this functionality for now
         return false;
-
-        //check for duplicate checklist text in the same lead
-        if (\App\Models\Checklist::where('checklistresource_type', 'lead')
-            ->where('checklistresource_id', $this->lead_id)
-            ->where('checklist_clientid', request('access_control_customer_unique_id'))
-            ->where('checklist_text', $checklist_text)
-            ->exists()) {
-            return true;
-        }
-
-        return false;
     }
 
     public function rules(): array
@@ -192,18 +176,18 @@ class LeadsChecklistImport implements ToModel, WithStartRow, WithValidation, Ski
     }
 
     /**
-     * Check if maximum import limit was reached
-     * @return bool
+     * Chunk size for processing
      */
-    public function maxLimitReached(): bool {
-        return $this->max_limit_reached;
+    public function chunkSize(): int
+    {
+        return 1000;
     }
 
     /**
-     * Get the maximum number of items that can be imported
-     * @return int
+     * Batch size for database inserts
      */
-    public function getMaxItems(): int {
-        return $this->import_limit;
+    public function batchSize(): int
+    {
+        return 1000;
     }
 }
