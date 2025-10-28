@@ -1302,6 +1302,16 @@ Route::group(['prefix' => 'report'], function () {
     Route::get("/sales/comparison/datatables", "Reports\\SalesReports@comparisonDataTables");
     Route::get("/sales/aggregates", "Reports\\SalesReports@aggregates");
     Route::post("/sales/aggregates/data", "Reports\\SalesReports@aggregatesData");
+    
+    // sales - analytics reports
+    Route::get("/sales/analytics", "Reports\\SalesReports@analytics");
+    Route::post("/sales/analytics/monthly-trend", "Reports\\SalesReports@getMonthlyTrend");
+    Route::post("/sales/analytics/top-products", "Reports\\SalesReports@getTopProducts");
+    Route::post("/sales/analytics/top-customers", "Reports\\SalesReports@getTopCustomers");
+    Route::post("/sales/analytics/profit-analysis", "Reports\\SalesReports@getProfitAnalysis");
+    Route::post("/sales/analytics/seasonal-analysis", "Reports\\SalesReports@getSeasonalAnalysis");
+    Route::post("/sales/analytics/delivery-status", "Reports\\SalesReports@getDeliveryStatus");
+    
     Route::get("/sales/test-date-conversion", "Reports\\SalesReports@testDateConversion");
     Route::get("/sales/simple-date-test", "Reports\\SalesReports@simpleDateTest");
     Route::get("/sales/check-database-data", "Reports\\SalesReports@checkDatabaseData");

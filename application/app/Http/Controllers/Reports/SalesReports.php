@@ -406,4 +406,275 @@ class SalesReports extends Controller {
         $payload = ['page' => $page];
         return response()->view('pages.reports.sales.aggregates', $payload);
     }
+
+    /**
+     * Display sales analytics dashboard
+     */
+    public function analytics() {
+        $page = [ 'title' => __('lang.sales') . ' - ' . __('lang.reports') . ' - ' . 'تحلیل‌های فروش' ];
+        $payload = ['page' => $page];
+        return new \App\Http\Responses\Reports\Sales\SalesAnalyticsResponse($payload);
+    }
+
+    /**
+     * Get monthly sales trend
+     */
+    public function getMonthlyTrend(Request $request) {
+        try {
+            $from_date = $request->get('from_date');
+            $to_date = $request->get('to_date');
+
+            $query = Sales::query();
+            
+            if ($from_date && PersianCalendarHelper::isValidPersianDate($from_date)) {
+                $query->where('document_date', '>=', $from_date);
+            }
+            if ($to_date && PersianCalendarHelper::isValidPersianDate($to_date)) {
+                $query->where('document_date', '<=', $to_date);
+            }
+
+            // Group by month
+            $monthlyData = $query->selectRaw('month, COUNT(*) as count, SUM(base_sales_amount) as total_amount, AVG(base_sales_amount) as avg_amount')
+                ->groupBy('month')
+                ->orderBy('month', 'asc')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $monthlyData
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Monthly Trend Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Get top selling products
+     */
+    public function getTopProducts(Request $request) {
+        try {
+            $from_date = $request->get('from_date');
+            $to_date = $request->get('to_date');
+            $limit = $request->get('limit', 10);
+
+            $query = Sales::query();
+            
+            if ($from_date && PersianCalendarHelper::isValidPersianDate($from_date)) {
+                $query->where('document_date', '>=', $from_date);
+            }
+            if ($to_date && PersianCalendarHelper::isValidPersianDate($to_date)) {
+                $query->where('document_date', '<=', $to_date);
+            }
+
+            // Group by product
+            $topProducts = $query->selectRaw('product_name, COUNT(*) as sales_count, SUM(main_quantity) as total_quantity, SUM(base_sales_amount) as total_amount')
+                ->groupBy('product_name')
+                ->orderBy('total_amount', 'desc')
+                ->limit($limit)
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $topProducts
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Top Products Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Get top customers
+     */
+    public function getTopCustomers(Request $request) {
+        try {
+            $from_date = $request->get('from_date');
+            $to_date = $request->get('to_date');
+            $limit = $request->get('limit', 10);
+
+            $query = Sales::query();
+            
+            if ($from_date && PersianCalendarHelper::isValidPersianDate($from_date)) {
+                $query->where('document_date', '>=', $from_date);
+            }
+            if ($to_date && PersianCalendarHelper::isValidPersianDate($to_date)) {
+                $query->where('document_date', '<=', $to_date);
+            }
+
+            // Group by customer
+            $topCustomers = $query->selectRaw('customer_name, COUNT(*) as order_count, SUM(base_sales_amount) as total_amount, AVG(base_sales_amount) as avg_amount')
+                ->groupBy('customer_name')
+                ->orderBy('total_amount', 'desc')
+                ->limit($limit)
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $topCustomers
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Top Customers Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Get profit analysis
+     */
+    public function getProfitAnalysis(Request $request) {
+        try {
+            $from_date = $request->get('from_date');
+            $to_date = $request->get('to_date');
+
+            $query = Sales::query();
+            
+            if ($from_date && PersianCalendarHelper::isValidPersianDate($from_date)) {
+                $query->where('document_date', '>=', $from_date);
+            }
+            if ($to_date && PersianCalendarHelper::isValidPersianDate($to_date)) {
+                $query->where('document_date', '<=', $to_date);
+            }
+
+            // Calculate profit by product
+            $profitData = $query->selectRaw('product_name, SUM(base_net_amount) as net_amount, SUM(base_sales_amount) as sales_amount, SUM(base_net_amount - base_sales_amount) as profit, COUNT(*) as count')
+                ->groupBy('product_name')
+                ->orderBy('profit', 'desc')
+                ->limit(15)
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $profitData
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Profit Analysis Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Get seasonal analysis (by quarter/season)
+     */
+    public function getSeasonalAnalysis(Request $request) {
+        try {
+            $from_date = $request->get('from_date');
+            $to_date = $request->get('to_date');
+
+            $query = Sales::query();
+            
+            if ($from_date && PersianCalendarHelper::isValidPersianDate($from_date)) {
+                $query->where('document_date', '>=', $from_date);
+            }
+            if ($to_date && PersianCalendarHelper::isValidPersianDate($to_date)) {
+                $query->where('document_date', '<=', $to_date);
+            }
+
+            // Get all sales
+            $sales = $query->get();
+
+            // Group by season (فصل)
+            $seasonalData = [
+                'spring' => ['name' => 'بهار', 'count' => 0, 'total' => 0, 'months' => [1, 2, 3]], // فروردین، اردیبهشت، خرداد
+                'summer' => ['name' => 'تابستان', 'count' => 0, 'total' => 0, 'months' => [4, 5, 6]], // تیر، مرداد، شهریور
+                'autumn' => ['name' => 'پاییز', 'count' => 0, 'total' => 0, 'months' => [7, 8, 9]], // مهر، آبان، آذر
+                'winter' => ['name' => 'زمستان', 'count' => 0, 'total' => 0, 'months' => [10, 11, 12]], // دی، بهمن، اسفند
+            ];
+
+            foreach ($sales as $sale) {
+                $month = (int) $sale->month;
+                foreach ($seasonalData as $key => $season) {
+                    if (in_array($month, $season['months'])) {
+                        $seasonalData[$key]['count']++;
+                        $seasonalData[$key]['total'] += $sale->base_sales_amount;
+                        break;
+                    }
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => array_values($seasonalData)
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Seasonal Analysis Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Get delivery status analysis
+     */
+    public function getDeliveryStatus(Request $request) {
+        try {
+            $from_date = $request->get('from_date');
+            $to_date = $request->get('to_date');
+
+            $query = Sales::query();
+            
+            if ($from_date && PersianCalendarHelper::isValidPersianDate($from_date)) {
+                $query->where('document_date', '>=', $from_date);
+            }
+            if ($to_date && PersianCalendarHelper::isValidPersianDate($to_date)) {
+                $query->where('document_date', '<=', $to_date);
+            }
+
+            // Calculate delivery statistics
+            $stats = $query->selectRaw('
+                COUNT(*) as total_orders,
+                SUM(issued_main_quantity) as total_issued,
+                SUM(remaining_main_quantity) as total_remaining,
+                SUM(main_quantity) as total_quantity
+            ')->first();
+
+            $deliveryRate = 0;
+            if ($stats->total_quantity > 0) {
+                $deliveryRate = ($stats->total_issued / $stats->total_quantity) * 100;
+            }
+
+            // Top products with pending delivery
+            $pendingProducts = $query->selectRaw('product_name, SUM(remaining_main_quantity) as pending_quantity, COUNT(*) as order_count')
+                ->where('remaining_main_quantity', '>', 0)
+                ->groupBy('product_name')
+                ->orderBy('pending_quantity', 'desc')
+                ->limit(10)
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'stats' => $stats,
+                    'delivery_rate' => round($deliveryRate, 2),
+                    'pending_products' => $pendingProducts
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Delivery Status Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
 }
