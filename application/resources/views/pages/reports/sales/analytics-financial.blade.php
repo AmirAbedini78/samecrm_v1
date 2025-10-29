@@ -143,21 +143,25 @@ window.financialChartsLoaded = false;
 
 // Load Financial Analytics Data
 function loadFinancialAnalytics() {
+    console.log('Loading financial analytics...');
     const dates = getFilterDates();
     
     $.ajax({
         url: '/report/sales/analytics/profit-analysis',
         method: 'POST',
         data: dates,
+        dataType: 'json',
         success: function(response) {
-            if (response.success) {
+            console.log('Profit analysis response:', response);
+            if (response.success && response.data) {
                 renderProfitAnalysisChart(response.data);
                 updateProfitTable(response.data);
                 calculateFinancialStatistics(response.data);
             }
         },
-        error: function(xhr) {
-            console.error('Error loading profit analysis:', xhr);
+        error: function(xhr, status, error) {
+            console.error('Error loading profit analysis:', status, error);
+            console.error('Response:', xhr.responseText);
         }
     });
     

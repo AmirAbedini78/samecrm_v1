@@ -137,14 +137,17 @@ window.logisticsChartsLoaded = false;
 
 // Load Logistics Analytics Data
 function loadLogisticsAnalytics() {
+    console.log('Loading logistics analytics...');
     const dates = getFilterDates();
     
     $.ajax({
         url: '/report/sales/analytics/delivery-status',
         method: 'POST',
         data: dates,
+        dataType: 'json',
         success: function(response) {
-            if (response.success) {
+            console.log('Delivery status response:', response);
+            if (response.success && response.data) {
                 renderDeliveryRateChart(response.data.delivery_rate);
                 renderPendingProductsChart(response.data.pending_products);
                 updatePendingProductsTable(response.data.pending_products);
@@ -152,8 +155,9 @@ function loadLogisticsAnalytics() {
                 evaluateDeliveryPerformance(response.data.delivery_rate, response.data.stats);
             }
         },
-        error: function(xhr) {
-            console.error('Error loading delivery status:', xhr);
+        error: function(xhr, status, error) {
+            console.error('Error loading delivery status:', status, error);
+            console.error('Response:', xhr.responseText);
         }
     });
     

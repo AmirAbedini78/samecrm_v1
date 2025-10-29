@@ -96,22 +96,26 @@ window.customersChartsLoaded = false;
 
 // Load Customers Analytics Data
 function loadCustomersAnalytics() {
+    console.log('Loading customers analytics...');
     const dates = getFilterDates();
     
     $.ajax({
         url: '/report/sales/analytics/top-customers',
         method: 'POST',
         data: { ...dates, limit: 10 },
+        dataType: 'json',
         success: function(response) {
-            if (response.success) {
+            console.log('Top customers response:', response);
+            if (response.success && response.data) {
                 renderTopCustomersChart(response.data);
                 updateTopCustomersTable(response.data);
                 calculateCustomerStatistics(response.data);
                 calculateParetoAnalysis(response.data);
             }
         },
-        error: function(xhr) {
-            console.error('Error loading top customers:', xhr);
+        error: function(xhr, status, error) {
+            console.error('Error loading top customers:', status, error);
+            console.error('Response:', xhr.responseText);
         }
     });
     

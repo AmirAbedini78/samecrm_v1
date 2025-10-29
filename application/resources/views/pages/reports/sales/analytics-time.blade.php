@@ -183,15 +183,44 @@ function loadTimeAnalytics() {
 
 // Render Monthly Trend Chart
 function renderMonthlyTrendChart(data) {
+    console.log('Rendering monthly trend chart with data:', data);
+    
     const ctx = document.getElementById('monthlyTrendChart');
+    
+    if (!ctx) {
+        console.error('Canvas element #monthlyTrendChart not found!');
+        return;
+    }
     
     if (monthlyTrendChart) {
         monthlyTrendChart.destroy();
     }
     
-    const labels = data.map(item => persianMonths[item.month - 1]);
+    // Check if data is empty
+    if (!data || data.length === 0) {
+        console.warn('No data for monthly trend chart');
+        $('#monthlyTrendChart').parent().html('<div class="alert alert-warning text-center"><i class="ti-info-alt"></i> داده‌ای برای نمایش یافت نشد. لطفاً بازه تاریخی دیگری انتخاب کنید.</div>');
+        return;
+    }
+    
+    // Create labels with year and month (e.g., "شهریور 1403")
+    const labels = data.map(item => {
+        const monthName = persianMonths[item.month - 1];
+        // If multiple years exist, show year in label
+        const uniqueYears = [...new Set(data.map(d => d.year))];
+        if (uniqueYears.length > 1) {
+            return `${monthName} ${item.year}`;
+        } else {
+            return monthName;
+        }
+    });
+    
     const counts = data.map(item => item.count);
     const amounts = data.map(item => item.total_amount);
+    
+    console.log('Chart labels:', labels);
+    console.log('Chart counts:', counts);
+    console.log('Chart amounts:', amounts);
     
     monthlyTrendChart = new Chart(ctx, {
         type: 'line',
@@ -289,6 +318,12 @@ function renderSeasonalChart(data) {
         seasonalChart.destroy();
     }
     
+    // Check if data is empty
+    if (!data || data.length === 0) {
+        console.warn('No data for seasonal chart');
+        return;
+    }
+    
     const labels = data.map(item => item.name);
     const totals = data.map(item => item.total);
     
@@ -359,10 +394,16 @@ function updateMonthlyStatsTable(data) {
         return;
     }
     
+    // Check if multiple years exist
+    const uniqueYears = [...new Set(data.map(d => d.year))];
+    const showYear = uniqueYears.length > 1;
+    
     data.forEach(item => {
+        const monthName = showYear ? `${persianMonths[item.month - 1]} ${item.year}` : persianMonths[item.month - 1];
+        
         const row = `
             <tr>
-                <td><strong>${persianMonths[item.month - 1]}</strong></td>
+                <td><strong>${monthName}</strong></td>
                 <td>${formatNumber(item.count)}</td>
                 <td>${formatNumber(Math.round(item.total_amount))} ریال</td>
                 <td>${formatNumber(Math.round(item.avg_amount))} ریال</td>
@@ -378,7 +419,11 @@ function calculateTimeStatistics(data) {
     
     // Best month
     const bestMonth = data.reduce((max, item) => item.total_amount > max.total_amount ? item : max, data[0]);
-    $('#bestMonth').text(persianMonths[bestMonth.month - 1]);
+    const uniqueYears = [...new Set(data.map(d => d.year))];
+    const monthLabel = uniqueYears.length > 1 ? 
+        `${persianMonths[bestMonth.month - 1]} ${bestMonth.year}` : 
+        persianMonths[bestMonth.month - 1];
+    $('#bestMonth').text(monthLabel);
     
     // Total sales
     const totalSales = data.reduce((sum, item) => sum + parseFloat(item.total_amount), 0);

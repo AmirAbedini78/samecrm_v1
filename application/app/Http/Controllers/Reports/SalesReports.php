@@ -14,7 +14,7 @@ class SalesReports extends Controller {
     public function __construct() {
         parent::__construct();
         $this->middleware('auth');
-        $this->middleware('reportsMiddlewareShow')->only(['comparison', 'aggregates']);
+        $this->middleware('reportsMiddlewareShow')->only(['comparison', 'aggregates', 'analytics']);
     }
 
     public function comparison(Request $request) {
@@ -45,20 +45,26 @@ class SalesReports extends Controller {
     }
     
     /**
-     * Get unique values for a column
+     * Get unique values for a column (used by both comparison and analytics)
      */
-    private function getUniqueValues(Request $request) {
+    public function getUniqueValues(Request $request) {
         try {
             $column = $request->get('column');
+            
+            // For comparison page (range-based)
             $range = $request->get('range', 1);
             $range1_from = $request->get('range1_from');
             $range1_to = $request->get('range1_to');
             $range2_from = $request->get('range2_from');
             $range2_to = $request->get('range2_to');
             
+            // For analytics page (simple from/to)
+            $from_date = $request->get('from_date');
+            $to_date = $request->get('to_date');
+            
             $query = Sales::query();
             
-            // Apply date range filter
+            // Apply date range filter for comparison page
             if ($range == 1) {
                 if ($range1_from && PersianCalendarHelper::isValidPersianDate($range1_from)) {
                     $query->where('document_date', '>=', $range1_from);
@@ -66,13 +72,21 @@ class SalesReports extends Controller {
                 if ($range1_to && PersianCalendarHelper::isValidPersianDate($range1_to)) {
                     $query->where('document_date', '<=', $range1_to);
                 }
-            } else {
+            } else if ($range == 2) {
                 if ($range2_from && PersianCalendarHelper::isValidPersianDate($range2_from)) {
                     $query->where('document_date', '>=', $range2_from);
                 }
                 if ($range2_to && PersianCalendarHelper::isValidPersianDate($range2_to)) {
                     $query->where('document_date', '<=', $range2_to);
                 }
+            }
+            
+            // Apply date filter for analytics page
+            if ($from_date && PersianCalendarHelper::isValidPersianDate($from_date)) {
+                $query->where('document_date', '>=', $from_date);
+            }
+            if ($to_date && PersianCalendarHelper::isValidPersianDate($to_date)) {
+                $query->where('document_date', '<=', $to_date);
             }
             
             $values = [];
@@ -109,7 +123,8 @@ class SalesReports extends Controller {
             
             return response()->json([
                 'success' => true,
-                'data' => array_values($values)
+                'data' => array_values($values),
+                'count' => count($values)
             ]);
             
         } catch (\Exception $e) {
@@ -423,21 +438,76 @@ class SalesReports extends Controller {
         try {
             $from_date = $request->get('from_date');
             $to_date = $request->get('to_date');
+            $product = $request->get('product');
+            $customer = $request->get('customer');
+            $warehouse = $request->get('warehouse');
+            $status = $request->get('status');
 
             $query = Sales::query();
             
+            // Date filters
             if ($from_date && PersianCalendarHelper::isValidPersianDate($from_date)) {
                 $query->where('document_date', '>=', $from_date);
             }
             if ($to_date && PersianCalendarHelper::isValidPersianDate($to_date)) {
                 $query->where('document_date', '<=', $to_date);
             }
+            
+            // Additional filters
+            if ($product) {
+                $query->where('product_name', 'LIKE', '%' . $product . '%');
+            }
+            if ($customer) {
+                $query->where('customer_name', 'LIKE', '%' . $customer . '%');
+            }
+            if ($warehouse) {
+                $query->where('warehouse', 'LIKE', '%' . $warehouse . '%');
+            }
+            if ($status) {
+                $query->where('sales_status', $status);
+            }
 
-            // Group by month
-            $monthlyData = $query->selectRaw('month, COUNT(*) as count, SUM(base_sales_amount) as total_amount, AVG(base_sales_amount) as avg_amount')
-                ->groupBy('month')
-                ->orderBy('month', 'asc')
-                ->get();
+            // Get all sales data
+            $sales = $query->select('document_date', 'month', 'base_sales_amount')->get();
+            
+            // Group by year and month manually
+            $grouped = [];
+            foreach ($sales as $sale) {
+                // Extract year from document_date (format: YYYY/MM/DD or YYYY-MM-DD)
+                $dateParts = preg_split('/[-\/]/', $sale->document_date);
+                $year = $dateParts[0] ?? '1403';
+                $month = $sale->month;
+                
+                $key = $year . '-' . str_pad($month, 2, '0', STR_PAD_LEFT);
+                
+                if (!isset($grouped[$key])) {
+                    $grouped[$key] = [
+                        'year' => $year,
+                        'month' => (int)$month,
+                        'year_month' => $key,
+                        'count' => 0,
+                        'total_amount' => 0,
+                        'amounts' => []
+                    ];
+                }
+                
+                $grouped[$key]['count']++;
+                $grouped[$key]['total_amount'] += $sale->base_sales_amount;
+                $grouped[$key]['amounts'][] = $sale->base_sales_amount;
+            }
+            
+            // Calculate averages and sort
+            $monthlyData = [];
+            foreach ($grouped as $key => $data) {
+                $data['avg_amount'] = $data['count'] > 0 ? $data['total_amount'] / $data['count'] : 0;
+                unset($data['amounts']); // Remove raw amounts array
+                $monthlyData[] = $data;
+            }
+            
+            // Sort by year_month
+            usort($monthlyData, function($a, $b) {
+                return strcmp($a['year_month'], $b['year_month']);
+            });
 
             return response()->json([
                 'success' => true,
@@ -461,14 +531,33 @@ class SalesReports extends Controller {
             $from_date = $request->get('from_date');
             $to_date = $request->get('to_date');
             $limit = $request->get('limit', 10);
+            $product = $request->get('product');
+            $customer = $request->get('customer');
+            $warehouse = $request->get('warehouse');
+            $status = $request->get('status');
 
             $query = Sales::query();
             
+            // Date filters
             if ($from_date && PersianCalendarHelper::isValidPersianDate($from_date)) {
                 $query->where('document_date', '>=', $from_date);
             }
             if ($to_date && PersianCalendarHelper::isValidPersianDate($to_date)) {
                 $query->where('document_date', '<=', $to_date);
+            }
+            
+            // Additional filters
+            if ($product) {
+                $query->where('product_name', 'LIKE', '%' . $product . '%');
+            }
+            if ($customer) {
+                $query->where('customer_name', 'LIKE', '%' . $customer . '%');
+            }
+            if ($warehouse) {
+                $query->where('warehouse', 'LIKE', '%' . $warehouse . '%');
+            }
+            if ($status) {
+                $query->where('sales_status', $status);
             }
 
             // Group by product
@@ -500,14 +589,33 @@ class SalesReports extends Controller {
             $from_date = $request->get('from_date');
             $to_date = $request->get('to_date');
             $limit = $request->get('limit', 10);
+            $product = $request->get('product');
+            $customer = $request->get('customer');
+            $warehouse = $request->get('warehouse');
+            $status = $request->get('status');
 
             $query = Sales::query();
             
+            // Date filters
             if ($from_date && PersianCalendarHelper::isValidPersianDate($from_date)) {
                 $query->where('document_date', '>=', $from_date);
             }
             if ($to_date && PersianCalendarHelper::isValidPersianDate($to_date)) {
                 $query->where('document_date', '<=', $to_date);
+            }
+            
+            // Additional filters
+            if ($product) {
+                $query->where('product_name', 'LIKE', '%' . $product . '%');
+            }
+            if ($customer) {
+                $query->where('customer_name', 'LIKE', '%' . $customer . '%');
+            }
+            if ($warehouse) {
+                $query->where('warehouse', 'LIKE', '%' . $warehouse . '%');
+            }
+            if ($status) {
+                $query->where('sales_status', $status);
             }
 
             // Group by customer
@@ -538,14 +646,33 @@ class SalesReports extends Controller {
         try {
             $from_date = $request->get('from_date');
             $to_date = $request->get('to_date');
+            $product = $request->get('product');
+            $customer = $request->get('customer');
+            $warehouse = $request->get('warehouse');
+            $status = $request->get('status');
 
             $query = Sales::query();
             
+            // Date filters
             if ($from_date && PersianCalendarHelper::isValidPersianDate($from_date)) {
                 $query->where('document_date', '>=', $from_date);
             }
             if ($to_date && PersianCalendarHelper::isValidPersianDate($to_date)) {
                 $query->where('document_date', '<=', $to_date);
+            }
+            
+            // Additional filters
+            if ($product) {
+                $query->where('product_name', 'LIKE', '%' . $product . '%');
+            }
+            if ($customer) {
+                $query->where('customer_name', 'LIKE', '%' . $customer . '%');
+            }
+            if ($warehouse) {
+                $query->where('warehouse', 'LIKE', '%' . $warehouse . '%');
+            }
+            if ($status) {
+                $query->where('sales_status', $status);
             }
 
             // Calculate profit by product
@@ -576,14 +703,33 @@ class SalesReports extends Controller {
         try {
             $from_date = $request->get('from_date');
             $to_date = $request->get('to_date');
+            $product = $request->get('product');
+            $customer = $request->get('customer');
+            $warehouse = $request->get('warehouse');
+            $status = $request->get('status');
 
             $query = Sales::query();
             
+            // Date filters
             if ($from_date && PersianCalendarHelper::isValidPersianDate($from_date)) {
                 $query->where('document_date', '>=', $from_date);
             }
             if ($to_date && PersianCalendarHelper::isValidPersianDate($to_date)) {
                 $query->where('document_date', '<=', $to_date);
+            }
+            
+            // Additional filters
+            if ($product) {
+                $query->where('product_name', 'LIKE', '%' . $product . '%');
+            }
+            if ($customer) {
+                $query->where('customer_name', 'LIKE', '%' . $customer . '%');
+            }
+            if ($warehouse) {
+                $query->where('warehouse', 'LIKE', '%' . $warehouse . '%');
+            }
+            if ($status) {
+                $query->where('sales_status', $status);
             }
 
             // Get all sales
@@ -629,14 +775,33 @@ class SalesReports extends Controller {
         try {
             $from_date = $request->get('from_date');
             $to_date = $request->get('to_date');
+            $product = $request->get('product');
+            $customer = $request->get('customer');
+            $warehouse = $request->get('warehouse');
+            $status = $request->get('status');
 
             $query = Sales::query();
             
+            // Date filters
             if ($from_date && PersianCalendarHelper::isValidPersianDate($from_date)) {
                 $query->where('document_date', '>=', $from_date);
             }
             if ($to_date && PersianCalendarHelper::isValidPersianDate($to_date)) {
                 $query->where('document_date', '<=', $to_date);
+            }
+            
+            // Additional filters
+            if ($product) {
+                $query->where('product_name', 'LIKE', '%' . $product . '%');
+            }
+            if ($customer) {
+                $query->where('customer_name', 'LIKE', '%' . $customer . '%');
+            }
+            if ($warehouse) {
+                $query->where('warehouse', 'LIKE', '%' . $warehouse . '%');
+            }
+            if ($status) {
+                $query->where('sales_status', $status);
             }
 
             // Calculate delivery statistics
@@ -671,6 +836,46 @@ class SalesReports extends Controller {
 
         } catch (\Exception $e) {
             Log::error('Delivery Status Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Test analytics data - for debugging
+     */
+    public function testAnalyticsData(Request $request) {
+        try {
+            // Get total count
+            $totalCount = Sales::count();
+            
+            // Get date range
+            $minDate = Sales::min('document_date');
+            $maxDate = Sales::max('document_date');
+            
+            // Sample data
+            $sampleData = Sales::orderBy('document_date', 'desc')->limit(5)->get();
+            
+            // Monthly distribution
+            $monthlyCount = Sales::selectRaw('month, COUNT(*) as count')
+                ->groupBy('month')
+                ->orderBy('month')
+                ->get();
+            
+            return response()->json([
+                'success' => true,
+                'total_records' => $totalCount,
+                'date_range' => [
+                    'min' => $minDate,
+                    'max' => $maxDate
+                ],
+                'sample_data' => $sampleData,
+                'monthly_distribution' => $monthlyCount
+            ]);
+            
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'error' => $e->getMessage()
