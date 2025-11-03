@@ -291,28 +291,7 @@ function formatNumber(num) {
     return new Intl.NumberFormat('fa-IR').format(num);
 }
 
-// Initialize charts when tab is shown
-$('#analyticsTab a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-    const target = $(e.target).attr('href');
-    
-    console.log('Tab switched to:', target);
-    
-    // Trigger resize event to redraw charts
-    window.dispatchEvent(new Event('resize'));
-    
-    // Load data for the specific tab if not loaded
-    if (target === '#time-analytics' && !window.timeChartsLoaded) {
-        loadTimeAnalytics();
-    } else if (target === '#products-analytics' && !window.productsChartsLoaded) {
-        loadProductsAnalytics();
-    } else if (target === '#customers-analytics' && !window.customersChartsLoaded) {
-        loadCustomersAnalytics();
-    } else if (target === '#financial-analytics' && !window.financialChartsLoaded) {
-        loadFinancialAnalytics();
-    } else if (target === '#logistics-analytics' && !window.logisticsChartsLoaded) {
-        loadLogisticsAnalytics();
-    }
-});
+// Tab switching is now handled in $(document).ready() above
 
 // Update charts button
 $('#update-analytics').on('click', function() {
@@ -794,6 +773,7 @@ $(document).ready(function() {
     console.log('Analytics page loaded');
     console.log('jQuery version:', $.fn.jquery);
     console.log('Chart.js available:', typeof Chart !== 'undefined');
+    console.log('Bootstrap available:', typeof $.fn.tab !== 'undefined');
     
     // Check if canvas elements exist
     console.log('Canvas #monthlyTrendChart exists:', $('#monthlyTrendChart').length > 0);
@@ -806,6 +786,51 @@ $(document).ready(function() {
     $('#analytics_to_month').val('12');
     
     console.log('Default year set to:', currentYear);
+    
+    // Initialize Bootstrap tabs manually with click handler
+    $('#analyticsTab a[data-toggle="tab"]').each(function() {
+        $(this).on('click', function(e) {
+            e.preventDefault();
+            
+            const targetId = $(this).attr('href');
+            console.log('Tab clicked:', targetId);
+            
+            // Remove active from all tabs and panes
+            $('#analyticsTab .nav-link').removeClass('active');
+            $('.tab-pane').removeClass('show active');
+            
+            // Add active to clicked tab
+            $(this).addClass('active');
+            
+            // Show corresponding tab pane
+            $(targetId).addClass('show active');
+            
+            // Load data for the specific tab if not loaded
+            setTimeout(() => {
+                if (targetId === '#time-analytics' && !window.timeChartsLoaded) {
+                    console.log('Loading time analytics...');
+                    loadTimeAnalytics();
+                } else if (targetId === '#products-analytics' && !window.productsChartsLoaded) {
+                    console.log('Loading products analytics...');
+                    loadProductsAnalytics();
+                } else if (targetId === '#customers-analytics' && !window.customersChartsLoaded) {
+                    console.log('Loading customers analytics...');
+                    loadCustomersAnalytics();
+                } else if (targetId === '#financial-analytics' && !window.financialChartsLoaded) {
+                    console.log('Loading financial analytics...');
+                    loadFinancialAnalytics();
+                } else if (targetId === '#logistics-analytics' && !window.logisticsChartsLoaded) {
+                    console.log('Loading logistics analytics...');
+                    loadLogisticsAnalytics();
+                }
+                
+                // Trigger resize to redraw charts
+                window.dispatchEvent(new Event('resize'));
+            }, 100);
+        });
+    });
+    
+    console.log('Tabs initialized with manual click handlers');
     
     // Initialize Persian date pickers
     initPersianDatePickers();

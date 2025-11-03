@@ -182,6 +182,7 @@ class SalesReports extends Controller {
             $sales_status = $request->get('sales_status');
             $customer = $request->get('customer');
             $product = $request->get('product');
+            $warehouse = $request->get('warehouse');
 
             Log::info('Comparison Data Request', [
                 'range1_from' => $range1_from,
@@ -190,7 +191,8 @@ class SalesReports extends Controller {
                 'range2_to' => $range2_to,
                 'sales_status' => $sales_status,
                 'customer' => $customer,
-                'product' => $product
+                'product' => $product,
+                'warehouse' => $warehouse
             ]);
 
             // Build Range 1 Query
@@ -210,6 +212,9 @@ class SalesReports extends Controller {
             if ($product) {
                 $range1_query->where('product_name', 'LIKE', '%' . $product . '%');
             }
+            if ($warehouse) {
+                $range1_query->where('warehouse', 'LIKE', '%' . $warehouse . '%');
+            }
 
             // Build Range 2 Query
             $range2_query = Sales::query();
@@ -227,6 +232,9 @@ class SalesReports extends Controller {
             }
             if ($product) {
                 $range2_query->where('product_name', 'LIKE', '%' . $product . '%');
+            }
+            if ($warehouse) {
+                $range2_query->where('warehouse', 'LIKE', '%' . $warehouse . '%');
             }
 
             $result = [
@@ -264,6 +272,7 @@ class SalesReports extends Controller {
             $sales_status = $request->get('sales_status');
             $customer = $request->get('customer');
             $product = $request->get('product');
+            $warehouse = $request->get('warehouse');
 
             Log::info("DataTables Range $range Request", [
                 'range1_from' => $range1_from,
@@ -272,7 +281,8 @@ class SalesReports extends Controller {
                 'range2_to' => $range2_to,
                 'sales_status' => $sales_status,
                 'customer' => $customer,
-                'product' => $product
+                'product' => $product,
+                'warehouse' => $warehouse
             ]);
 
             // Build query based on range
@@ -303,6 +313,9 @@ class SalesReports extends Controller {
             }
             if ($product) {
                 $query->where('product_name', 'LIKE', '%' . $product . '%');
+            }
+            if ($warehouse) {
+                $query->where('warehouse', 'LIKE', '%' . $warehouse . '%');
             }
 
             // Apply column-specific search from request or session
@@ -632,6 +645,161 @@ class SalesReports extends Controller {
 
         } catch (\Exception $e) {
             Log::error('Top Customers Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Get customer percentage analysis (Pareto/ABC Analysis)
+     */
+    public function getCustomerPercentageAnalysis(Request $request) {
+        try {
+            $from_date = $request->get('from_date');
+            $to_date = $request->get('to_date');
+            $product = $request->get('product');
+            $customer = $request->get('customer');
+            $warehouse = $request->get('warehouse');
+            $status = $request->get('status');
+
+            // First, get total sales amount
+            $totalQuery = Sales::query();
+            
+            // Date filters
+            if ($from_date && PersianCalendarHelper::isValidPersianDate($from_date)) {
+                $totalQuery->where('document_date', '>=', $from_date);
+            }
+            if ($to_date && PersianCalendarHelper::isValidPersianDate($to_date)) {
+                $totalQuery->where('document_date', '<=', $to_date);
+            }
+            
+            // Additional filters
+            if ($product) {
+                $totalQuery->where('product_name', 'LIKE', '%' . $product . '%');
+            }
+            if ($customer) {
+                $totalQuery->where('customer_name', 'LIKE', '%' . $customer . '%');
+            }
+            if ($warehouse) {
+                $totalQuery->where('warehouse', 'LIKE', '%' . $warehouse . '%');
+            }
+            if ($status) {
+                $totalQuery->where('sales_status', $status);
+            }
+
+            $totalSales = $totalQuery->sum('base_sales_amount') ?? 0;
+            
+            if ($totalSales == 0) {
+                return response()->json([
+                    'success' => true,
+                    'data' => [],
+                    'total_sales' => 0,
+                    'message' => 'هیچ داده‌ای برای این بازه زمانی یافت نشد'
+                ]);
+            }
+
+            // Get sales by customer
+            $query = Sales::query();
+            
+            // Apply same filters
+            if ($from_date && PersianCalendarHelper::isValidPersianDate($from_date)) {
+                $query->where('document_date', '>=', $from_date);
+            }
+            if ($to_date && PersianCalendarHelper::isValidPersianDate($to_date)) {
+                $query->where('document_date', '<=', $to_date);
+            }
+            if ($product) {
+                $query->where('product_name', 'LIKE', '%' . $product . '%');
+            }
+            if ($customer) {
+                $query->where('customer_name', 'LIKE', '%' . $customer . '%');
+            }
+            if ($warehouse) {
+                $query->where('warehouse', 'LIKE', '%' . $warehouse . '%');
+            }
+            if ($status) {
+                $query->where('sales_status', $status);
+            }
+
+            // Group by customer and calculate amounts
+            $customerSales = $query->selectRaw('
+                    customer_name,
+                    COUNT(*) as order_count,
+                    SUM(base_sales_amount) as total_amount,
+                    AVG(base_sales_amount) as avg_amount
+                ')
+                ->groupBy('customer_name')
+                ->orderBy('total_amount', 'desc')
+                ->get();
+
+            // Calculate percentages and cumulative percentages
+            $cumulativePercentage = 0;
+            $analysisData = [];
+            
+            foreach ($customerSales as $index => $customer) {
+                $percentage = ($customer->total_amount / $totalSales) * 100;
+                $cumulativePercentage += $percentage;
+                
+                // ABC Classification (Pareto Analysis)
+                $classification = 'C';
+                if ($cumulativePercentage <= 80) {
+                    $classification = 'A'; // Top 80% of sales
+                } elseif ($cumulativePercentage <= 95) {
+                    $classification = 'B'; // Next 15% of sales
+                }
+                
+                $analysisData[] = [
+                    'rank' => $index + 1,
+                    'customer_name' => $customer->customer_name,
+                    'order_count' => (int) $customer->order_count,
+                    'total_amount' => (float) $customer->total_amount,
+                    'avg_amount' => (float) $customer->avg_amount,
+                    'percentage' => round($percentage, 2),
+                    'cumulative_percentage' => round($cumulativePercentage, 2),
+                    'classification' => $classification
+                ];
+            }
+
+            // Prepare summary statistics
+            $summary = [
+                'total_sales' => (float) $totalSales,
+                'total_customers' => count($customerSales),
+                'top_10_percentage' => 0,
+                'top_20_percentage' => 0,
+                'class_a_customers' => 0,
+                'class_b_customers' => 0,
+                'class_c_customers' => 0
+            ];
+
+            // Calculate statistics
+            if (count($analysisData) > 0) {
+                // Top 10 customers percentage
+                $top10 = array_slice($analysisData, 0, min(10, count($analysisData)));
+                $summary['top_10_percentage'] = round(array_sum(array_column($top10, 'percentage')), 2);
+                
+                // Top 20% customers percentage (Pareto)
+                $top20Count = max(1, ceil(count($analysisData) * 0.2));
+                $top20 = array_slice($analysisData, 0, $top20Count);
+                $summary['top_20_percentage'] = round(array_sum(array_column($top20, 'percentage')), 2);
+                
+                // Count customers by classification
+                foreach ($analysisData as $item) {
+                    if ($item['classification'] == 'A') $summary['class_a_customers']++;
+                    elseif ($item['classification'] == 'B') $summary['class_b_customers']++;
+                    else $summary['class_c_customers']++;
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $analysisData,
+                'summary' => $summary
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Customer Percentage Analysis Error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'error' => $e->getMessage()

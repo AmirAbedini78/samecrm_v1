@@ -6,10 +6,10 @@
                 <h4 class="card-title mb-4">گزارش مقایسه فروش بر اساس تاریخ سند</h4>
                 
                 <!-- Date Range Filters -->
-                <div class="row g-3 align-items-end mb-4">
+                <div class="row align-items-end mb-4">
                     <div class="col-md-3">
                         <label class="form-label">از تاریخ (بازه 1)</label>
-                        <div class="input-group">
+                        <div class="input-group input-group-sm">
                             <input type="text" id="range1_from" class="form-control persian-date-input" 
                                    placeholder="1403/01/01" autocomplete="off">
                             <button type="button" class="btn btn-outline-secondary" data-target="range1_from">
@@ -19,7 +19,7 @@
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">تا تاریخ (بازه 1)</label>
-                        <div class="input-group">
+                        <div class="input-group input-group-sm">
                             <input type="text" id="range1_to" class="form-control persian-date-input" 
                                    placeholder="1403/12/29" autocomplete="off">
                             <button type="button" class="btn btn-outline-secondary" data-target="range1_to">
@@ -29,7 +29,7 @@
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">از تاریخ (بازه 2)</label>
-                        <div class="input-group">
+                        <div class="input-group input-group-sm">
                             <input type="text" id="range2_from" class="form-control persian-date-input" 
                                    placeholder="1404/01/01" autocomplete="off">
                             <button type="button" class="btn btn-outline-secondary" data-target="range2_from">
@@ -39,7 +39,7 @@
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">تا تاریخ (بازه 2)</label>
-                        <div class="input-group">
+                        <div class="input-group input-group-sm">
                             <input type="text" id="range2_to" class="form-control persian-date-input" 
                                    placeholder="1404/12/29" autocomplete="off">
                             <button type="button" class="btn btn-outline-secondary" data-target="range2_to">
@@ -51,26 +51,53 @@
 
                 <!-- Additional Filters -->
                 <div class="row g-3 align-items-end mb-4">
-                    <div class="col-md-3">
+                    <div class="col-md-2">
+                        <label class="form-label d-flex justify-content-between align-items-center">
+                            <span>فیلتر محصول</span>
+                            <small class="text-muted" id="comp-product-count"></small>
+                        </label>
+                        <select id="product_filter" class="form-control form-control-sm">
+                            <option value="">همه محصولات</option>
+                            <option value="loading" disabled>در حال بارگذاری...</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label d-flex justify-content-between align-items-center">
+                            <span>فیلتر مشتری</span>
+                            <small class="text-muted" id="comp-customer-count"></small>
+                        </label>
+                        <select id="customer_filter" class="form-control form-control-sm">
+                            <option value="">همه مشتریان</option>
+                            <option value="loading" disabled>در حال بارگذاری...</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label d-flex justify-content-between align-items-center">
+                            <span>فیلتر انبار</span>
+                            <small class="text-muted" id="comp-warehouse-count"></small>
+                        </label>
+                        <select id="warehouse_filter" class="form-control form-control-sm">
+                            <option value="">همه انبارها</option>
+                            <option value="loading" disabled>در حال بارگذاری...</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
                         <label class="form-label">وضعیت فروش</label>
-                        <select id="sales_status_filter" class="form-select">
-                            <option value="">همه وضعیت‌ها</option>
+                        <select id="sales_status_filter" class="form-control form-control-sm">
+                            <option value="">همه</option>
                             <option value="completed">تکمیل شده</option>
                             <option value="pending">در انتظار</option>
                             <option value="cancelled">لغو شده</option>
                         </select>
                     </div>
-                    <div class="col-md-3">
-                        <label class="form-label">نام مشتری</label>
-                        <input type="text" id="customer_filter" class="form-control" placeholder="جستجو در نام مشتری">
+                    <div class="col-md-2">
+                        <button id="refresh-comparison-filters" class="btn btn-outline-secondary btn-sm w-100">
+                            <i class="ti-reload"></i> بروزرسانی لیست‌ها
+                        </button>
                     </div>
-                    <div class="col-md-3">
-                        <label class="form-label">نام محصول</label>
-                        <input type="text" id="product_filter" class="form-control" placeholder="جستجو در نام محصول">
-                    </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <button id="run-comparison" class="btn btn-primary w-100">
-                            <i class="ti-bar-chart"></i> اجرای مقایسه
+                            <i class="ti-bar-chart"></i> اجرا
                         </button>
                     </div>
                 </div>
@@ -697,63 +724,16 @@
     </div>
 </div>
 
-<!-- Custom Persian Date Picker Modal -->
-<div id="persianDatePickerModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); z-index: 99999;">
-    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 8px; padding: 20px; min-width: 400px; max-width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.5); border: 2px solid #007bff;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 15px;">
-            <h4 style="margin: 0; color: #333; font-weight: bold;">انتخاب تاریخ شمسی</h4>
-            <button type="button" onclick="closePersianDatePicker()" style="background: #dc3545; color: white; border: none; font-size: 20px; cursor: pointer; padding: 5px 10px; border-radius: 4px;">&times;</button>
-        </div>
-        
-        <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
-            <div style="flex: 1; min-width: 120px;">
-                <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #555; font-size: 14px;">سال:</label>
-                <select id="picker-year" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px; background: white;">
-                    <option value="1400">1400</option>
-                    <option value="1401">1401</option>
-                    <option value="1402">1402</option>
-                    <option value="1403">1403</option>
-                    <option value="1404" selected>1404</option>
-                    <option value="1405">1405</option>
-                </select>
-            </div>
-            <div style="flex: 1; min-width: 120px;">
-                <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #555; font-size: 14px;">ماه:</label>
-                <select id="picker-month" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px; background: white;">
-                    <option value="1">فروردین</option>
-                    <option value="2">اردیبهشت</option>
-                    <option value="3">خرداد</option>
-                    <option value="4">تیر</option>
-                    <option value="5">مرداد</option>
-                    <option value="6">شهریور</option>
-                    <option value="7">مهر</option>
-                    <option value="8">آبان</option>
-                    <option value="9">آذر</option>
-                    <option value="10">دی</option>
-                    <option value="11">بهمن</option>
-                    <option value="12">اسفند</option>
-                </select>
-            </div>
-            <div style="flex: 1; min-width: 120px;">
-                <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #555; font-size: 14px;">روز:</label>
-                <select id="picker-day" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px; background: white;">
-                    <!-- Days will be populated dynamically -->
-                </select>
-            </div>
-        </div>
-        
-        <div style="display: flex; gap: 15px; justify-content: flex-end;">
-            <button type="button" onclick="confirmPersianDate()" style="background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold;">تأیید</button>
-            <button type="button" onclick="closePersianDatePicker()" style="background: #6c757d; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold;">لغو</button>
-        </div>
-    </div>
-</div>
-
+<!-- Persian Date Picker Scripts (Analytics Style) -->
 <script>
+const persianMonths = [
+    'فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور',
+    'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'
+];
+
 // Global variables
 var table1 = null;
 var table2 = null;
-var currentDateInput = null;
 var comparisonChart = null;
 
 // Utility functions
@@ -765,123 +745,124 @@ function fmt(amount) {
     }
 }
 
-function clearOldDatePickers() {
-    // Remove any existing date picker elements
-    $('.kamadatepicker-popup, .persian-datepicker-popup-old, .modal-backdrop').remove();
-    
-    // Remove any existing date picker event handlers
-    $(document).off('click.persian-picker');
-    $(document).off('keydown.persian-picker');
-    
-    // Clear any existing date picker variables
-    currentDatePicker = null;
-    currentInputId = null;
-    
-    console.log('Old date pickers cleared');
+// Persian Date Picker Initialization (Analytics Style)
+function initPersianDatePickers() {
+    $('.persian-date-input').each(function() {
+        const inputId = $(this).attr('id');
+        
+        // Calendar button click
+        $('button[data-target="' + inputId + '"]').on('click', function(e) {
+            e.preventDefault();
+            openPersianDatePicker(inputId);
+        });
+        
+        // Input click
+        $('#' + inputId).on('click', function() {
+            openPersianDatePicker(inputId);
+        });
+        
+        // Input change event
+        $('#' + inputId).on('change', function() {
+            console.log('Date changed:', inputId, $(this).val());
+        });
+    });
 }
 
-// Custom Persian Date Picker Functions
-var currentDatePicker = null;
-var currentInputId = null;
+let currentPickerInput = null;
+let selectedDate = { year: 1403, month: 1, day: 1 };
 
-function showPersianDatePicker(inputId) {
-    console.log('showPersianDatePicker called with:', inputId);
+function openPersianDatePicker(inputId) {
+    currentPickerInput = inputId;
     
-    // Clear any existing date pickers first
-    $('.kamadatepicker-popup, .persian-datepicker-popup-old, .modal-backdrop').remove();
+    console.log('Opening date picker for:', inputId);
     
-    // Close any existing picker
-    closePersianDatePicker();
+    // Get current date from input or use default
+    const currentValue = $('#' + inputId).val();
+    if (currentValue && currentValue.trim() !== '') {
+        const parts = currentValue.split('/');
+        if (parts.length === 3) {
+            selectedDate = {
+                year: parseInt(parts[0]),
+                month: parseInt(parts[1]),
+                day: parseInt(parts[2])
+            };
+        }
+    } else {
+        // Set default date
+        selectedDate = {
+            year: 1403,
+            month: 1,
+            day: 1
+        };
+    }
     
-    currentInputId = inputId;
-    var input = $('#' + inputId);
-    var inputGroup = input.closest('.input-group');
+    // Remove existing picker
+    $('.persian-datepicker-popup').remove();
     
-    console.log('Input found:', input.length);
-    console.log('InputGroup found:', inputGroup.length);
-    
-    // Get current date or default to today
-    var currentValue = input.val();
-    var currentDate = currentValue ? parsePersianDate(currentValue) : getTodayPersian();
-    
-    console.log('Current date:', currentDate);
-    
-    // Create popup
-    var popup = createPersianDatePickerPopup(currentDate);
-    
-    // Position popup
-    var offset = inputGroup.offset();
-    popup.css({
-        'top': offset.top + inputGroup.outerHeight() + 5,
-        'left': offset.left
-    });
-    
-    console.log('Popup positioned at:', offset);
-    
-    // Add to body
+    // Create and show picker
+    const popup = createPersianDatePickerPopup(selectedDate);
     $('body').append(popup);
-    currentDatePicker = popup;
     
-    console.log('Popup added to body');
+    // Position popup near input
+    const input = $('#' + inputId);
+    const offset = input.offset();
+    popup.css({
+        top: offset.top + input.outerHeight() + 5,
+        left: offset.left,
+        zIndex: 9999
+    });
     
     // Add click outside to close
-    $(document).on('click.persian-picker', function(e) {
-        if (!$(e.target).closest('.persian-datepicker-popup').length && 
-            !$(e.target).closest('#' + inputId).length &&
-            !$(e.target).closest('button[data-target="' + inputId + '"]').length) {
-            closePersianDatePicker();
-        }
-    });
-    
-    // Add escape key to close
-    $(document).on('keydown.persian-picker', function(e) {
-        if (e.keyCode === 27) { // Escape key
-            closePersianDatePicker();
-        }
-    });
+    setTimeout(() => {
+        $(document).on('click.persian-picker', function(e) {
+            if (!$(e.target).closest('.persian-datepicker-popup').length && 
+                !$(e.target).closest('#' + inputId).length &&
+                !$(e.target).closest('button[data-target="' + inputId + '"]').length) {
+                closePersianDatePicker();
+            }
+        });
+    }, 100);
 }
 
 function createPersianDatePickerPopup(currentDate) {
-    var year = currentDate.year;
-    var month = currentDate.month;
-    var day = currentDate.day;
+    const { year, month, day } = currentDate;
     
-    var persianMonths = [
-        'فروردین', 'اردیبهشت', 'خرداد', 'تیر',
-        'مرداد', 'شهریور', 'مهر', 'آبان',
-        'آذر', 'دی', 'بهمن', 'اسفند'
-    ];
-    
-    var dayNames = ['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج'];
-    
-    // Generate calendar
-    var calendarHtml = generatePersianCalendar(year, month, day);
-    
-    var popup = $(`
-        <div class="persian-datepicker-popup">
-            <div class="header">
-                <h5 style="margin: 0;">انتخاب تاریخ شمسی</h5>
-                <button type="button" onclick="closePersianDatePicker()" style="background: none; border: none; font-size: 18px; cursor: pointer;">&times;</button>
+    const popup = $(`
+        <div class="persian-datepicker-popup" style="position: absolute; z-index: 9999; background: white; border: 1px solid #ddd; border-radius: 8px; padding: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); min-width: 300px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h6 style="margin: 0; font-weight: bold;">انتخاب تاریخ</h6>
+                <button type="button" onclick="closePersianDatePicker()" style="background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
             </div>
             
-            <div class="month-year">
-                <select id="picker-year" onchange="updatePersianCalendar()">
-                    ${generateYearOptions(year)}
-                </select>
-                <select id="picker-month" onchange="updatePersianCalendar()">
-                    ${generateMonthOptions(month)}
-                </select>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                <div>
+                    <label style="display: block; font-size: 12px; margin-bottom: 5px;">سال</label>
+                    <select id="picker-year" class="form-select form-select-sm" onchange="updatePersianCalendar()">
+                        ${Array.from({length: 20}, (_, i) => 1395 + i).map(y => 
+                            `<option value="${y}" ${y === year ? 'selected' : ''}>${y}</option>`
+                        ).join('')}
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 12px; margin-bottom: 5px;">ماه</label>
+                    <select id="picker-month" class="form-select form-select-sm" onchange="updatePersianCalendar()">
+                        ${persianMonths.map((m, i) => 
+                            `<option value="${i + 1}" ${(i + 1) === month ? 'selected' : ''}>${m}</option>`
+                        ).join('')}
+                    </select>
+                </div>
             </div>
             
-            <div class="calendar">
-                ${dayNames.map(d => `<div class="day-header">${d}</div>`).join('')}
-                ${calendarHtml}
+            <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; margin-bottom: 15px;">
+                ${['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج'].map(d => 
+                    `<div style="font-weight: bold; font-size: 12px; padding: 5px;">${d}</div>`
+                ).join('')}
+                ${generateCalendarDays(year, month, day)}
             </div>
             
-            <div class="buttons">
-                <button type="button" class="btn-danger" onclick="clearPersianDate()">پاک کردن</button>
-                <button type="button" class="btn-secondary" onclick="closePersianDatePicker()">لغو</button>
-                <button type="button" class="btn-primary" onclick="confirmPersianDate()">تأیید</button>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" class="btn btn-sm btn-secondary" onclick="closePersianDatePicker()">لغو</button>
+                <button type="button" class="btn btn-sm btn-primary" onclick="confirmPersianDate()">تأیید</button>
             </div>
         </div>
     `);
@@ -889,239 +870,189 @@ function createPersianDatePickerPopup(currentDate) {
     return popup;
 }
 
-function generateYearOptions(currentYear) {
-    var options = '';
-    for (var i = 1400; i <= 1410; i++) {
-        var selected = i === currentYear ? 'selected' : '';
-        options += `<option value="${i}" ${selected}>${i}</option>`;
-    }
-    return options;
-}
-
-function generateMonthOptions(currentMonth) {
-    var persianMonths = [
-        'فروردین', 'اردیبهشت', 'خرداد', 'تیر',
-        'مرداد', 'شهریور', 'مهر', 'آبان',
-        'آذر', 'دی', 'بهمن', 'اسفند'
-    ];
+function generateCalendarDays(year, month, selectedDay) {
+    const daysInMonth = month <= 6 ? 31 : (month <= 11 ? 30 : (isLeapYear(year) ? 30 : 29));
+    let html = '';
     
-    var options = '';
-    for (var i = 1; i <= 12; i++) {
-        var selected = i === currentMonth ? 'selected' : '';
-        options += `<option value="${i}" ${selected}>${persianMonths[i-1]}</option>`;
-    }
-    return options;
-}
-
-function generatePersianCalendar(year, month, selectedDay) {
-    var daysInMonth = month <= 6 ? 31 : 30;
-    if (month === 12 && year % 4 === 3) daysInMonth = 30; // Leap year
-    
-    var html = '';
-    var today = getTodayPersian();
-    
-    // Add empty cells for alignment (simplified)
-    for (var i = 1; i <= daysInMonth; i++) {
-        var isToday = (year === today.year && month === today.month && i === today.day);
-        var isSelected = (i === selectedDay);
-        var classes = 'day';
-        if (isToday) classes += ' today';
-        if (isSelected) classes += ' selected';
-        
-        html += `<div class="${classes}" onclick="selectPersianDay(${i})">${i}</div>`;
+    for (let i = 1; i <= daysInMonth; i++) {
+        const isSelected = i === selectedDay;
+        html += `
+            <div class="calendar-day ${isSelected ? 'selected' : ''}" 
+                 data-day="${i}" 
+                 onclick="selectDay(${i})"
+                 style="
+                     padding: 8px; 
+                     cursor: pointer; 
+                     border-radius: 4px;
+                     font-size: 13px;
+                     ${isSelected ? 'background: #5969ff; color: white; font-weight: bold;' : 'background: #f8f9fa;'}
+                 ">
+                ${i}
+            </div>
+        `;
     }
     
     return html;
 }
 
-function selectPersianDay(day) {
-    if (currentDatePicker) {
-        currentDatePicker.find('.day').removeClass('selected');
-        currentDatePicker.find('.day').each(function(index) {
-            if ($(this).text() == day) {
-                $(this).addClass('selected');
-            }
-        });
-    }
+function isLeapYear(year) {
+    const breaks = [1, 5, 9, 13, 17, 22, 26, 30];
+    const cycle = year % 33;
+    return breaks.includes(cycle);
 }
 
-function updatePersianCalendar() {
-    if (currentDatePicker) {
-        var year = parseInt(currentDatePicker.find('#picker-year').val());
-        var month = parseInt(currentDatePicker.find('#picker-month').val());
-        var calendar = currentDatePicker.find('.calendar');
-        
-        var calendarHtml = generatePersianCalendar(year, month, 1);
-        calendar.html(`
-            <div class="day-header">ش</div>
-            <div class="day-header">ی</div>
-            <div class="day-header">د</div>
-            <div class="day-header">س</div>
-            <div class="day-header">چ</div>
-            <div class="day-header">پ</div>
-            <div class="day-header">ج</div>
-            ${calendarHtml}
-        `);
-    }
-}
+window.selectDay = function(day) {
+    selectedDate.day = day;
+    $('.calendar-day').removeClass('selected').css({'background': '#f8f9fa', 'color': 'inherit', 'font-weight': 'normal'});
+    $(`.calendar-day[data-day="${day}"]`).addClass('selected').css({'background': '#5969ff', 'color': 'white', 'font-weight': 'bold'});
+};
 
-function confirmPersianDate() {
-    if (currentDatePicker && currentInputId) {
-        var year = currentDatePicker.find('#picker-year').val();
-        var month = currentDatePicker.find('#picker-month').val();
-        var selectedDay = currentDatePicker.find('.day.selected');
+window.updatePersianCalendar = function() {
+    selectedDate.year = parseInt($('#picker-year').val());
+    selectedDate.month = parseInt($('#picker-month').val());
+    
+    console.log('Calendar updated to:', selectedDate.year, '/', selectedDate.month);
+    
+    // Regenerate calendar
+    const calendarHtml = generateCalendarDays(selectedDate.year, selectedDate.month, selectedDate.day);
+    $('.persian-datepicker-popup > div:nth-child(3)').html(`
+        ${['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج'].map(d => 
+            `<div style="font-weight: bold; font-size: 12px; padding: 5px;">${d}</div>`
+        ).join('')}
+        ${calendarHtml}
+    `);
+};
+
+window.confirmPersianDate = function() {
+    if (currentPickerInput) {
+        const dateString = `${selectedDate.year}/${String(selectedDate.month).padStart(2, '0')}/${String(selectedDate.day).padStart(2, '0')}`;
+        $('#' + currentPickerInput).val(dateString);
+        console.log('Date set for', currentPickerInput, ':', dateString);
         
-        if (selectedDay.length > 0) {
-            var day = selectedDay.text();
-            var formattedDate = year + '/' + month + '/' + day;
-            $('#' + currentInputId).val(formattedDate);
-            console.log('Date set to:', formattedDate);
-        } else {
-            alert('لطفاً یک روز را انتخاب کنید.');
-            return;
-        }
+        // Trigger change event
+        $('#' + currentPickerInput).trigger('change');
     }
     closePersianDatePicker();
-}
+};
 
-function clearPersianDate() {
-    if (currentInputId) {
-        $('#' + currentInputId).val('');
-    }
-    closePersianDatePicker();
-}
-
-function closePersianDatePicker() {
-    if (currentDatePicker) {
-        currentDatePicker.remove();
-        currentDatePicker = null;
-    }
+window.closePersianDatePicker = function() {
+    $('.persian-datepicker-popup').remove();
     $(document).off('click.persian-picker');
-    $(document).off('keydown.persian-picker');
-    currentInputId = null;
-}
-
-function parsePersianDate(dateStr) {
-    if (!dateStr || !/^\d{4}\/\d{1,2}\/\d{1,2}$/.test(dateStr)) {
-        return getTodayPersian();
-    }
-    var parts = dateStr.split('/');
-    return {
-        year: parseInt(parts[0]),
-        month: parseInt(parts[1]),
-        day: parseInt(parts[2])
-    };
-}
-
-function getTodayPersian() {
-    // Simple approximation - in real app you'd use proper conversion
-    return { year: 1404, month: 1, day: 1 };
-}
-
-function createPersianDatePickerModal() {
-    var modalHtml = `
-        <div id="persianDatePickerModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); z-index: 99999;">
-            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 8px; padding: 20px; min-width: 400px; max-width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.5); border: 2px solid #007bff;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 15px;">
-                    <h4 style="margin: 0; color: #333; font-weight: bold;">انتخاب تاریخ شمسی</h4>
-                    <button type="button" onclick="closePersianDatePicker()" style="background: #dc3545; color: white; border: none; font-size: 20px; cursor: pointer; padding: 5px 10px; border-radius: 4px;">&times;</button>
-                </div>
-                
-                <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
-                    <div style="flex: 1; min-width: 120px;">
-                        <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #555; font-size: 14px;">سال:</label>
-                        <select id="picker-year" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px; background: white;">
-                            <option value="1400">1400</option>
-                            <option value="1401">1401</option>
-                            <option value="1402">1402</option>
-                            <option value="1403">1403</option>
-                            <option value="1404" selected>1404</option>
-                            <option value="1405">1405</option>
-                        </select>
-                    </div>
-                    <div style="flex: 1; min-width: 120px;">
-                        <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #555; font-size: 14px;">ماه:</label>
-                        <select id="picker-month" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px; background: white;">
-                            <option value="1">فروردین</option>
-                            <option value="2">اردیبهشت</option>
-                            <option value="3">خرداد</option>
-                            <option value="4">تیر</option>
-                            <option value="5">مرداد</option>
-                            <option value="6">شهریور</option>
-                            <option value="7">مهر</option>
-                            <option value="8">آبان</option>
-                            <option value="9">آذر</option>
-                            <option value="10">دی</option>
-                            <option value="11">بهمن</option>
-                            <option value="12">اسفند</option>
-                        </select>
-                    </div>
-                    <div style="flex: 1; min-width: 120px;">
-                        <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #555; font-size: 14px;">روز:</label>
-                        <select id="picker-day" style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 6px; font-size: 14px; background: white;">
-                            <!-- Days will be populated dynamically -->
-                        </select>
-                    </div>
-                </div>
-                
-                <div style="display: flex; gap: 15px; justify-content: flex-end;">
-                    <button type="button" onclick="confirmPersianDate()" style="background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold;">تأیید</button>
-                    <button type="button" onclick="closePersianDatePicker()" style="background: #6c757d; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold;">لغو</button>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    $('body').append(modalHtml);
-    console.log('Modal created and appended to body');
-    
-    // Initialize month change handler
-    $('#picker-month').on('change', updateDays);
-    
-    // Close modal when clicking outside
-    $('#persianDatePickerModal').on('click', function(e) {
-        if (e.target === this) {
-            closePersianDatePicker();
-        }
-    });
-}
-
-function updateDays() {
-    // This function is no longer needed with custom date picker
-    // Keeping it for compatibility
-}
-
-function confirmPersianDate() {
-    // This function is now implemented above
-}
-
-function closePersianDatePicker() {
-    // This function is now implemented above
-}
+};
 
 // Event handlers
-$(document).ready(function() {
-    console.log('Document ready - Initializing Persian Date Picker');
+// Load unique values for ComboBox filters
+function loadComparisonUniqueFilters() {
+    console.log('Loading unique filter values for comparison...');
     
-    // Clear any existing date pickers
-    clearOldDatePickers();
-    
-    // Initialize Persian date picker buttons
-    $(document).on('click', 'button[data-target]', function() {
-        var targetId = $(this).data('target');
-        console.log('Button clicked for:', targetId);
-        showPersianDatePicker(targetId);
-    });
-    
-    // Remove modal backdrop when it appears
-    $(document).on('DOMNodeInserted', function(e) {
-        if ($(e.target).hasClass('modal-backdrop')) {
-            $(e.target).remove();
+    // Load unique products
+    $.ajax({
+        url: '/report/sales/comparison',
+        method: 'GET',
+        data: { action: 'unique_values', column: 'product_name' },
+        dataType: 'json',
+        success: function(response) {
+            if (response.success) {
+                console.log('Unique products loaded:', response.data.length);
+                populateComparisonSelect('#product_filter', response.data, 'همه محصولات', 'comp-product-count');
+            }
+        },
+        error: function(xhr) {
+            console.error('Error loading products:', xhr);
+            populateComparisonSelect('#product_filter', [], 'همه محصولات', 'comp-product-count');
         }
     });
     
-    // Initialize month change handler
-    $('#picker-month').on('change', updateDays);
+    // Load unique customers
+    $.ajax({
+        url: '/report/sales/comparison',
+        method: 'GET',
+        data: { action: 'unique_values', column: 'customer_name' },
+        dataType: 'json',
+        success: function(response) {
+            if (response.success) {
+                console.log('Unique customers loaded:', response.data.length);
+                populateComparisonSelect('#customer_filter', response.data, 'همه مشتریان', 'comp-customer-count');
+            }
+        },
+        error: function(xhr) {
+            console.error('Error loading customers:', xhr);
+            populateComparisonSelect('#customer_filter', [], 'همه مشتریان', 'comp-customer-count');
+        }
+    });
+    
+    // Load unique warehouses
+    $.ajax({
+        url: '/report/sales/comparison',
+        method: 'GET',
+        data: { action: 'unique_values', column: 'warehouse' },
+        dataType: 'json',
+        success: function(response) {
+            if (response.success) {
+                console.log('Unique warehouses loaded:', response.data.length);
+                populateComparisonSelect('#warehouse_filter', response.data, 'همه انبارها', 'comp-warehouse-count');
+            }
+        },
+        error: function(xhr) {
+            console.error('Error loading warehouses:', xhr);
+            populateComparisonSelect('#warehouse_filter', [], 'همه انبارها', 'comp-warehouse-count');
+        }
+    });
+}
+
+// Populate ComboBox select with options
+function populateComparisonSelect(selector, data, placeholder, countId) {
+    const $select = $(selector);
+    const currentValue = $select.val();
+    
+    $select.empty();
+    
+    // Add placeholder option
+    $select.append(`<option value="">${placeholder}</option>`);
+    
+    // Add data options
+    if (data && data.length > 0) {
+        data.forEach(function(item) {
+            if (item && item.trim() !== '') {
+                const isSelected = item === currentValue ? 'selected' : '';
+                const displayName = item.length > 50 ? item.substring(0, 50) + '...' : item;
+                $select.append(`<option value="${item}" ${isSelected}>${displayName}</option>`);
+            }
+        });
+        
+        // Update count label
+        $(`#${countId}`).text(`(${data.length})`);
+    } else {
+        $select.append(`<option value="" disabled>داده‌ای یافت نشد</option>`);
+        $(`#${countId}`).text('(0)');
+    }
+    
+    console.log(`${selector} populated with ${data.length} items`);
+}
+
+// Refresh filters button
+$('#refresh-comparison-filters').on('click', function() {
+    const $btn = $(this);
+    const originalHtml = $btn.html();
+    
+    $btn.prop('disabled', true).html('<i class="spinner-border spinner-border-sm"></i>');
+    
+    console.log('Refreshing comparison filter lists...');
+    loadComparisonUniqueFilters();
+    
+    setTimeout(function() {
+        $btn.prop('disabled', false).html(originalHtml);
+    }, 1500);
+});
+
+$(document).ready(function() {
+    console.log('Document ready - Initializing Comparison Page');
+    
+    // Initialize Persian date pickers (Analytics Style)
+    initPersianDatePickers();
+    
+    // Load unique values for ComboBoxes
+    loadComparisonUniqueFilters();
     
     // Initialize date input validation
     $('.persian-date-input').on('blur', function() {
@@ -1147,8 +1078,9 @@ $('#run-comparison').on('click', function() {
     var range2_from = $('#range2_from').val().trim();
     var range2_to = $('#range2_to').val().trim();
     var sales_status = $('#sales_status_filter').val();
-    var customer = $('#customer_filter').val().trim();
-    var product = $('#product_filter').val().trim();
+    var customer = $('#customer_filter').val();
+    var product = $('#product_filter').val();
+    var warehouse = $('#warehouse_filter').val();
     
     if ((!range1_from && !range1_to) && (!range2_from && !range2_to)) {
         alert('لطفاً حداقل یک بازه تاریخ را انتخاب کنید.');
@@ -1171,7 +1103,8 @@ $('#run-comparison').on('click', function() {
         range2_to: range2_to,
         sales_status: sales_status,
         customer: customer,
-        product: product
+        product: product,
+        warehouse: warehouse
     }).done(function(resp) {
         if (resp.success) {
             $('#comparison-results').show();
@@ -1187,7 +1120,7 @@ $('#run-comparison').on('click', function() {
             $('#r2-avg').text(fmt(resp.data.range2.average_sales_amount));
             
             // Initialize DataTables
-            initializeTables(range1_from, range1_to, range2_from, range2_to, sales_status, customer, product);
+            initializeTables(range1_from, range1_to, range2_from, range2_to, sales_status, customer, product, warehouse);
             
             // Initialize Chart
             initializeChart(resp.data);
@@ -1201,7 +1134,7 @@ $('#run-comparison').on('click', function() {
 });
 
 // Initialize Advanced DataTables with sort, filter, and search
-function initializeTables(r1_from, r1_to, r2_from, r2_to, status, customer, product) {
+function initializeTables(r1_from, r1_to, r2_from, r2_to, status, customer, product, warehouse) {
     // Destroy existing tables
     if (table1) {
         table1.destroy();
@@ -1228,6 +1161,7 @@ function initializeTables(r1_from, r1_to, r2_from, r2_to, status, customer, prod
                 d.sales_status = status;
                 d.customer = customer;
                 d.product = product;
+                d.warehouse = warehouse;
                 return d;
             }
         },
@@ -1289,6 +1223,7 @@ function initializeTables(r1_from, r1_to, r2_from, r2_to, status, customer, prod
                 d.sales_status = status;
                 d.customer = customer;
                 d.product = product;
+                d.warehouse = warehouse;
                 return d;
             }
         },
@@ -2073,6 +2008,15 @@ body.show-table-config-sidebar .table-config-sidebar {
 .persian-datepicker-popup .btn-danger {
     background: #dc3545;
     color: white;
+}
+
+/* Analytics Style Date Picker Hover Effects */
+.persian-datepicker-popup:hover {
+    box-shadow: 0 6px 16px rgba(0,0,0,0.2) !important;
+}
+
+.calendar-day:hover:not(.selected) {
+    background: #e7e9fd !important;
 }
 
 /* Hide any modal backdrop */
