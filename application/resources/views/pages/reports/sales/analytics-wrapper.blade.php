@@ -838,6 +838,45 @@ $(document).ready(function() {
     // Load unique values for ComboBoxes
     loadUniqueFilterValues();
     
+    // Warehouse change event - Reload products based on selected warehouse
+    $('#filter_warehouse').on('change', function() {
+        const selectedWarehouse = $(this).val();
+        console.log('Warehouse changed:', selectedWarehouse);
+        
+        // Get current date filter
+        let filterData = {};
+        const dates = getFilterDates();
+        if (dates.from_date) filterData.from_date = dates.from_date;
+        if (dates.to_date) filterData.to_date = dates.to_date;
+        
+        // Add warehouse filter
+        if (selectedWarehouse) {
+            filterData.warehouse = selectedWarehouse;
+        }
+        
+        // Reload products based on selected warehouse
+        $.ajax({
+            url: '/report/sales/analytics/unique-values',
+            method: 'POST',
+            data: { column: 'product_name', ...filterData },
+            dataType: 'json',
+            success: function(response) {
+                console.log('Products reloaded for warehouse:', response.data.length);
+                populateSelect('#filter_product', response.data, 'همه محصولات', '');
+                
+                // Show feedback
+                if (selectedWarehouse) {
+                    $('#filter_product').addClass('border-primary');
+                    setTimeout(() => $('#filter_product').removeClass('border-primary'), 2000);
+                }
+            },
+            error: function(xhr) {
+                console.error('Error loading products for warehouse:', xhr);
+                populateSelect('#filter_product', [], 'همه محصولات');
+            }
+        });
+    });
+    
     // Load first tab data after a short delay
     setTimeout(function() {
         console.log('Loading initial analytics data...');

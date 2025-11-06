@@ -62,6 +62,9 @@ class SalesReports extends Controller {
             $from_date = $request->get('from_date');
             $to_date = $request->get('to_date');
             
+            // Get warehouse filter (for cascading dropdown)
+            $warehouse = $request->get('warehouse');
+            
             $query = Sales::query();
             
             // Apply date range filter for comparison page
@@ -87,6 +90,12 @@ class SalesReports extends Controller {
             }
             if ($to_date && PersianCalendarHelper::isValidPersianDate($to_date)) {
                 $query->where('document_date', '<=', $to_date);
+            }
+            
+            // Apply warehouse filter (for product cascading)
+            // When loading products, filter by selected warehouse
+            if ($warehouse && $warehouse !== '' && $column === 'product_name') {
+                $query->where('warehouse', 'LIKE', '%' . $warehouse . '%');
             }
             
             $values = [];

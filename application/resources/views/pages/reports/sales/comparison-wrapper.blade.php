@@ -1054,6 +1054,55 @@ $(document).ready(function() {
     // Load unique values for ComboBoxes
     loadComparisonUniqueFilters();
     
+    // Warehouse change event - Reload products based on selected warehouse
+    $('#warehouse_filter').on('change', function() {
+        const selectedWarehouse = $(this).val();
+        console.log('Warehouse changed (Comparison):', selectedWarehouse);
+        
+        // Get current range and dates
+        const range = $('input[name="range"]:checked').val() || '1';
+        let filterData = { 
+            column: 'product_name',
+            range: range
+        };
+        
+        // Add date range filters
+        if (range == '1') {
+            filterData.range1_from = $('#range1_from').val();
+            filterData.range1_to = $('#range1_to').val();
+        } else {
+            filterData.range2_from = $('#range2_from').val();
+            filterData.range2_to = $('#range2_to').val();
+        }
+        
+        // Add warehouse filter
+        if (selectedWarehouse) {
+            filterData.warehouse = selectedWarehouse;
+        }
+        
+        // Reload products based on selected warehouse
+        $.ajax({
+            url: '/report/sales/analytics/unique-values',
+            method: 'POST',
+            data: filterData,
+            dataType: 'json',
+            success: function(response) {
+                console.log('Products reloaded for warehouse (Comparison):', response.data.length);
+                populateComparisonSelect('#product_filter', response.data, 'همه محصولات', '');
+                
+                // Show feedback
+                if (selectedWarehouse) {
+                    $('#product_filter').addClass('border-primary');
+                    setTimeout(() => $('#product_filter').removeClass('border-primary'), 2000);
+                }
+            },
+            error: function(xhr) {
+                console.error('Error loading products for warehouse (Comparison):', xhr);
+                populateComparisonSelect('#product_filter', [], 'همه محصولات');
+            }
+        });
+    });
+    
     // Initialize date input validation
     $('.persian-date-input').on('blur', function() {
         var value = $(this).val();
