@@ -104,7 +104,6 @@ class SalesController extends Controller {
             'completed_sales' => Sales::where('sales_status', 'completed')->count(),
             'pending_sales' => Sales::where('sales_status', 'pending')->count(),
             'total_sales_amount' => Sales::sum('base_sales_amount') ?? 0,
-            'average_sales_amount' => Sales::avg('base_sales_amount') ?? 0,
         ];
 
         //reponse payload

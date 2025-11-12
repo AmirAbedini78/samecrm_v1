@@ -385,13 +385,11 @@ class SalesRepository {
         
         // Get stats in one query to optimize performance
         $stats = $sales->selectRaw('
-            COALESCE(SUM(base_sales_amount), 0) as total_sales_amount,
-            COALESCE(AVG(base_sales_amount), 0) as average_sales_amount
+            COALESCE(SUM(base_sales_amount), 0) as total_sales_amount
         ')->first();
         
         return [
             'total_sales_amount' => (float) $stats->total_sales_amount,
-            'average_sales_amount' => (float) $stats->average_sales_amount,
         ];
     }
 }

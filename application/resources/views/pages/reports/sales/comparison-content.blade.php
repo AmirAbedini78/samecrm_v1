@@ -8,7 +8,7 @@
 						<div class="col-md-3">
 							<label class="form-label">از تاریخ (بازه 1)</label>
                             <div class="input-group">
-                                <input type="text" id="range1_from" class="form-control persian-datepicker" autocomplete="off" placeholder="1403/01/01" data-field="range1_from">
+                                <input type="text" id="range1_from" class="form-control persian-datepicker" autocomplete="off" placeholder="لطفاً تاریخ شروع بازه ۱ را وارد کنید" data-field="range1_from">
                                 <button type="button" class="btn btn-outline-secondary" onclick="showPersianDatePicker('range1_from')">
                                     <i class="ti-calendar"></i>
                                 </button>
@@ -17,7 +17,7 @@
 						<div class="col-md-3">
 							<label class="form-label">تا تاریخ (بازه 1)</label>
                             <div class="input-group">
-                                <input type="text" id="range1_to" class="form-control persian-datepicker" autocomplete="off" placeholder="1403/12/29" data-field="range1_to">
+                                <input type="text" id="range1_to" class="form-control persian-datepicker" autocomplete="off" placeholder="لطفاً تاریخ پایان بازه ۱ را وارد کنید" data-field="range1_to">
                                 <button type="button" class="btn btn-outline-secondary" onclick="showPersianDatePicker('range1_to')">
                                     <i class="ti-calendar"></i>
                                 </button>
@@ -26,7 +26,7 @@
 						<div class="col-md-3">
 							<label class="form-label">از تاریخ (بازه 2)</label>
                             <div class="input-group">
-                                <input type="text" id="range2_from" class="form-control persian-datepicker" autocomplete="off" placeholder="1403/01/01" data-field="range2_from">
+                                <input type="text" id="range2_from" class="form-control persian-datepicker" autocomplete="off" placeholder="لطفاً تاریخ شروع بازه ۲ را وارد کنید" data-field="range2_from">
                                 <button type="button" class="btn btn-outline-secondary" onclick="showPersianDatePicker('range2_from')">
                                     <i class="ti-calendar"></i>
                                 </button>
@@ -35,7 +35,7 @@
 						<div class="col-md-3">
 							<label class="form-label">تا تاریخ (بازه 2)</label>
                             <div class="input-group">
-                                <input type="text" id="range2_to" class="form-control persian-datepicker" autocomplete="off" placeholder="1403/12/29" data-field="range2_to">
+                                <input type="text" id="range2_to" class="form-control persian-datepicker" autocomplete="off" placeholder="لطفاً تاریخ پایان بازه ۲ را وارد کنید" data-field="range2_to">
                                 <button type="button" class="btn btn-outline-secondary" onclick="showPersianDatePicker('range2_to')">
                                     <i class="ti-calendar"></i>
                                 </button>
@@ -54,8 +54,7 @@
 							<div class="card-body">
 								<h5 class="mb-3">بازه 1</h5>
 								<p class="mb-1">تعداد رکورد: <span id="r1-count">0</span></p>
-								<p class="mb-1">مجموع مبلغ فروش: <span id="r1-total">0</span></p>
-								<p class="mb-0">میانگین مبلغ فروش: <span id="r1-avg">0</span></p>
+								<p class="mb-0">مجموع مبلغ فروش: <span id="r1-total">0</span></p>
 							</div>
 						</div>
 					</div>
@@ -64,8 +63,7 @@
 							<div class="card-body">
 								<h5 class="mb-3">بازه 2</h5>
 								<p class="mb-1">تعداد رکورد: <span id="r2-count">0</span></p>
-								<p class="mb-1">مجموع مبلغ فروش: <span id="r2-total">0</span></p>
-								<p class="mb-0">میانگین مبلغ فروش: <span id="r2-avg">0</span></p>
+								<p class="mb-0">مجموع مبلغ فروش: <span id="r2-total">0</span></p>
 							</div>
 						</div>
 					</div>
@@ -328,10 +326,8 @@ $('#run-comparison').on('click', function(){
 			// Update summary data
 			$('#r1-count').text(resp.data.range1.count);
 			$('#r1-total').text(fmt(resp.data.range1.total_sales_amount));
-			$('#r1-avg').text(fmt(resp.data.range1.average_sales_amount));
 			$('#r2-count').text(resp.data.range2.count);
 			$('#r2-total').text(fmt(resp.data.range2.total_sales_amount));
-			$('#r2-avg').text(fmt(resp.data.range2.average_sales_amount));
 
         // fill tables
         var tbody1 = $('#tbl-range1 tbody');

@@ -11,7 +11,7 @@
                         <label class="form-label">از تاریخ (بازه 1)</label>
                         <div class="input-group input-group-sm">
                             <input type="text" id="range1_from" class="form-control persian-date-input" 
-                                   placeholder="1403/01/01" autocomplete="off">
+                                   placeholder="لطفاً تاریخ شروع بازه ۱ را وارد کنید" autocomplete="off">
                             <button type="button" class="btn btn-outline-secondary" data-target="range1_from">
                                 <i class="ti-calendar"></i>
                             </button>
@@ -21,7 +21,7 @@
                         <label class="form-label">تا تاریخ (بازه 1)</label>
                         <div class="input-group input-group-sm">
                             <input type="text" id="range1_to" class="form-control persian-date-input" 
-                                   placeholder="1403/12/29" autocomplete="off">
+                                   placeholder="لطفاً تاریخ پایان بازه ۱ را وارد کنید" autocomplete="off">
                             <button type="button" class="btn btn-outline-secondary" data-target="range1_to">
                                 <i class="ti-calendar"></i>
                             </button>
@@ -31,7 +31,7 @@
                         <label class="form-label">از تاریخ (بازه 2)</label>
                         <div class="input-group input-group-sm">
                             <input type="text" id="range2_from" class="form-control persian-date-input" 
-                                   placeholder="1404/01/01" autocomplete="off">
+                                   placeholder="لطفاً تاریخ شروع بازه ۲ را وارد کنید" autocomplete="off">
                             <button type="button" class="btn btn-outline-secondary" data-target="range2_from">
                                 <i class="ti-calendar"></i>
                             </button>
@@ -41,7 +41,7 @@
                         <label class="form-label">تا تاریخ (بازه 2)</label>
                         <div class="input-group input-group-sm">
                             <input type="text" id="range2_to" class="form-control persian-date-input" 
-                                   placeholder="1404/12/29" autocomplete="off">
+                                   placeholder="لطفاً تاریخ پایان بازه ۲ را وارد کنید" autocomplete="off">
                             <button type="button" class="btn btn-outline-secondary" data-target="range2_to">
                                 <i class="ti-calendar"></i>
                             </button>
@@ -51,51 +51,40 @@
 
                 <!-- Additional Filters -->
                 <div class="row g-3 align-items-end mb-4">
-                    <div class="col-md-2">
-                        <label class="form-label d-flex justify-content-between align-items-center">
-                            <span>فیلتر محصول</span>
-                            <small class="text-muted" id="comp-product-count"></small>
-                        </label>
-                        <select id="product_filter" class="form-control form-control-sm">
-                            <option value="">همه محصولات</option>
-                            <option value="loading" disabled>در حال بارگذاری...</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
+                    <div class="col-md-3 order-md-1">
                         <label class="form-label d-flex justify-content-between align-items-center">
                             <span>فیلتر مشتری</span>
                             <small class="text-muted" id="comp-customer-count"></small>
                         </label>
                         <select id="customer_filter" class="form-control form-control-sm">
-                            <option value="">همه مشتریان</option>
+                            <option value="">انتخاب کنید</option>
                             <option value="loading" disabled>در حال بارگذاری...</option>
                         </select>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md-3 order-md-2">
                         <label class="form-label d-flex justify-content-between align-items-center">
                             <span>فیلتر انبار</span>
                             <small class="text-muted" id="comp-warehouse-count"></small>
                         </label>
                         <select id="warehouse_filter" class="form-control form-control-sm">
-                            <option value="">همه انبارها</option>
+                            <option value="">انتخاب کنید</option>
                             <option value="loading" disabled>در حال بارگذاری...</option>
                         </select>
                     </div>
-                    <div class="col-md-2">
-                        <label class="form-label">وضعیت فروش</label>
-                        <select id="sales_status_filter" class="form-control form-control-sm">
-                            <option value="">همه</option>
-                            <option value="completed">تکمیل شده</option>
-                            <option value="pending">در انتظار</option>
-                            <option value="cancelled">لغو شده</option>
+                    <div class="col-md-3 order-md-3">
+                        <label class="form-label d-flex justify-content-between align-items-center">
+                            <span>فیلتر محصول</span>
+                            <small class="text-muted" id="comp-product-count"></small>
+                        </label>
+                        <select id="product_filter" class="form-control form-control-sm">
+                            <option value="">انتخاب کنید</option>
+                            <option value="loading" disabled>در حال بارگذاری...</option>
                         </select>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md-3 order-md-4 d-flex flex-column flex-md-row align-items-stretch gap-2">
                         <button id="refresh-comparison-filters" class="btn btn-outline-secondary btn-sm w-100">
                             <i class="ti-reload"></i> بروزرسانی لیست‌ها
                         </button>
-                    </div>
-                    <div class="col-md-2">
                         <button id="run-comparison" class="btn btn-primary w-100">
                             <i class="ti-bar-chart"></i> اجرا
                         </button>
@@ -111,8 +100,7 @@
                             <div class="card-body">
                                 <h5 class="mb-3">بازه 1 - خلاصه آمار</h5>
                                 <p class="mb-1">تعداد رکورد: <span id="r1-count" class="fw-bold">0</span></p>
-                                <p class="mb-1">مجموع مبلغ فروش: <span id="r1-total" class="fw-bold">0</span> ریال</p>
-                                <p class="mb-0">میانگین مبلغ فروش: <span id="r1-avg" class="fw-bold">0</span> ریال</p>
+                                <p class="mb-0">مجموع مبلغ فروش: <span id="r1-total" class="fw-bold">0</span> ریال</p>
                             </div>
                         </div>
                     </div>
@@ -121,8 +109,7 @@
                             <div class="card-body">
                                 <h5 class="mb-3">بازه 2 - خلاصه آمار</h5>
                                 <p class="mb-1">تعداد رکورد: <span id="r2-count" class="fw-bold">0</span></p>
-                                <p class="mb-1">مجموع مبلغ فروش: <span id="r2-total" class="fw-bold">0</span> ریال</p>
-                                <p class="mb-0">میانگین مبلغ فروش: <span id="r2-avg" class="fw-bold">0</span> ریال</p>
+                                <p class="mb-0">مجموع مبلغ فروش: <span id="r2-total" class="fw-bold">0</span> ریال</p>
                             </div>
                         </div>
                     </div>
@@ -293,18 +280,18 @@
                                         </tr>
                                         <!-- Search Row -->
                                         <tr class="search-row">
-                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="sales_id" data-range="1"></th>
-                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="document_number" data-range="1"></th>
-                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="customer_name" data-range="1"></th>
-                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="product_name" data-range="1"></th>
-                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="main_quantity" data-range="1"></th>
-                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="base_price" data-range="1"></th>
-                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="base_sales_amount" data-range="1"></th>
-                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="base_net_amount" data-range="1"></th>
-                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="document_type" data-range="1"></th>
-                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="document_date" data-range="1"></th>
-                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="sales_status" data-range="1"></th>
-                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="creator" data-range="1"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="لطفاً شناسه فروش را بنویسید" data-column="sales_id" data-range="1"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="لطفاً شماره سند را بنویسید" data-column="document_number" data-range="1"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="لطفاً نام مشتری را بنویسید" data-column="customer_name" data-range="1"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="لطفاً نام محصول را بنویسید" data-column="product_name" data-range="1"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="لطفاً مقدار اصلی را بنویسید" data-column="main_quantity" data-range="1"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="لطفاً قیمت پایه را بنویسید" data-column="base_price" data-range="1"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="لطفاً مبلغ فروش را بنویسید" data-column="base_sales_amount" data-range="1"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="لطفاً مبلغ خالص را بنویسید" data-column="base_net_amount" data-range="1"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="لطفاً نوع سند را بنویسید" data-column="document_type" data-range="1"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="لطفاً تاریخ سند را بنویسید" data-column="document_date" data-range="1"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="لطفاً وضعیت فروش را بنویسید" data-column="sales_status" data-range="1"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="لطفاً نام ایجادکننده را بنویسید" data-column="creator" data-range="1"></th>
                                             <th></th>
                                         </tr>
                                     </thead>
@@ -465,18 +452,18 @@
                                         </tr>
                                         <!-- Search Row -->
                                         <tr class="search-row">
-                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="sales_id" data-range="2"></th>
-                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="document_number" data-range="2"></th>
-                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="customer_name" data-range="2"></th>
-                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="product_name" data-range="2"></th>
-                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="main_quantity" data-range="2"></th>
-                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="base_price" data-range="2"></th>
-                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="base_sales_amount" data-range="2"></th>
-                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="base_net_amount" data-range="2"></th>
-                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="document_type" data-range="2"></th>
-                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="document_date" data-range="2"></th>
-                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="sales_status" data-range="2"></th>
-                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="جستجو..." data-column="creator" data-range="2"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="لطفاً شناسه فروش را بنویسید" data-column="sales_id" data-range="2"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="لطفاً شماره سند را بنویسید" data-column="document_number" data-range="2"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="لطفاً نام مشتری را بنویسید" data-column="customer_name" data-range="2"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="لطفاً نام محصول را بنویسید" data-column="product_name" data-range="2"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="لطفاً مقدار اصلی را بنویسید" data-column="main_quantity" data-range="2"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="لطفاً قیمت پایه را بنویسید" data-column="base_price" data-range="2"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="لطفاً مبلغ فروش را بنویسید" data-column="base_sales_amount" data-range="2"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="لطفاً مبلغ خالص را بنویسید" data-column="base_net_amount" data-range="2"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="لطفاً نوع سند را بنویسید" data-column="document_type" data-range="2"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="لطفاً تاریخ سند را بنویسید" data-column="document_date" data-range="2"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="لطفاً وضعیت فروش را بنویسید" data-column="sales_status" data-range="2"></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search-input" placeholder="لطفاً نام ایجادکننده را بنویسید" data-column="creator" data-range="2"></th>
                                             <th></th>
                                         </tr>
                                     </thead>
@@ -503,7 +490,7 @@
                 <i class="ti-close js-close-table-config" data-target="table-config-report-range1"></i>
             </span>
         </div>
-
+        
         <div class="r-panel-body">
             <div class="p-b-5">
                 <label class="custom-control custom-checkbox table-config-checkbox-container">
@@ -535,15 +522,15 @@
                     <span class="custom-control-indicator"></span>
                     <span class="custom-control-description">نام محصول</span>
                 </label>
-            </div>
-            
+        </div>
+        
             <div class="p-b-5">
                 <label class="custom-control custom-checkbox table-config-checkbox-container">
                     <input type="checkbox" class="custom-control-input table-config-checkbox" data-column="4" data-range="1" checked>
                     <span class="custom-control-indicator"></span>
                     <span class="custom-control-description">مقدار اصلی</span>
                 </label>
-            </div>
+        </div>
             
             <div class="p-b-5">
                 <label class="custom-control custom-checkbox table-config-checkbox-container">
@@ -551,7 +538,7 @@
                     <span class="custom-control-indicator"></span>
                     <span class="custom-control-description">قیمت پایه</span>
                 </label>
-            </div>
+    </div>
             
             <div class="p-b-5">
                 <label class="custom-control custom-checkbox table-config-checkbox-container">
@@ -559,8 +546,8 @@
                     <span class="custom-control-indicator"></span>
                     <span class="custom-control-description">مبلغ فروش</span>
                 </label>
-            </div>
-            
+</div>
+
             <div class="p-b-5">
                 <label class="custom-control custom-checkbox table-config-checkbox-container">
                     <input type="checkbox" class="custom-control-input table-config-checkbox" data-column="7" data-range="1" checked>
@@ -814,13 +801,13 @@ function openPersianDatePicker(inputId) {
     
     // Add click outside to close
     setTimeout(() => {
-        $(document).on('click.persian-picker', function(e) {
-            if (!$(e.target).closest('.persian-datepicker-popup').length && 
-                !$(e.target).closest('#' + inputId).length &&
-                !$(e.target).closest('button[data-target="' + inputId + '"]').length) {
-                closePersianDatePicker();
-            }
-        });
+    $(document).on('click.persian-picker', function(e) {
+        if (!$(e.target).closest('.persian-datepicker-popup').length && 
+            !$(e.target).closest('#' + inputId).length &&
+            !$(e.target).closest('button[data-target="' + inputId + '"]').length) {
+            closePersianDatePicker();
+        }
+    });
     }, 100);
 }
 
@@ -841,7 +828,7 @@ function createPersianDatePickerPopup(currentDate) {
                         ${Array.from({length: 20}, (_, i) => 1395 + i).map(y => 
                             `<option value="${y}" ${y === year ? 'selected' : ''}>${y}</option>`
                         ).join('')}
-                    </select>
+                </select>
                 </div>
                 <div>
                     <label style="display: block; font-size: 12px; margin-bottom: 5px;">ماه</label>
@@ -849,7 +836,7 @@ function createPersianDatePickerPopup(currentDate) {
                         ${persianMonths.map((m, i) => 
                             `<option value="${i + 1}" ${(i + 1) === month ? 'selected' : ''}>${m}</option>`
                         ).join('')}
-                    </select>
+                </select>
                 </div>
             </div>
             
@@ -942,92 +929,64 @@ window.closePersianDatePicker = function() {
 
 // Event handlers
 // Load unique values for ComboBox filters
-function loadComparisonUniqueFilters() {
+const comparisonCsrfToken = $('meta[name="csrf-token"]').attr('content');
+
+function loadComparisonUniqueFilters(force = false) {
     console.log('Loading unique filter values for comparison...');
     
-    // Load unique products
-    $.ajax({
-        url: '/report/sales/comparison',
-        method: 'GET',
-        data: { action: 'unique_values', column: 'product_name' },
-        dataType: 'json',
-        success: function(response) {
-            if (response.success) {
-                console.log('Unique products loaded:', response.data.length);
-                populateComparisonSelect('#product_filter', response.data, 'همه محصولات', 'comp-product-count');
-            }
-        },
-        error: function(xhr) {
-            console.error('Error loading products:', xhr);
-            populateComparisonSelect('#product_filter', [], 'همه محصولات', 'comp-product-count');
-        }
-    });
+    const requests = [
+        { selector: '#customer_filter', column: 'customer_name', countId: 'comp-customer-count' },
+        { selector: '#warehouse_filter', column: 'warehouse', countId: 'comp-warehouse-count' },
+        { selector: '#product_filter', column: 'product_name', countId: 'comp-product-count' }
+    ];
     
-    // Load unique customers
-    $.ajax({
-        url: '/report/sales/comparison',
-        method: 'GET',
-        data: { action: 'unique_values', column: 'customer_name' },
-        dataType: 'json',
-        success: function(response) {
-            if (response.success) {
-                console.log('Unique customers loaded:', response.data.length);
-                populateComparisonSelect('#customer_filter', response.data, 'همه مشتریان', 'comp-customer-count');
-            }
-        },
-        error: function(xhr) {
-            console.error('Error loading customers:', xhr);
-            populateComparisonSelect('#customer_filter', [], 'همه مشتریان', 'comp-customer-count');
-        }
-    });
-    
-    // Load unique warehouses
-    $.ajax({
-        url: '/report/sales/comparison',
-        method: 'GET',
-        data: { action: 'unique_values', column: 'warehouse' },
-        dataType: 'json',
-        success: function(response) {
-            if (response.success) {
-                console.log('Unique warehouses loaded:', response.data.length);
-                populateComparisonSelect('#warehouse_filter', response.data, 'همه انبارها', 'comp-warehouse-count');
-            }
-        },
-        error: function(xhr) {
-            console.error('Error loading warehouses:', xhr);
-            populateComparisonSelect('#warehouse_filter', [], 'همه انبارها', 'comp-warehouse-count');
-        }
+    requests.forEach(cfg => {
+        const previousValue = $(cfg.selector).val();
+        $.ajax({
+            url: '/report/sales/comparison',
+            method: 'GET',
+            data: { action: 'unique_values', column: cfg.column },
+            dataType: 'json'
+        }).done(function(response) {
+            const values = response.success ? (response.data || []) : [];
+            populateComparisonSelect(cfg.selector, values, 'انتخاب کنید', cfg.countId, previousValue);
+        }).fail(function(xhr) {
+            console.error('Error loading', cfg.column, xhr);
+            populateComparisonSelect(cfg.selector, [], 'انتخاب کنید', cfg.countId);
+        });
     });
 }
 
-// Populate ComboBox select with options
-function populateComparisonSelect(selector, data, placeholder, countId) {
+function populateComparisonSelect(selector, data, placeholder, countId, selectedValue = '') {
     const $select = $(selector);
-    const currentValue = $select.val();
-    
+    const desiredValue = selectedValue || '';
+
     $select.empty();
-    
-    // Add placeholder option
+
     $select.append(`<option value="">${placeholder}</option>`);
-    
-    // Add data options
+
+    let hasMatch = false;
+
     if (data && data.length > 0) {
         data.forEach(function(item) {
             if (item && item.trim() !== '') {
-                const isSelected = item === currentValue ? 'selected' : '';
                 const displayName = item.length > 50 ? item.substring(0, 50) + '...' : item;
+                const isSelected = item === desiredValue ? 'selected' : '';
+                if (isSelected) {
+                    hasMatch = true;
+                }
                 $select.append(`<option value="${item}" ${isSelected}>${displayName}</option>`);
             }
         });
-        
-        // Update count label
         $(`#${countId}`).text(`(${data.length})`);
     } else {
-        $select.append(`<option value="" disabled>داده‌ای یافت نشد</option>`);
+        $select.append('<option value="" disabled>داده‌ای یافت نشد</option>');
         $(`#${countId}`).text('(0)');
     }
-    
-    console.log(`${selector} populated with ${data.length} items`);
+
+    $select.val(hasMatch ? desiredValue : '');
+
+    console.log(`${selector} populated with ${(data && data.length) || 0} items`);
 }
 
 // Refresh filters button
@@ -1038,7 +997,7 @@ $('#refresh-comparison-filters').on('click', function() {
     $btn.prop('disabled', true).html('<i class="spinner-border spinner-border-sm"></i>');
     
     console.log('Refreshing comparison filter lists...');
-    loadComparisonUniqueFilters();
+    loadComparisonUniqueFilters(true);
     
     setTimeout(function() {
         $btn.prop('disabled', false).html(originalHtml);
@@ -1057,16 +1016,16 @@ $(document).ready(function() {
     // Warehouse change event - Reload products based on selected warehouse
     $('#warehouse_filter').on('change', function() {
         const selectedWarehouse = $(this).val();
+        const previousProduct = $('#product_filter').val();
         console.log('Warehouse changed (Comparison):', selectedWarehouse);
         
-        // Get current range and dates
+        // Prepare request data
         const range = $('input[name="range"]:checked').val() || '1';
-        let filterData = { 
+        let filterData = {
             column: 'product_name',
             range: range
         };
         
-        // Add date range filters
         if (range == '1') {
             filterData.range1_from = $('#range1_from').val();
             filterData.range1_to = $('#range1_to').val();
@@ -1075,22 +1034,20 @@ $(document).ready(function() {
             filterData.range2_to = $('#range2_to').val();
         }
         
-        // Add warehouse filter
         if (selectedWarehouse) {
             filterData.warehouse = selectedWarehouse;
         }
         
-        // Reload products based on selected warehouse
         $.ajax({
             url: '/report/sales/analytics/unique-values',
             method: 'POST',
+            headers: comparisonCsrfToken ? { 'X-CSRF-TOKEN': comparisonCsrfToken } : {},
             data: filterData,
             dataType: 'json',
             success: function(response) {
-                console.log('Products reloaded for warehouse (Comparison):', response.data.length);
-                populateComparisonSelect('#product_filter', response.data, 'همه محصولات', '');
+                const values = response.success ? (response.data || []) : [];
+                populateComparisonSelect('#product_filter', values, 'انتخاب کنید', 'comp-product-count', previousProduct);
                 
-                // Show feedback
                 if (selectedWarehouse) {
                     $('#product_filter').addClass('border-primary');
                     setTimeout(() => $('#product_filter').removeClass('border-primary'), 2000);
@@ -1098,7 +1055,7 @@ $(document).ready(function() {
             },
             error: function(xhr) {
                 console.error('Error loading products for warehouse (Comparison):', xhr);
-                populateComparisonSelect('#product_filter', [], 'همه محصولات');
+                populateComparisonSelect('#product_filter', [], 'انتخاب کنید', 'comp-product-count');
             }
         });
     });
@@ -1126,7 +1083,6 @@ $('#run-comparison').on('click', function() {
     var range1_to = $('#range1_to').val().trim();
     var range2_from = $('#range2_from').val().trim();
     var range2_to = $('#range2_to').val().trim();
-    var sales_status = $('#sales_status_filter').val();
     var customer = $('#customer_filter').val();
     var product = $('#product_filter').val();
     var warehouse = $('#warehouse_filter').val();
@@ -1150,7 +1106,6 @@ $('#run-comparison').on('click', function() {
         range1_to: range1_to,
         range2_from: range2_from,
         range2_to: range2_to,
-        sales_status: sales_status,
         customer: customer,
         product: product,
         warehouse: warehouse
@@ -1163,13 +1118,11 @@ $('#run-comparison').on('click', function() {
             // Update summary
             $('#r1-count').text(resp.data.range1.count);
             $('#r1-total').text(fmt(resp.data.range1.total_sales_amount));
-            $('#r1-avg').text(fmt(resp.data.range1.average_sales_amount));
             $('#r2-count').text(resp.data.range2.count);
             $('#r2-total').text(fmt(resp.data.range2.total_sales_amount));
-            $('#r2-avg').text(fmt(resp.data.range2.average_sales_amount));
             
             // Initialize DataTables
-            initializeTables(range1_from, range1_to, range2_from, range2_to, sales_status, customer, product, warehouse);
+            initializeTables(range1_from, range1_to, range2_from, range2_to, customer, warehouse, product);
             
             // Initialize Chart
             initializeChart(resp.data);
@@ -1183,7 +1136,7 @@ $('#run-comparison').on('click', function() {
 });
 
 // Initialize Advanced DataTables with sort, filter, and search
-function initializeTables(r1_from, r1_to, r2_from, r2_to, status, customer, product, warehouse) {
+function initializeTables(r1_from, r1_to, r2_from, r2_to, customer, warehouse, product) {
     // Destroy existing tables
     if (table1) {
         table1.destroy();
@@ -1207,7 +1160,6 @@ function initializeTables(r1_from, r1_to, r2_from, r2_to, status, customer, prod
                 d.range2_from = r2_from;
                 d.range2_to = r2_to;
                 d.range = 1;
-                d.sales_status = status;
                 d.customer = customer;
                 d.product = product;
                 d.warehouse = warehouse;
@@ -1269,7 +1221,6 @@ function initializeTables(r1_from, r1_to, r2_from, r2_to, status, customer, prod
                 d.range2_from = r2_from;
                 d.range2_to = r2_to;
                 d.range = 2;
-                d.sales_status = status;
                 d.customer = customer;
                 d.product = product;
                 d.warehouse = warehouse;
@@ -1319,14 +1270,14 @@ function initializeTables(r1_from, r1_to, r2_from, r2_to, status, customer, prod
     });
     
     // Setup advanced features after tables are initialized
-    setupAdvancedTableFeatures(r1_from, r1_to, r2_from, r2_to, status, customer, product);
+    setupAdvancedTableFeatures(r1_from, r1_to, r2_from, r2_to);
     
     // Setup table column configuration
     setupTableColumnConfig();
 }
 
 // Setup advanced table features: sort, filter, search
-function setupAdvancedTableFeatures(r1_from, r1_to, r2_from, r2_to, status, customer, product) {
+function setupAdvancedTableFeatures(r1_from, r1_to, r2_from, r2_to) {
     
     // Handle sort links
     $(document).off('click', '.js-sort-link');
@@ -1471,6 +1422,7 @@ function loadColumnUniqueValues(column, range, $menu, r1_from, r1_to, r2_from, r
     $.ajax({
         url: '/report/sales/comparison',
         type: 'GET',
+        headers: comparisonCsrfToken ? { 'X-CSRF-TOKEN': comparisonCsrfToken } : {},
         data: {
             action: 'unique_values',
             column: column,
@@ -1530,6 +1482,7 @@ function performColumnSearch(column, range, searchValue, r1_from, r1_to, r2_from
     $.ajax({
         url: '/report/sales/comparison',
         type: 'GET',
+        headers: comparisonCsrfToken ? { 'X-CSRF-TOKEN': comparisonCsrfToken } : {},
         data: searchParams,
         success: function(response) {
             // Reload the appropriate table
@@ -1659,14 +1612,13 @@ function initializeChart(data) {
     comparisonChart = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: ['تعداد رکورد', 'مجموع مبلغ فروش', 'میانگین مبلغ فروش'],
+            labels: ['تعداد رکورد', 'مجموع مبلغ فروش'],
             datasets: [
                 {
                     label: 'بازه 1',
                     data: [
                         data.range1.count,
-                        data.range1.total_sales_amount,
-                        data.range1.average_sales_amount
+                        data.range1.total_sales_amount
                     ],
                     backgroundColor: 'rgba(54, 162, 235, 0.2)',
                     borderColor: 'rgba(54, 162, 235, 1)',
@@ -1676,8 +1628,7 @@ function initializeChart(data) {
                     label: 'بازه 2',
                     data: [
                         data.range2.count,
-                        data.range2.total_sales_amount,
-                        data.range2.average_sales_amount
+                        data.range2.total_sales_amount
                     ],
                     backgroundColor: 'rgba(255, 99, 132, 0.2)',
                     borderColor: 'rgba(255, 99, 132, 1)',

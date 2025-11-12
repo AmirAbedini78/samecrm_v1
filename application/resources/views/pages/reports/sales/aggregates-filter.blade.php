@@ -5,7 +5,7 @@
         <div class="form-group row">
             <label class="form-label">از تاریخ</label>
             <div class="input-group">
-                <input type="text" id="document_date_from" class="form-control form-control-sm persian-datepicker" autocomplete="off" placeholder="1403/01/01" name="document_date_from">
+                <input type="text" id="document_date_from" class="form-control form-control-sm persian-datepicker" autocomplete="off" placeholder="لطفاً تاریخ شروع گزارش را وارد کنید" name="document_date_from">
                 <button type="button" class="btn btn-outline-secondary btn-sm" onclick="showPersianDatePicker('document_date_from')">
                     <i class="ti-calendar"></i>
                 </button>
@@ -16,7 +16,7 @@
         <div class="form-group row">
             <label class="form-label">تا تاریخ</label>
             <div class="input-group">
-                <input type="text" id="document_date_to" class="form-control form-control-sm persian-datepicker" autocomplete="off" placeholder="1403/12/29" name="document_date_to">
+                <input type="text" id="document_date_to" class="form-control form-control-sm persian-datepicker" autocomplete="off" placeholder="لطفاً تاریخ پایان گزارش را وارد کنید" name="document_date_to">
                 <button type="button" class="btn btn-outline-secondary btn-sm" onclick="showPersianDatePicker('document_date_to')">
                     <i class="ti-calendar"></i>
                 </button>
@@ -26,13 +26,13 @@
         <!-- Customer Filter -->
         <div class="form-group row">
             <label class="form-label">مشتری</label>
-            <input type="text" id="column_customer_name" class="form-control form-control-sm" placeholder="نام مشتری" name="column_customer_name">
+            <input type="text" id="column_customer_name" class="form-control form-control-sm" placeholder="لطفاً نام مشتری را بنویسید" name="column_customer_name">
         </div>
 
         <!-- Warehouse Filter -->
         <div class="form-group row">
             <label class="form-label">انبار</label>
-            <input type="text" id="column_warehouse" class="form-control form-control-sm" placeholder="انبار" name="column_warehouse">
+            <input type="text" id="column_warehouse" class="form-control form-control-sm" placeholder="لطفاً نام انبار را بنویسید" name="column_warehouse">
         </div>
 
         <!--form buttons-->

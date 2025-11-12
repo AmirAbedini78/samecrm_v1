@@ -11,6 +11,9 @@
                         <div id="filter-status" class="badge bg-info mr-2" style="display: none;">
                             <i class="ti-filter"></i> <span id="filter-text">فیلتر اعمال شده</span>
                         </div>
+                        <div id="focus-active-badge" class="badge bg-warning mr-2" style="display: none;">
+                            <i class="ti-target"></i> <span id="focus-active-text">تمرکز فعال</span>
+                        </div>
                         <button id="test-data-btn" class="btn btn-sm btn-outline-secondary" title="تست داده‌ها">
                             <i class="ti-bug"></i> Debug
                         </button>
@@ -18,27 +21,38 @@
                 </div>
                 
                 <!-- Date Range Filters -->
-                <div class="row align-items-end mb-4">
+                <div class="row g-3 align-items-end mb-3">
+                    <div class="col-md-3">
+                        <label class="form-label">شیوه فیلتر تاریخ</label>
+                        <div class="btn-group btn-group-sm w-100" role="group" aria-label="حالت فیلتر تاریخ">
+                            <button type="button" class="btn btn-primary" id="filter-mode-year-month" data-mode="year_month">
+                                <i class="ti-calendar"></i> سال / ماه
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" id="filter-mode-exact" data-mode="exact">
+                                <i class="ti-time"></i> تاریخ دقیق
+                            </button>
+                        </div>
+                    </div>
                     <!-- Year Selector -->
-                    <div class="col-md-2">
+                    <div class="col-md-3 filter-year-month-group">
                         <label class="form-label">انتخاب سال</label>
                         <select id="analytics_year" class="form-control">
-                            <option value="">همه سال‌ها</option>
+                            <option value="">انتخاب کنید</option>
                             <option value="1400">1400</option>
                             <option value="1401">1401</option>
                             <option value="1402">1402</option>
-                            <option value="1403" selected>1403</option>
+                            <option value="1403">1403</option>
                             <option value="1404">1404</option>
                             <option value="1405">1405</option>
                         </select>
                     </div>
                     
                     <!-- Month Range -->
-                    <div class="col-md-2">
+                    <div class="col-md-3 filter-year-month-group">
                         <label class="form-label">از ماه</label>
                         <select id="analytics_from_month" class="form-control">
-                            <option value="">همه</option>
-                            <option value="1" selected>فروردین</option>
+                            <option value="">انتخاب کنید</option>
+                            <option value="1">فروردین</option>
                             <option value="2">اردیبهشت</option>
                             <option value="3">خرداد</option>
                             <option value="4">تیر</option>
@@ -53,10 +67,10 @@
                         </select>
                     </div>
                     
-                    <div class="col-md-2">
+                    <div class="col-md-3 filter-year-month-group">
                         <label class="form-label">تا ماه</label>
                         <select id="analytics_to_month" class="form-control">
-                            <option value="">همه</option>
+                            <option value="">انتخاب کنید</option>
                             <option value="1">فروردین</option>
                             <option value="2">اردیبهشت</option>
                             <option value="3">خرداد</option>
@@ -68,84 +82,73 @@
                             <option value="9">آذر</option>
                             <option value="10">دی</option>
                             <option value="11">بهمن</option>
-                            <option value="12" selected>اسفند</option>
+                            <option value="12">اسفند</option>
                         </select>
                     </div>
-                    
-                    <!-- OR Custom Date Range -->
-                    <div class="col-md-1 text-center">
-                        <label class="form-label d-block">&nbsp;</label>
-                        <strong>یا</strong>
-                    </div>
-                    
-                    <div class="col-md-2">
+</div>
+
+                <div class="row g-3 align-items-end mb-4">
+                    <div class="col-md-4 filter-exact-group">
                         <label class="form-label">از تاریخ (دقیق)</label>
                         <div class="input-group input-group-sm">
                             <input type="text" id="analytics_from_date" class="form-control persian-date-input" 
-                                   placeholder="1403/01/01" autocomplete="off">
+                                   placeholder="لطفاً تاریخ شروع دقیق را وارد کنید" autocomplete="off">
                             <button type="button" class="btn btn-outline-secondary" data-target="analytics_from_date">
                                 <i class="ti-calendar"></i>
                             </button>
                         </div>
                     </div>
                     
-                    <div class="col-md-2">
+                    <div class="col-md-4 filter-exact-group">
                         <label class="form-label">تا تاریخ (دقیق)</label>
                         <div class="input-group input-group-sm">
                             <input type="text" id="analytics_to_date" class="form-control persian-date-input" 
-                                   placeholder="1403/12/29" autocomplete="off">
+                                   placeholder="لطفاً تاریخ پایان دقیق را وارد کنید" autocomplete="off">
                             <button type="button" class="btn btn-outline-secondary" data-target="analytics_to_date">
                                 <i class="ti-calendar"></i>
                             </button>
                         </div>
                     </div>
                     
-                    <div class="col-md-1">
-                        <button id="update-analytics" class="btn btn-primary w-100">
-                            <i class="ti-reload"></i>
-                        </button>
+                    <div class="col-md-4 d-flex align-items-end justify-content-md-end">
+                        <div class="w-100 w-md-auto">
+                            <button id="update-analytics" class="btn btn-primary w-100">
+                                <i class="ti-reload"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
                 
                 <!-- Additional Filters -->
                 <div class="row mb-3">
-                    <div class="col-md-3">
-                        <label class="form-label d-flex justify-content-between align-items-center">
-                            <span>فیلتر محصول</span>
-                            <small class="text-muted" id="product-count"></small>
-                        </label>
-                        <select id="filter_product" class="form-control form-control-sm">
-                            <option value="">همه محصولات</option>
-                            <option value="loading" disabled>در حال بارگذاری...</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4 order-md-1">
                         <label class="form-label d-flex justify-content-between align-items-center">
                             <span>فیلتر مشتری</span>
                             <small class="text-muted" id="customer-count"></small>
                         </label>
                         <select id="filter_customer" class="form-control form-control-sm">
-                            <option value="">همه مشتریان</option>
+                            <option value="">انتخاب کنید</option>
                             <option value="loading" disabled>در حال بارگذاری...</option>
                         </select>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4 order-md-2">
                         <label class="form-label d-flex justify-content-between align-items-center">
                             <span>فیلتر انبار</span>
                             <small class="text-muted" id="warehouse-count"></small>
                         </label>
                         <select id="filter_warehouse" class="form-control form-control-sm">
-                            <option value="">همه انبارها</option>
+                            <option value="">انتخاب کنید</option>
                             <option value="loading" disabled>در حال بارگذاری...</option>
                         </select>
                     </div>
-                    <div class="col-md-3">
-                        <label class="form-label">وضعیت فروش</label>
-                        <select id="filter_status" class="form-control form-control-sm">
-                            <option value="">همه</option>
-                            <option value="completed">تکمیل شده</option>
-                            <option value="pending">در انتظار</option>
-                            <option value="cancelled">لغو شده</option>
+                    <div class="col-md-4 order-md-3">
+                        <label class="form-label d-flex justify-content-between align-items-center">
+                            <span>فیلتر محصول</span>
+                            <small class="text-muted" id="product-count"></small>
+                        </label>
+                        <select id="filter_product" class="form-control form-control-sm">
+                            <option value="">انتخاب کنید</option>
+                            <option value="loading" disabled>در حال بارگذاری...</option>
                         </select>
                     </div>
                 </div>
@@ -200,6 +203,97 @@
                 </div>
 
                 <hr class="mb-4">
+
+                <!-- Focus Summary -->
+                <div id="focus-summary-wrapper" class="card mb-4 focus-summary-card" style="display: none;">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-1" id="focus-summary-title">تمرکز فعال</h5>
+                            <small class="text-muted" id="focus-summary-subtitle"></small>
+                        </div>
+                        <span class="badge badge-warning">
+                            <i class="ti-target"></i> تمرکز فعال
+                        </span>
+                    </div>
+                    <div class="card-body position-relative">
+                        <div id="focus-summary-loading" class="focus-summary-loading" style="display: none;">
+                            <div class="text-center">
+                                <div class="spinner-border text-primary"></div>
+                                <p class="mt-2 mb-0">در حال بارگذاری خلاصه تمرکز...</p>
+                            </div>
+                        </div>
+                        <div id="focus-summary-content">
+                            <div class="row focus-summary-metrics">
+                                <div class="col-md-4 col-sm-6 mb-3">
+                                    <div class="focus-metric-card">
+                                        <span class="focus-metric-label">کل فروش</span>
+                                        <h4 class="focus-metric-value" id="focus-total-amount">-</h4>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 col-sm-6 mb-3">
+                                    <div class="focus-metric-card">
+                                        <span class="focus-metric-label">تعداد سفارش</span>
+                                        <h4 class="focus-metric-value" id="focus-order-count">-</h4>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 col-sm-6 mb-3">
+                                    <div class="focus-metric-card">
+                                        <span class="focus-metric-label">کل مقدار</span>
+                                        <h4 class="focus-metric-value" id="focus-total-quantity">-</h4>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row focus-summary-meta">
+                                <div class="col-md-3 col-sm-6 mb-3">
+                                    <div class="focus-meta-card">
+                                        <span class="focus-meta-label">مشتریان یکتا</span>
+                                        <span class="focus-meta-value" id="focus-unique-customers">-</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-sm-6 mb-3">
+                                    <div class="focus-meta-card">
+                                        <span class="focus-meta-label">محصولات یکتا</span>
+                                        <span class="focus-meta-value" id="focus-unique-products">-</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-sm-6 mb-3">
+                                    <div class="focus-meta-card">
+                                        <span class="focus-meta-label">انبارهای یکتا</span>
+                                        <span class="focus-meta-value" id="focus-unique-warehouses">-</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-sm-6 mb-3">
+                                    <div class="focus-meta-card">
+                                        <span class="focus-meta-label">دوره زمانی</span>
+                                        <span class="focus-meta-value" id="focus-date-range">-</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mt-3" id="focus-top-entities">
+                                <div class="col-md-4 mb-3" id="focus-top-customers" style="display: none;">
+                                    <h6 class="focus-top-title">
+                                        <i class="ti-user"></i> مشتریان برتر
+                                    </h6>
+                                    <ul class="list-group list-group-sm" id="focus-top-customers-list"></ul>
+                                </div>
+                                <div class="col-md-4 mb-3" id="focus-top-products" style="display: none;">
+                                    <h6 class="focus-top-title">
+                                        <i class="ti-package"></i> محصولات برتر
+                                    </h6>
+                                    <ul class="list-group list-group-sm" id="focus-top-products-list"></ul>
+                                </div>
+                                <div class="col-md-4 mb-3" id="focus-top-warehouses" style="display: none;">
+                                    <h6 class="focus-top-title">
+                                        <i class="ti-home"></i> انبارهای برتر
+                                    </h6>
+                                    <ul class="list-group list-group-sm" id="focus-top-warehouses-list"></ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Tabs Navigation -->
                 <ul class="nav nav-tabs" id="analyticsTab" role="tablist">
@@ -291,6 +385,258 @@ function formatNumber(num) {
     return new Intl.NumberFormat('fa-IR').format(num);
 }
 
+function formatCurrency(num) {
+    return formatNumber(Math.round(num || 0)) + ' ریال';
+}
+
+let focusDataLoading = false;
+let currentFilterMode = 'year_month';
+let hasTriggeredUpdate = false;
+const analyticsCsrfToken = $('meta[name="csrf-token"]').attr('content');
+
+function getActiveFocus() {
+    const product = $('#filter_product').val();
+    const customer = $('#filter_customer').val();
+    const warehouse = $('#filter_warehouse').val();
+
+    // Only one focus at a time
+    const focusSelections = [
+        product ? 'product' : null,
+        customer ? 'customer' : null,
+        warehouse ? 'warehouse' : null
+    ].filter(Boolean);
+
+    if (focusSelections.length !== 1) {
+        return null;
+    }
+
+    const focusType = focusSelections[0];
+    const valueMap = {
+        product: product,
+        customer: customer,
+        warehouse: warehouse
+    };
+
+    return {
+        type: focusType,
+        value: valueMap[focusType]
+    };
+}
+
+function truncateLabel(label, maxLength = 40) {
+    if (!label || typeof label !== 'string') {
+        return '-';
+    }
+    return label.length > maxLength ? label.substring(0, maxLength) + '…' : label;
+}
+
+function getFocusTypeLabel(focusType) {
+    switch (focusType) {
+        case 'product':
+            return 'محصول';
+        case 'customer':
+            return 'مشتری';
+        case 'warehouse':
+            return 'انبار';
+        default:
+            return 'تمرکز';
+    }
+}
+
+function showFocusLoading() {
+    $('#focus-summary-wrapper').show();
+    $('#focus-summary-loading').show();
+    $('#focus-summary-content').css('opacity', 0.2);
+}
+
+function hideFocusSummary() {
+    $('#focus-summary-wrapper').hide();
+    $('#focus-summary-loading').hide();
+    $('#focus-summary-content').css('opacity', 1);
+    $('#focus-top-customers-list, #focus-top-products-list, #focus-top-warehouses-list').empty();
+    $('#focus-top-customers, #focus-top-products, #focus-top-warehouses').hide();
+    applyFocusBadges(null);
+}
+
+function applyFocusBadges(focus, summaryData = null) {
+    $('#filter_product, #filter_customer, #filter_warehouse').removeClass('focus-highlight');
+    $('#focus-active-badge').hide();
+
+    if (!focus) {
+        return;
+    }
+
+    const focusLabel = getFocusTypeLabel(focus.type);
+    const summaryLabel = summaryData && summaryData.label ? summaryData.label : focus.value;
+    const displayLabel = truncateLabel(summaryLabel, 45);
+
+    $('#focus-active-text').text(`${focusLabel}: ${displayLabel}`);
+    $('#focus-active-badge').fadeIn(150);
+
+    if (focus.type === 'product') {
+        $('#filter_product').addClass('focus-highlight');
+    } else if (focus.type === 'customer') {
+        $('#filter_customer').addClass('focus-highlight');
+    } else if (focus.type === 'warehouse') {
+        $('#filter_warehouse').addClass('focus-highlight');
+    }
+}
+
+function renderFocusList(containerSelector, list, options = {}) {
+    const $container = $(containerSelector);
+    if (!$container.length) {
+        return;
+    }
+
+    const $list = $container.find('ul');
+    if (!list || !Array.isArray(list) || list.length === 0) {
+        $list.empty();
+        $container.hide();
+        return;
+    }
+
+    $list.empty();
+    list.forEach((item, index) => {
+        const label = truncateLabel(item.label || '-', 45);
+        const totalAmount = formatCurrency(item.total_amount || 0);
+        const quantityKey = options.quantityKey;
+        const quantityLabel = quantityKey && item[quantityKey] ? formatNumber(Math.round(item[quantityKey])) + ' واحد' : '';
+        const countLabel = item.order_count ? formatNumber(item.order_count) + ' سفارش' : '';
+
+        const badgeHtml = `<span class="badge badge-light mr-2">${index + 1}</span>`;
+        const metaHtml = [quantityLabel, countLabel].filter(Boolean).map(text => `<small class="text-muted d-block">${text}</small>`).join('');
+
+        const itemHtml = `
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    ${badgeHtml}
+                    <div class="d-flex flex-column">
+                        <span>${label}</span>
+                        ${metaHtml}
+                    </div>
+                </div>
+                <span class="text-muted">${totalAmount}</span>
+            </li>
+        `;
+        $list.append(itemHtml);
+    });
+
+    $container.fadeIn(150);
+}
+
+function renderFocusSummary(summary) {
+    if (!summary) {
+        hideFocusSummary();
+        return;
+    }
+
+    $('#focus-summary-wrapper').show();
+    $('#focus-summary-loading').hide();
+    $('#focus-summary-content').css('opacity', 1);
+
+    const focusType = summary.focus;
+    const focusLabel = getFocusTypeLabel(focusType);
+    const titleMap = {
+        product: 'تحلیل اختصاصی محصول',
+        customer: 'تحلیل اختصاصی مشتری',
+        warehouse: 'تحلیل اختصاصی انبار'
+    };
+
+    $('#focus-summary-title').text(titleMap[focusType] || 'تحلیل تمرکز فعال');
+    $('#focus-summary-subtitle').text(`نمایش اطلاعات برای ${focusLabel}: ${truncateLabel(summary.label || '-', 60)}`);
+
+    $('#focus-total-amount').text(formatCurrency(summary.total_amount));
+    $('#focus-order-count').text(formatNumber(summary.order_count || 0));
+    $('#focus-total-quantity').text(formatNumber(Math.round(summary.total_quantity || 0)));
+
+    $('#focus-unique-customers').text(formatNumber(summary.unique_customers || 0));
+    $('#focus-unique-products').text(formatNumber(summary.unique_products || 0));
+    $('#focus-unique-warehouses').text(formatNumber(summary.unique_warehouses || 0));
+
+    const dateRange = summary.first_sale_date && summary.last_sale_date
+        ? `${summary.first_sale_date} تا ${summary.last_sale_date}`
+        : '-';
+    $('#focus-date-range').text(dateRange);
+
+    const topEntities = summary.top_entities || {};
+    renderFocusList('#focus-top-customers', topEntities.customers || []);
+    renderFocusList('#focus-top-products', topEntities.products || [], { quantityKey: 'total_quantity' });
+    renderFocusList('#focus-top-warehouses', topEntities.warehouses || []);
+
+    applyFocusBadges({ type: focusType, value: summary.label }, summary);
+}
+
+function loadFocusData(filters) {
+    const focus = getActiveFocus();
+    window.currentFocus = null;
+    window.focusSummary = null;
+    window.focusDistributions = null;
+
+    if (!focus) {
+        hideFocusSummary();
+        return $.Deferred().resolve().promise();
+    }
+
+    const payload = Object.assign({}, filters, { focus: focus.type });
+    payload[focus.type] = focus.value;
+
+    showFocusLoading();
+    focusDataLoading = true;
+
+    const summaryRequest = $.ajax({
+        url: '/report/sales/analytics/focus-summary',
+        method: 'POST',
+        headers: analyticsCsrfToken ? { 'X-CSRF-TOKEN': analyticsCsrfToken } : {},
+        data: payload
+    });
+
+    const distributionRequest = $.ajax({
+        url: '/report/sales/analytics/focus-distributions',
+        method: 'POST',
+        headers: analyticsCsrfToken ? { 'X-CSRF-TOKEN': analyticsCsrfToken } : {},
+        data: payload
+    });
+
+    return $.when(summaryRequest, distributionRequest)
+        .done(function(summaryResponse, distributionResponse) {
+            const summaryData = summaryResponse[0];
+            const distributionData = distributionResponse[0];
+
+            if (summaryData && summaryData.success) {
+                window.currentFocus = focus;
+                window.focusSummary = summaryData.data;
+                renderFocusSummary(summaryData.data);
+                if (summaryData.data && summaryData.data.focus === 'product') {
+                    window.productsChartsLoaded = false;
+                    loadProductsAnalytics();
+                    window.financialChartsLoaded = false;
+                    loadFinancialAnalytics();
+                } else if (summaryData.data && summaryData.data.focus === 'customer') {
+                    window.customersChartsLoaded = false;
+                    loadCustomersAnalytics();
+                    window.financialChartsLoaded = false;
+                    loadFinancialAnalytics();
+                } else if (summaryData.data && summaryData.data.focus === 'warehouse') {
+                    window.logisticsChartsLoaded = false;
+                    loadLogisticsAnalytics();
+                }
+            } else {
+                hideFocusSummary();
+            }
+
+            if (distributionData && distributionData.success) {
+                window.focusDistributions = distributionData.data;
+            }
+        })
+        .fail(function(xhr) {
+            console.error('Focus data error:', xhr);
+            hideFocusSummary();
+        })
+        .always(function() {
+            focusDataLoading = false;
+        });
+}
+
 // Tab switching is now handled in $(document).ready() above
 
 // Update charts button
@@ -318,12 +664,12 @@ $('#update-analytics').on('click', function() {
     const product = $('#filter_product').val();
     const customer = $('#filter_customer').val();
     const warehouse = $('#filter_warehouse').val();
-    const status = $('#filter_status').val();
+    const filters = getFilterDates();
     
     let filterText = '';
     let filterParts = [];
     
-    if (fromDate || toDate) {
+    if (currentFilterMode === 'exact') {
         // Using exact dates
         if (fromDate && toDate) {
             filterParts.push(`${fromDate} تا ${toDate}`);
@@ -350,13 +696,9 @@ $('#update-analytics').on('click', function() {
     }
     
     // Add additional filter info
-    if (product) filterParts.push(`محصول: ${product}`);
     if (customer) filterParts.push(`مشتری: ${customer}`);
     if (warehouse) filterParts.push(`انبار: ${warehouse}`);
-    if (status) {
-        const statusText = status === 'completed' ? 'تکمیل شده' : (status === 'pending' ? 'در انتظار' : 'لغو شده');
-        filterParts.push(`وضعیت: ${statusText}`);
-    }
+    if (product) filterParts.push(`محصول: ${product}`);
     
     if (filterParts.length > 0) {
         filterText = filterParts.join(' | ');
@@ -375,26 +717,48 @@ $('#update-analytics').on('click', function() {
     window.financialChartsLoaded = false;
     window.logisticsChartsLoaded = false;
     
+    // Hide all tab contents until load completes
+    $('.tab-pane .card, .tab-pane .chart-container, #focus-summary-wrapper').hide();
+    $('#focus-summary-wrapper').hide();
+
     // Reload data for active tab
-    if (activeTabId === '#time-analytics') {
-        loadTimeAnalytics();
-    } else if (activeTabId === '#products-analytics') {
-        loadProductsAnalytics();
-    } else if (activeTabId === '#customers-analytics') {
-        loadCustomersAnalytics();
-    } else if (activeTabId === '#financial-analytics') {
-        loadFinancialAnalytics();
-    } else if (activeTabId === '#logistics-analytics') {
-        loadLogisticsAnalytics();
-    } else {
-        // Default to time analytics if nothing is active
-        console.log('No active tab found, loading time analytics');
-        loadTimeAnalytics();
+    const loaders = {
+        '#time-analytics': loadTimeAnalytics,
+        '#products-analytics': loadProductsAnalytics,
+        '#customers-analytics': loadCustomersAnalytics,
+        '#financial-analytics': loadFinancialAnalytics,
+        '#logistics-analytics': loadLogisticsAnalytics
+    };
+    const loader = loaders[activeTabId] || loadTimeAnalytics;
+    const activateContent = () => {
+        hasTriggeredUpdate = true;
+        $('.tab-pane.show.active .card, .tab-pane.show.active .chart-container').fadeIn(150);
+    };
+    try {
+        const loaderResult = loader();
+        if (loaderResult && typeof loaderResult.always === 'function') {
+            loaderResult.always(activateContent);
+        } else if (loaderResult && typeof loaderResult.finally === 'function') {
+            loaderResult.finally(activateContent);
+        } else {
+            activateContent();
+        }
+    } catch (error) {
+        console.error('Loader execution error:', error);
+        activateContent();
     }
     
     setTimeout(() => {
         $(this).prop('disabled', false).html('<i class="ti-reload"></i> به‌روزرسانی نمودارها');
     }, 1000);
+
+    // Detect and load focus-specific data
+    loadFocusData({
+        ...filters,
+        product: product,
+        customer: customer,
+        warehouse: warehouse
+    });
 });
 
 // Get current Persian year (approximate calculation)
@@ -412,49 +776,97 @@ function getCurrentPersianYear() {
     }
 }
 
+function updateFilterMode(mode, options = {}) {
+    if (!['year_month', 'exact'].includes(mode)) {
+        console.warn('Unknown filter mode:', mode);
+        return;
+    }
+
+    const { preserveYearValues = false, preserveDateValues = false } = options;
+    currentFilterMode = mode;
+
+    const $yearInputs = $('#analytics_year, #analytics_from_month, #analytics_to_month');
+    const $dateInputs = $('#analytics_from_date, #analytics_to_date');
+    const $yearGroups = $('.filter-year-month-group');
+    const $dateGroups = $('.filter-exact-group');
+    const $yearModeBtn = $('#filter-mode-year-month');
+    const $exactModeBtn = $('#filter-mode-exact');
+
+    if (mode === 'year_month') {
+        $yearInputs.prop('disabled', false);
+        $dateInputs.prop('disabled', true);
+        if (!preserveDateValues) {
+            $dateInputs.val('');
+        }
+
+        $yearGroups.removeClass('filter-group-disabled');
+        $dateGroups.addClass('filter-group-disabled');
+
+        $yearModeBtn.addClass('btn-primary active').removeClass('btn-outline-primary');
+        $exactModeBtn.removeClass('btn-primary active').addClass('btn-outline-primary');
+    } else {
+        $yearInputs.prop('disabled', true);
+        $dateInputs.prop('disabled', false);
+        if (!preserveYearValues) {
+            $('#analytics_year').val('');
+            $('#analytics_from_month').val('');
+            $('#analytics_to_month').val('');
+        }
+
+        $yearGroups.addClass('filter-group-disabled');
+        $dateGroups.removeClass('filter-group-disabled');
+
+        $exactModeBtn.addClass('btn-primary active').removeClass('btn-outline-primary');
+        $yearModeBtn.removeClass('btn-primary active').addClass('btn-outline-primary');
+    }
+}
+
 // Get all filters including date, product, customer, warehouse
 function getFilterDates() {
-    const year = $('#analytics_year').val();
-    const fromMonth = $('#analytics_from_month').val();
-    const toMonth = $('#analytics_to_month').val();
-    const fromDate = $('#analytics_from_date').val();
-    const toDate = $('#analytics_to_date').val();
-    
+    const filters = {
+        filter_mode: currentFilterMode,
+        from_date: '',
+        to_date: '',
+        year: '',
+        from_month: '',
+        to_month: ''
+    };
+
+    if (currentFilterMode === 'exact') {
+        const fromDate = $('#analytics_from_date').val();
+        const toDate = $('#analytics_to_date').val();
+
+        filters.from_date = fromDate || '';
+        filters.to_date = toDate || '';
+
+        if (fromDate || toDate) {
+            console.log('Using custom exact date range:', fromDate, 'to', toDate);
+        }
+    } else {
+        const year = $('#analytics_year').val();
+        const fromMonth = $('#analytics_from_month').val();
+        const toMonth = $('#analytics_to_month').val();
+
+        filters.year = year;
+        filters.from_month = fromMonth;
+        filters.to_month = toMonth;
+
+        if (year) {
+            const startMonth = (fromMonth || '01').toString().padStart(2, '0');
+            const endMonth = (toMonth || '12').toString().padStart(2, '0');
+            const endDay = (endMonth === '12') ? '29' : (parseInt(endMonth, 10) <= 6 ? '31' : '30');
+
+            filters.from_date = `${year}/${startMonth}/01`;
+            filters.to_date = `${year}/${endMonth}/${endDay}`;
+
+            console.log('Using year/month filters:', filters.from_date, 'to', filters.to_date);
+        }
+    }
+
     // Additional filters
     const product = $('#filter_product').val();
     const customer = $('#filter_customer').val();
     const warehouse = $('#filter_warehouse').val();
-    const status = $('#filter_status').val();
-    
-    let calculatedFromDate = '';
-    let calculatedToDate = '';
-    
-    // If custom dates are provided, use them
-    if (fromDate || toDate) {
-        calculatedFromDate = fromDate;
-        calculatedToDate = toDate;
-        console.log('Using custom date range:', fromDate, 'to', toDate);
-    } else if (year) {
-        // Otherwise use year/month selectors
-        const startMonth = fromMonth || '01';
-        const endMonth = toMonth || '12';
-        const endDay = (endMonth === '12') ? '29' : ((parseInt(endMonth) <= 6) ? '31' : '30');
-        
-        calculatedFromDate = `${year}/${startMonth.padStart(2, '0')}/01`;
-        calculatedToDate = `${year}/${endMonth.padStart(2, '0')}/${endDay}`;
-        console.log('Using year/month filters:', calculatedFromDate, 'to', calculatedToDate);
-    }
-    
-    const filters = {
-        from_date: calculatedFromDate,
-        to_date: calculatedToDate,
-        filter_mode: fromDate || toDate ? 'exact' : 'year_month',
-        year: year,
-        from_month: fromMonth,
-        to_month: toMonth
-    };
-    
-    // Add additional filters if they have values
     if (product) {
         filters.product = product;
         console.log('Filter - Product:', product);
@@ -467,16 +879,21 @@ function getFilterDates() {
         filters.warehouse = warehouse;
         console.log('Filter - Warehouse:', warehouse);
     }
-    if (status) {
-        filters.status = status;
-        console.log('Filter - Status:', status);
-    }
     
     return filters;
 }
 
+$('#filter-mode-year-month').on('click', function() {
+    updateFilterMode('year_month');
+});
+
+$('#filter-mode-exact').on('click', function() {
+    updateFilterMode('exact', { preserveDateValues: true });
+});
+
 // Set current year button
 $('#set-current-year').on('click', function() {
+    updateFilterMode('year_month');
     const currentYear = getCurrentPersianYear();
     
     // Clear custom date inputs
@@ -498,6 +915,7 @@ $('#set-current-year').on('click', function() {
 
 // Set last year button
 $('#set-last-year').on('click', function() {
+    updateFilterMode('year_month');
     const lastYear = getCurrentPersianYear() - 1;
     
     // Clear custom date inputs
@@ -519,6 +937,7 @@ $('#set-last-year').on('click', function() {
 
 // Set current quarter button
 $('#set-current-quarter').on('click', function() {
+    updateFilterMode('year_month');
     const currentYear = getCurrentPersianYear();
     const now = new Date();
     const month = now.getMonth() + 1;
@@ -558,16 +977,16 @@ $('#set-current-quarter').on('click', function() {
 
 // Clear filters button
 $('#clear-filters').on('click', function() {
+    updateFilterMode('year_month');
     // Clear all filters
     $('#analytics_year').val('');
     $('#analytics_from_month').val('');
     $('#analytics_to_month').val('');
     $('#analytics_from_date').val('');
     $('#analytics_to_date').val('');
-    $('#filter_product').val('');
-    $('#filter_customer').val('');
-    $('#filter_warehouse').val('');
-    $('#filter_status').val('');
+    $('#filter_customer').val('').trigger('change');
+    $('#filter_product').val('').trigger('change');
+    $('#filter_warehouse').val('').trigger('change');
     $('#filter-status').hide();
     
     console.log('All filters cleared');
@@ -624,7 +1043,6 @@ $('#refresh-filters').on('click', function() {
     
     console.log('Refreshing filter lists based on date range...');
     
-    // Reload with date filter
     loadUniqueFilterValues(true);
     
     setTimeout(function() {
@@ -674,98 +1092,73 @@ function loadUniqueFilterValues(useDateFilter = false) {
     console.log('Loading unique filter values...');
     
     let filterData = {};
-    
-    // If useDateFilter is true, add date range to filter
     if (useDateFilter) {
         const dates = getFilterDates();
         if (dates.from_date) filterData.from_date = dates.from_date;
         if (dates.to_date) filterData.to_date = dates.to_date;
     }
     
-    // Save current selections
-    const currentProduct = $('#filter_product').val();
-    const currentCustomer = $('#filter_customer').val();
-    const currentWarehouse = $('#filter_warehouse').val();
+    const currentValues = {
+        product: $('#filter_product').val(),
+        customer: $('#filter_customer').val(),
+        warehouse: $('#filter_warehouse').val()
+    };
     
-    // Load unique products
-    $.ajax({
-        url: '/report/sales/analytics/unique-values',
-        method: 'POST',
-        data: { column: 'product_name', ...filterData },
-        dataType: 'json',
-        success: function(response) {
-            console.log('Unique products loaded:', response.data.length);
-            populateSelect('#filter_product', response.data, 'همه محصولات', currentProduct);
-        },
-        error: function(xhr) {
-            console.error('Error loading products:', xhr);
-            populateSelect('#filter_product', [], 'همه محصولات');
-        }
-    });
+    const requests = [
+        { selector: '#filter_customer', column: 'customer_name', current: currentValues.customer, countId: 'customer-count' },
+        { selector: '#filter_warehouse', column: 'warehouse', current: currentValues.warehouse, countId: 'warehouse-count' },
+        { selector: '#filter_product', column: 'product_name', current: currentValues.product, countId: 'product-count' }
+    ];
     
-    // Load unique customers
-    $.ajax({
-        url: '/report/sales/analytics/unique-values',
-        method: 'POST',
-        data: { column: 'customer_name', ...filterData },
-        dataType: 'json',
-        success: function(response) {
-            console.log('Unique customers loaded:', response.data.length);
-            populateSelect('#filter_customer', response.data, 'همه مشتریان', currentCustomer);
-        },
-        error: function(xhr) {
-            console.error('Error loading customers:', xhr);
-            populateSelect('#filter_customer', [], 'همه مشتریان');
-        }
-    });
-    
-    // Load unique warehouses
-    $.ajax({
-        url: '/report/sales/analytics/unique-values',
-        method: 'POST',
-        data: { column: 'warehouse', ...filterData },
-        dataType: 'json',
-        success: function(response) {
-            console.log('Unique warehouses loaded:', response.data.length);
-            populateSelect('#filter_warehouse', response.data, 'همه انبارها', currentWarehouse);
-        },
-        error: function(xhr) {
-            console.error('Error loading warehouses:', xhr);
-            populateSelect('#filter_warehouse', [], 'همه انبارها');
-        }
+    requests.forEach(cfg => {
+        $.ajax({
+            url: '/report/sales/analytics/unique-values',
+            method: 'POST',
+            headers: analyticsCsrfToken ? { 'X-CSRF-TOKEN': analyticsCsrfToken } : {},
+            data: { column: cfg.column, ...filterData },
+            dataType: 'json'
+        }).done(function(response) {
+            const values = response.success ? (response.data || []) : [];
+            populateSelect(cfg.selector, values, 'انتخاب کنید', cfg.current);
+            $(`#${cfg.countId}`).text(`(${values.length})`);
+        }).fail(function(xhr) {
+            console.error('Error loading filter', cfg.column, xhr);
+            populateSelect(cfg.selector, [], 'انتخاب کنید');
+            $(`#${cfg.countId}`).text('(0)');
+        });
     });
 }
 
 // Populate select with options
 function populateSelect(selector, data, placeholder, selectedValue = '') {
     const $select = $(selector);
+    const desiredValue = selectedValue || '';
+
     $select.empty();
-    
+
     // Add placeholder option
     $select.append(`<option value="">${placeholder}</option>`);
-    
-    // Add data options
+
     if (data && data.length > 0) {
         data.forEach(function(item) {
             if (item && item.trim() !== '') {
-                const isSelected = item === selectedValue ? 'selected' : '';
-                // Truncate long names for display
+                const isSelected = item === desiredValue ? 'selected' : '';
                 const displayName = item.length > 50 ? item.substring(0, 50) + '...' : item;
                 $select.append(`<option value="${item}" ${isSelected}>${displayName}</option>`);
             }
         });
-        
-        // Update count label
+
         const countLabel = selector.replace('#filter_', '') + '-count';
         $(`#${countLabel}`).text(`(${data.length})`);
     } else {
-        $select.append(`<option value="" disabled>داده‌ای یافت نشد</option>`);
-        // Clear count label
+        $select.append('<option value="" disabled>داده‌ای یافت نشد</option>');
         const countLabel = selector.replace('#filter_', '') + '-count';
         $(`#${countLabel}`).text('(0)');
     }
-    
-    console.log(`${selector} populated with ${data.length} items`);
+
+    $select.val(desiredValue || '');
+
+    console.log(`${selector} populated with ${(data && data.length) || 0} items`);
 }
 
 // Initialize on page load
@@ -781,12 +1174,17 @@ $(document).ready(function() {
     
     // Set default to current year
     const currentYear = getCurrentPersianYear();
-    $('#analytics_year').val(currentYear);
-    $('#analytics_from_month').val('1');
-    $('#analytics_to_month').val('12');
+    $('#analytics_year').val('');
+    $('#analytics_from_month').val('');
+    $('#analytics_to_month').val('');
     
-    console.log('Default year set to:', currentYear);
+    updateFilterMode('year_month', { preserveYearValues: true, preserveDateValues: true });
     
+    $('.tab-pane .card, .tab-pane .chart-container, #focus-summary-wrapper').hide();
+    console.log('Default year placeholder active. Current year is:', currentYear);
+    
+    loadUniqueFilterValues(true);
+
     // Initialize Bootstrap tabs manually with click handler
     $('#analyticsTab a[data-toggle="tab"]').each(function() {
         $(this).on('click', function(e) {
@@ -805,8 +1203,13 @@ $(document).ready(function() {
             // Show corresponding tab pane
             $(targetId).addClass('show active');
             
+            $('.tab-pane.show.active .card, .tab-pane.show.active .chart-container').toggle(hasTriggeredUpdate);
+
             // Load data for the specific tab if not loaded
             setTimeout(() => {
+                if (!hasTriggeredUpdate) {
+                    return;
+                }
                 if (targetId === '#time-analytics' && !window.timeChartsLoaded) {
                     console.log('Loading time analytics...');
                     loadTimeAnalytics();
@@ -822,6 +1225,8 @@ $(document).ready(function() {
                 } else if (targetId === '#logistics-analytics' && !window.logisticsChartsLoaded) {
                     console.log('Loading logistics analytics...');
                     loadLogisticsAnalytics();
+                } else {
+                    $('.tab-pane.show.active .card, .tab-pane.show.active .chart-container').fadeIn(150);
                 }
                 
                 // Trigger resize to redraw charts
@@ -837,44 +1242,24 @@ $(document).ready(function() {
     
     // Load unique values for ComboBoxes
     loadUniqueFilterValues();
+
+    // Highlight focus selections when filters change
+    $('#filter_product, #filter_customer, #filter_warehouse').on('change', function() {
+        applyFocusBadges(getActiveFocus());
+    });
+    applyFocusBadges(getActiveFocus());
     
     // Warehouse change event - Reload products based on selected warehouse
     $('#filter_warehouse').on('change', function() {
         const selectedWarehouse = $(this).val();
+        const previousProduct = $('#filter_product').val();
         console.log('Warehouse changed:', selectedWarehouse);
         
-        // Get current date filter
-        let filterData = {};
-        const dates = getFilterDates();
-        if (dates.from_date) filterData.from_date = dates.from_date;
-        if (dates.to_date) filterData.to_date = dates.to_date;
-        
-        // Add warehouse filter
+        loadUniqueFilterValues(true);
         if (selectedWarehouse) {
-            filterData.warehouse = selectedWarehouse;
+            $('#filter_product').addClass('border-primary');
+            setTimeout(() => $('#filter_product').removeClass('border-primary'), 2000);
         }
-        
-        // Reload products based on selected warehouse
-        $.ajax({
-            url: '/report/sales/analytics/unique-values',
-            method: 'POST',
-            data: { column: 'product_name', ...filterData },
-            dataType: 'json',
-            success: function(response) {
-                console.log('Products reloaded for warehouse:', response.data.length);
-                populateSelect('#filter_product', response.data, 'همه محصولات', '');
-                
-                // Show feedback
-                if (selectedWarehouse) {
-                    $('#filter_product').addClass('border-primary');
-                    setTimeout(() => $('#filter_product').removeClass('border-primary'), 2000);
-                }
-            },
-            error: function(xhr) {
-                console.error('Error loading products for warehouse:', xhr);
-                populateSelect('#filter_product', [], 'همه محصولات');
-            }
-        });
     });
     
     // Load first tab data after a short delay
@@ -1166,6 +1551,116 @@ window.closePersianDatePicker = function() {
 
 .input-group-sm > .form-control {
     font-size: 0.875rem;
+}
+
+.focus-summary-card {
+    border: 1px solid #ffe0a3;
+    border-radius: 12px;
+    box-shadow: 0 8px 18px rgba(255, 193, 7, 0.08);
+}
+
+.focus-summary-card .card-header {
+    background: #fff7e6;
+    border-bottom: 1px solid #ffe0a3;
+}
+
+.focus-summary-loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 0 0 12px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+
+.focus-summary-metrics .focus-metric-card {
+    background: #f8f9fc;
+    border-radius: 10px;
+    padding: 14px 16px;
+    border: 1px solid #e6ecff;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    height: 100%;
+}
+
+.focus-summary-metrics .focus-metric-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 18px rgba(89, 105, 255, 0.12);
+}
+
+.focus-metric-label {
+    font-size: 13px;
+    color: #6c757d;
+}
+
+.focus-metric-value {
+    font-weight: 600;
+    color: #2b2f5c;
+}
+
+.focus-meta-card {
+    background: #ffffff;
+    border: 1px dashed #d8dffb;
+    border-radius: 10px;
+    padding: 12px;
+    height: 100%;
+}
+
+.focus-meta-label {
+    font-size: 12px;
+    color: #7a7f9a;
+}
+
+.focus-meta-value {
+    font-weight: 600;
+    color: #5969ff;
+    font-size: 15px;
+}
+
+.focus-top-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    color: #2b2d5f;
+    margin-bottom: 10px;
+}
+
+.list-group-sm .list-group-item {
+    padding: 0.45rem 0.75rem;
+    font-size: 0.88rem;
+}
+
+.list-group-sm .list-group-item .badge {
+    font-weight: 500;
+}
+
+.focus-highlight {
+    border: 2px solid #ff9800 !important;
+    box-shadow: 0 0 12px rgba(255, 152, 0, 0.25);
+}
+
+#product-focus-view .focus-empty-state {
+    background: #f7f9ff;
+    border: 1px dashed #cbd6ff;
+    color: #4f5d91;
+}
+
+#product-focus-view .focus-warehouse-list .list-group-item {
+    border: none;
+    border-bottom: 1px solid #f1f3f9;
+}
+
+#product-focus-view .focus-warehouse-list .list-group-item:last-child {
+    border-bottom: none;
+}
+
+.filter-group-disabled {
+    opacity: 0.6;
 }
 </style>
 

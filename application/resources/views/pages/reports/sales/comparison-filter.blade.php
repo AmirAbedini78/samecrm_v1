@@ -5,7 +5,7 @@
         <div class="form-group row">
             <label class="form-label">از تاریخ (بازه 1)</label>
             <div class="input-group">
-                <input type="text" id="range1_from" class="form-control form-control-sm persian-datepicker" autocomplete="off" placeholder="1403/01/01" name="range1_from">
+                <input type="text" id="range1_from" class="form-control form-control-sm persian-datepicker" autocomplete="off" placeholder="لطفاً تاریخ شروع بازه ۱ را وارد کنید" name="range1_from">
                 <button type="button" class="btn btn-outline-secondary btn-sm" onclick="showPersianDatePicker('range1_from')">
                     <i class="ti-calendar"></i>
                 </button>
@@ -16,7 +16,7 @@
         <div class="form-group row">
             <label class="form-label">تا تاریخ (بازه 1)</label>
             <div class="input-group">
-                <input type="text" id="range1_to" class="form-control form-control-sm persian-datepicker" autocomplete="off" placeholder="1403/12/29" name="range1_to">
+                <input type="text" id="range1_to" class="form-control form-control-sm persian-datepicker" autocomplete="off" placeholder="لطفاً تاریخ پایان بازه ۱ را وارد کنید" name="range1_to">
                 <button type="button" class="btn btn-outline-secondary btn-sm" onclick="showPersianDatePicker('range1_to')">
                     <i class="ti-calendar"></i>
                 </button>
@@ -27,7 +27,7 @@
         <div class="form-group row">
             <label class="form-label">از تاریخ (بازه 2)</label>
             <div class="input-group">
-                <input type="text" id="range2_from" class="form-control form-control-sm persian-datepicker" autocomplete="off" placeholder="1403/01/01" name="range2_from">
+                <input type="text" id="range2_from" class="form-control form-control-sm persian-datepicker" autocomplete="off" placeholder="لطفاً تاریخ شروع بازه ۲ را وارد کنید" name="range2_from">
                 <button type="button" class="btn btn-outline-secondary btn-sm" onclick="showPersianDatePicker('range2_from')">
                     <i class="ti-calendar"></i>
                 </button>
@@ -38,7 +38,7 @@
         <div class="form-group row">
             <label class="form-label">تا تاریخ (بازه 2)</label>
             <div class="input-group">
-                <input type="text" id="range2_to" class="form-control form-control-sm persian-datepicker" autocomplete="off" placeholder="1403/12/29" name="range2_to">
+                <input type="text" id="range2_to" class="form-control form-control-sm persian-datepicker" autocomplete="off" placeholder="لطفاً تاریخ پایان بازه ۲ را وارد کنید" name="range2_to">
                 <button type="button" class="btn btn-outline-secondary btn-sm" onclick="showPersianDatePicker('range2_to')">
                     <i class="ti-calendar"></i>
                 </button>

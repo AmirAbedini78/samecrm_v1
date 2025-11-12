@@ -1,5 +1,39 @@
 <!-- Logistics Analytics Tab Content -->
-<div class="row">
+<div id="logistics-focus-banner" class="alert alert-warning mb-3" style="display: none;">
+    <i class="ti-target mr-2"></i>
+    <span id="logistics-focus-text"></span>
+</div>
+
+<div class="row" id="logistics-focus-highlights" style="display: none;">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title mb-3">
+                    <i class="ti-package"></i> محصولات شاخص این انبار
+                </h5>
+                <ul class="list-group list-group-sm focus-warehouse-list" id="logisticsFocusProductsList"></ul>
+                <div class="alert alert-info focus-empty-state mt-3" id="logisticsFocusProductsEmpty" style="display: none;">
+                    <i class="ti-info-alt"></i> محصول شاخصی برای این انبار یافت نشد.
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title mb-3">
+                    <i class="ti-user"></i> مشتریان کلیدی این انبار
+                </h5>
+                <ul class="list-group list-group-sm focus-warehouse-list" id="logisticsFocusCustomersList"></ul>
+                <div class="alert alert-info focus-empty-state mt-3" id="logisticsFocusCustomersEmpty" style="display: none;">
+                    <i class="ti-info-alt"></i> مشتری شاخصی برای این انبار یافت نشد.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="logistics-general-view" class="row">
     <!-- Delivery Rate Gauge -->
     <div class="col-md-6 mb-4">
         <div class="card">
@@ -138,6 +172,22 @@ window.logisticsChartsLoaded = false;
 // Load Logistics Analytics Data
 function loadLogisticsAnalytics() {
     console.log('Loading logistics analytics...');
+
+    const focus = window.currentFocus;
+    if (focus && focus.type === 'warehouse') {
+        if (focusDataLoading) {
+            console.log('Focus data is still loading for logistics view, delaying render...');
+            setTimeout(loadLogisticsAnalytics, 350);
+            return;
+        }
+
+        if (window.focusSummary && window.focusDistributions) {
+            renderLogisticsFocusHighlights(window.focusSummary, window.focusDistributions);
+        }
+    } else {
+        toggleLogisticsFocusView(false);
+    }
+
     const dates = getFilterDates();
     
     $.ajax({
@@ -162,6 +212,67 @@ function loadLogisticsAnalytics() {
     });
     
     window.logisticsChartsLoaded = true;
+}
+
+function toggleLogisticsFocusView(isFocusMode) {
+    if (isFocusMode) {
+        $('#logistics-focus-banner').fadeIn(150);
+        $('#logistics-focus-highlights').fadeIn(150);
+    } else {
+        $('#logistics-focus-banner').hide();
+        $('#logistics-focus-highlights').hide();
+    }
+}
+
+function renderLogisticsFocusHighlights(summary, distributionsData) {
+    if (!summary || summary.focus !== 'warehouse') {
+        toggleLogisticsFocusView(false);
+        return;
+    }
+
+    toggleLogisticsFocusView(true);
+    $('#logistics-focus-text').text(`نمای عملکرد انبار: ${truncateLabel(summary.label || '-', 60)}`);
+
+    const products = summary.top_entities ? summary.top_entities.products || [] : [];
+    const customers = summary.top_entities ? summary.top_entities.customers || [] : [];
+
+    renderLogisticsFocusList('#logisticsFocusProductsList', '#logisticsFocusProductsEmpty', products, 'product');
+    renderLogisticsFocusList('#logisticsFocusCustomersList', '#logisticsFocusCustomersEmpty', customers, 'customer');
+}
+
+function renderLogisticsFocusList(listSelector, emptySelector, data, type) {
+    const $list = $(listSelector);
+    const $empty = $(emptySelector);
+
+    if (!$list.length) return;
+
+    if (!data || data.length === 0) {
+        $list.empty();
+        $empty.show();
+        return;
+    }
+
+    $empty.hide();
+    $list.empty();
+
+    data.forEach((item, index) => {
+        const label = truncateLabel(item.label || '-', 50);
+        const amount = formatCurrency(item.total_amount || 0);
+        const quantity = item.total_quantity ? formatNumber(Math.round(item.total_quantity)) + ' واحد' : '';
+        const orders = item.order_count ? formatNumber(item.order_count) + ' سفارش' : '';
+        const meta = [quantity, orders].filter(Boolean).join(' • ');
+
+        const li = `
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>${index + 1}. ${label}</strong>
+                    ${meta ? `<div class="text-muted small">${meta}</div>` : ''}
+                </div>
+                <span class="text-muted">${amount}</span>
+            </li>
+        `;
+        $list.append(li);
+    });
 }
 
 // Render Delivery Rate Chart (Gauge-like Doughnut)

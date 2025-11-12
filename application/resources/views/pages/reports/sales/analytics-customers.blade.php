@@ -1,5 +1,105 @@
 <!-- Customers Analytics Tab Content -->
-<div class="row">
+
+<div id="customer-focus-view" style="display: none;">
+    <div class="alert alert-warning d-flex align-items-center mb-3">
+        <i class="ti-light-bulb mr-2"></i>
+        <div>
+            <strong>نمای اختصاصی مشتری فعال است.</strong>
+            <div class="small text-muted">برای بازگشت به گزارش عمومی، فیلتر مشتری را پاک کنید یا فیلتر متفاوتی انتخاب نمایید.</div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title d-flex justify-content-between align-items-center mb-3">
+                        <span><i class="ti-package"></i> محصولات خریداری شده توسط مشتری</span>
+                        <small class="text-muted" id="customer-focus-products-count"></small>
+                    </h5>
+                    <div class="chart-container" style="height: 360px;">
+                        <canvas id="customerFocusProductsChart"></canvas>
+                        <div class="alert alert-info focus-empty-state mt-3" id="customerFocusProductsEmpty" style="display: none;">
+                            <i class="ti-info-alt"></i> برای این مشتری محصولی یافت نشد.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">
+                        <i class="ti-home"></i> انبارهای مورد استفاده
+                    </h5>
+                    <ul class="list-group list-group-sm focus-warehouse-list" id="customerFocusWarehousesList"></ul>
+                    <div class="alert alert-info focus-empty-state mt-3" id="customerFocusWarehousesEmpty" style="display: none;">
+                        <i class="ti-info-alt"></i> سفارشات این مشتری به انبار خاصی نسبت داده نشده است.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">
+                        <i class="ti-pie-chart"></i> وضعیت سفارش‌های این مشتری
+                    </h5>
+                    <div class="chart-container" style="height: 320px;">
+                        <canvas id="customerFocusStatusChart"></canvas>
+                        <div class="alert alert-info focus-empty-state mt-3" id="customerFocusStatusEmpty" style="display: none;">
+                            <i class="ti-info-alt"></i> سفارش فعالی برای وضعیت نمایش وجود ندارد.
+                        </div>
+                    </div>
+                    <div class="mt-3" id="customerFocusStatusLegend"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">
+                        <i class="ti-stats-up"></i> شاخص‌های کلیدی مشتری
+                    </h5>
+                    <ul class="list-group list-group-sm" id="customerFocusStats"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title mb-3">
+                <i class="ti-list"></i> محصولات خریداری شده (جزئیات کامل)
+            </h5>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover" id="customerFocusProductsTable">
+                    <thead>
+                        <tr>
+                            <th width="60">رتبه</th>
+                            <th>محصول</th>
+                            <th width="120">تعداد سفارش</th>
+                            <th width="160">مبلغ کل</th>
+                            <th width="140">مقدار کل</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="5" class="text-center text-muted">
+                                <i class="spinner-border spinner-border-sm"></i> در حال آماده‌سازی داده‌های محصول...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="customer-general-view" class="row">
     <!-- Top Customers Chart -->
     <div class="col-12 mb-4">
         <div class="card">
@@ -31,12 +131,11 @@
                                 <th>نام مشتری</th>
                                 <th>تعداد سفارش</th>
                                 <th>مبلغ کل</th>
-                                <th>میانگین</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td colspan="5" class="text-center text-muted">
+                                <td colspan="4" class="text-center text-muted">
                                     <i class="spinner-border spinner-border-sm"></i> در حال بارگذاری...
                                 </td>
                             </tr>
@@ -61,14 +160,6 @@
                 <div class="mb-4">
                     <p class="text-muted mb-2">مشتری برتر</p>
                     <h6 class="mb-0" id="topCustomer" style="font-size: 13px;">-</h6>
-                </div>
-                <div class="mb-4">
-                    <p class="text-muted mb-2">میانگین خرید هر مشتری</p>
-                    <h4 class="mb-0" id="avgCustomerPurchase">-</h4>
-                </div>
-                <div>
-                    <p class="text-muted mb-2">میانگین تعداد سفارش</p>
-                    <h4 class="mb-0" id="avgOrdersPerCustomer">-</h4>
                 </div>
             </div>
         </div>
@@ -241,11 +332,30 @@
 let topCustomersChart = null;
 let customerPercentagePieChart = null;
 let paretoChart = null;
+let customerFocusProductsChart = null;
+let customerFocusStatusChart = null;
 window.customersChartsLoaded = false;
 
 // Load Customers Analytics Data
 function loadCustomersAnalytics() {
     console.log('Loading customers analytics...');
+
+    if (window.currentFocus && window.currentFocus.type === 'customer') {
+        if (focusDataLoading) {
+            console.log('Focus data is still loading for customer view, delaying render...');
+            setTimeout(loadCustomersAnalytics, 350);
+            return;
+        }
+
+        if (window.focusSummary && window.focusDistributions) {
+            renderCustomerFocusView(window.focusSummary, window.focusDistributions);
+            window.customersChartsLoaded = true;
+            return;
+        }
+    } else {
+        toggleCustomerFocusView(false);
+    }
+
     const dates = getFilterDates();
     
     // Load Top Customers (existing)
@@ -257,6 +367,7 @@ function loadCustomersAnalytics() {
         success: function(response) {
             console.log('Top customers response:', response);
             if (response.success && response.data) {
+                toggleCustomerFocusView(false);
                 renderTopCustomersChart(response.data);
                 updateTopCustomersTable(response.data);
                 calculateCustomerStatistics(response.data);
@@ -291,6 +402,262 @@ function loadCustomersAnalytics() {
     });
     
     window.customersChartsLoaded = true;
+}
+
+function toggleCustomerFocusView(isFocusMode) {
+    if (isFocusMode) {
+        $('#customer-general-view').hide();
+        $('#customer-focus-view').fadeIn(150);
+    } else {
+        $('#customer-focus-view').hide();
+        $('#customer-general-view').show();
+    }
+}
+
+function renderCustomerFocusView(summaryData, distributionsData) {
+    if (!summaryData || !distributionsData) {
+        toggleCustomerFocusView(false);
+        return;
+    }
+
+    toggleCustomerFocusView(true);
+
+    const distributions = distributionsData.distributions || {};
+    const productDistribution = distributions.products || [];
+    const warehouseDistribution = distributions.warehouses || [];
+    const statusDistribution = distributions.statuses || [];
+
+    renderCustomerFocusProductsChart(productDistribution);
+    renderCustomerFocusWarehouseList(warehouseDistribution);
+    renderCustomerFocusStatusChart(statusDistribution);
+    renderCustomerFocusStats(summaryData);
+
+    const topProducts = summaryData.top_entities ? summaryData.top_entities.products || [] : [];
+    $('#customer-focus-products-count').text(topProducts.length ? `${formatNumber(topProducts.length)} محصول` : '');
+    renderCustomerFocusProductsTable(topProducts);
+}
+
+function renderCustomerFocusProductsChart(data) {
+    const ctx = document.getElementById('customerFocusProductsChart');
+    if (!ctx) return;
+
+    if (customerFocusProductsChart) {
+        customerFocusProductsChart.destroy();
+        customerFocusProductsChart = null;
+    }
+
+    if (!data || data.length === 0) {
+        $('#customerFocusProductsEmpty').show();
+        return;
+    }
+
+    $('#customerFocusProductsEmpty').hide();
+
+    const labels = data.map(item => item.label || '-');
+    const amounts = data.map(item => item.total_amount || 0);
+
+    customerFocusProductsChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'مبلغ خرید (ریال)',
+                data: amounts,
+                backgroundColor: 'rgba(89, 105, 255, 0.75)',
+                borderColor: 'rgba(89, 105, 255, 1)',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    rtl: true,
+                    callbacks: {
+                        label: function(context) {
+                            return formatCurrency(context.parsed.x);
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return formatNumber(value);
+                        }
+                    }
+                },
+                y: {
+                    ticks: {
+                        font: { family: 'Vazir', size: 11 }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function renderCustomerFocusWarehouseList(data) {
+    const $list = $('#customerFocusWarehousesList');
+    if (!$list.length) return;
+
+    if (!data || data.length === 0) {
+        $list.empty();
+        $('#customerFocusWarehousesEmpty').show();
+        return;
+    }
+
+    $('#customerFocusWarehousesEmpty').hide();
+    $list.empty();
+
+    data.forEach((item, index) => {
+        const label = item.label || '-';
+        const amount = formatCurrency(item.total_amount || 0);
+        const orders = item.order_count ? formatNumber(item.order_count) + ' سفارش' : '';
+        const quantity = item.total_quantity ? formatNumber(Math.round(item.total_quantity)) + ' واحد' : '';
+        const meta = [orders, quantity].filter(Boolean).join(' • ');
+
+        const li = `
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>${index + 1}. ${label}</strong>
+                    ${meta ? `<div class="text-muted small">${meta}</div>` : ''}
+                </div>
+                <span class="text-muted">${amount}</span>
+            </li>
+        `;
+        $list.append(li);
+    });
+}
+
+function renderCustomerFocusStatusChart(data) {
+    const ctx = document.getElementById('customerFocusStatusChart');
+    if (!ctx) return;
+
+    if (customerFocusStatusChart) {
+        customerFocusStatusChart.destroy();
+        customerFocusStatusChart = null;
+    }
+
+    if (!data || data.length === 0) {
+        $('#customerFocusStatusEmpty').show();
+        $('#customerFocusStatusLegend').empty();
+        return;
+    }
+
+    $('#customerFocusStatusEmpty').hide();
+
+    const labels = data.map(item => item.label || 'نامشخص');
+    const counts = data.map(item => item.order_count || 0);
+    const colors = [
+        'rgba(255, 152, 0, 0.8)',
+        'rgba(36, 210, 181, 0.8)',
+        'rgba(89, 105, 255, 0.8)',
+        'rgba(255, 99, 132, 0.8)',
+        'rgba(153, 102, 255, 0.8)'
+    ];
+
+    customerFocusStatusChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: counts,
+                backgroundColor: colors.slice(0, labels.length),
+                borderColor: colors.slice(0, labels.length).map(c => c.replace('0.8', '1')),
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    rtl: true,
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.label || ''}: ${formatNumber(context.parsed)} سفارش`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    let legendHtml = '<div class="row">';
+    data.forEach((item, index) => {
+        const color = colors[index % colors.length];
+        legendHtml += `
+            <div class="col-md-6 mb-2 d-flex align-items-center">
+                <span class="badge badge-pill mr-2" style="background:${color};">&nbsp;</span>
+                <div>
+                    <strong>${item.label || 'نامشخص'}</strong>
+                    <div class="text-muted small">${formatNumber(item.order_count || 0)} سفارش</div>
+                </div>
+            </div>
+        `;
+    });
+    legendHtml += '</div>';
+    $('#customerFocusStatusLegend').html(legendHtml);
+}
+
+function renderCustomerFocusStats(summary) {
+    const $list = $('#customerFocusStats');
+    if (!$list.length || !summary) return;
+
+    const stats = [
+        { label: 'کل خرید', value: formatCurrency(summary.total_amount) },
+        { label: 'تعداد سفارش', value: formatNumber(summary.order_count || 0) },
+        { label: 'کل مقدار خرید', value: formatNumber(Math.round(summary.total_quantity || 0)) + ' واحد' },
+        { label: 'محصولات یکتا', value: formatNumber(summary.unique_products || 0) },
+        { label: 'انبارهای فعال', value: formatNumber(summary.unique_warehouses || 0) }
+    ];
+
+    $list.empty();
+    stats.forEach(stat => {
+        $list.append(`
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span>${stat.label}</span>
+                <span class="font-weight-bold">${stat.value}</span>
+            </li>
+        `);
+    });
+}
+
+function renderCustomerFocusProductsTable(products) {
+    const $tbody = $('#customerFocusProductsTable tbody');
+    if (!$tbody.length) return;
+
+    if (!products || products.length === 0) {
+        $tbody.html(`
+            <tr>
+                <td colspan="5" class="text-center text-muted">
+                    <i class="ti-alert"></i> محصولی برای این مشتری ثبت نشده است.
+                </td>
+            </tr>
+        `);
+        return;
+    }
+
+    $tbody.empty();
+    products.forEach((product, index) => {
+        const quantity = product.total_quantity ? formatNumber(Math.round(product.total_quantity)) : '-';
+        $tbody.append(`
+            <tr>
+                <td><span class="badge badge-secondary">${index + 1}</span></td>
+                <td>${product.label || '-'}</td>
+                <td>${formatNumber(product.order_count || 0)}</td>
+                <td>${formatCurrency(product.total_amount || 0)}</td>
+                <td>${quantity}</td>
+            </tr>
+        `);
+    });
 }
 
 // Render Top Customers Chart
@@ -417,7 +784,7 @@ function updateTopCustomersTable(data) {
     tbody.empty();
     
     if (data.length === 0) {
-        tbody.append('<tr><td colspan="5" class="text-center text-muted">داده‌ای یافت نشد</td></tr>');
+        tbody.append('<tr><td colspan="4" class="text-center text-muted">داده‌ای یافت نشد</td></tr>');
         return;
     }
     
@@ -429,7 +796,6 @@ function updateTopCustomersTable(data) {
                 <td><strong>${item.customer_name}</strong></td>
                 <td>${formatNumber(item.order_count)}</td>
                 <td>${formatNumber(Math.round(item.total_amount))} ریال</td>
-                <td>${formatNumber(Math.round(item.avg_amount))} ریال</td>
             </tr>
         `;
         tbody.append(row);
@@ -449,15 +815,6 @@ function calculateCustomerStatistics(data) {
         $('#topCustomer').text(topCust.length > 30 ? topCust.substring(0, 30) + '...' : topCust);
     }
     
-    // Average purchase per customer
-    const totalSales = data.reduce((sum, item) => sum + parseFloat(item.total_amount), 0);
-    const avgPurchase = totalSales / data.length;
-    $('#avgCustomerPurchase').text(formatNumber(Math.round(avgPurchase)) + ' ریال');
-    
-    // Average orders per customer
-    const totalOrders = data.reduce((sum, item) => sum + parseInt(item.order_count), 0);
-    const avgOrders = totalOrders / data.length;
-    $('#avgOrdersPerCustomer').text(formatNumber(avgOrders.toFixed(1)));
 }
 
 // Calculate Pareto Analysis (80/20 rule)

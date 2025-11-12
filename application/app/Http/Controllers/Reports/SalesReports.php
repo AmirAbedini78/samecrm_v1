@@ -36,8 +36,8 @@ class SalesReports extends Controller {
         $page = [ 'title' => __('lang.sales') . ' - ' . __('lang.reports') ];
         
         $report = [
-            'range1' => ['count' => 0, 'total_sales_amount' => 0, 'average_sales_amount' => 0],
-            'range2' => ['count' => 0, 'total_sales_amount' => 0, 'average_sales_amount' => 0],
+            'range1' => ['count' => 0, 'total_sales_amount' => 0],
+            'range2' => ['count' => 0, 'total_sales_amount' => 0],
         ];
 
         $payload = ['page' => $page, 'report' => $report];
@@ -250,12 +250,10 @@ class SalesReports extends Controller {
                 'range1' => [
                     'count' => (int) $range1_query->count(),
                     'total_sales_amount' => (float) ($range1_query->sum('base_sales_amount') ?? 0),
-                    'average_sales_amount' => (float) ($range1_query->avg('base_sales_amount') ?? 0),
                 ],
                 'range2' => [
                     'count' => (int) $range2_query->count(),
                     'total_sales_amount' => (float) ($range2_query->sum('base_sales_amount') ?? 0),
-                    'average_sales_amount' => (float) ($range2_query->avg('base_sales_amount') ?? 0),
                 ],
             ];
 
@@ -454,6 +452,281 @@ class SalesReports extends Controller {
     }
 
     /**
+     * Build a base query for analytics endpoints with common filters
+     */
+    private function buildAnalyticsQuery(Request $request) {
+        $query = Sales::query();
+
+        $from_date = $request->get('from_date');
+        $to_date = $request->get('to_date');
+        $product = $request->get('product');
+        $customer = $request->get('customer');
+        $warehouse = $request->get('warehouse');
+        $status = $request->get('status');
+
+        if ($from_date && PersianCalendarHelper::isValidPersianDate($from_date)) {
+            $query->where('document_date', '>=', $from_date);
+        }
+        if ($to_date && PersianCalendarHelper::isValidPersianDate($to_date)) {
+            $query->where('document_date', '<=', $to_date);
+        }
+        if ($product) {
+            $query->where('product_name', 'LIKE', '%' . $product . '%');
+        }
+        if ($customer) {
+            $query->where('customer_name', 'LIKE', '%' . $customer . '%');
+        }
+        if ($warehouse) {
+            $query->where('warehouse', 'LIKE', '%' . $warehouse . '%');
+        }
+        if ($status) {
+            $query->where('sales_status', $status);
+        }
+
+        return $query;
+    }
+
+    /**
+     * Provide summary information when a specific focus (product/customer/warehouse) is selected
+     */
+    public function getFocusSummary(Request $request) {
+        try {
+            $focus = $request->get('focus');
+
+            if (!in_array($focus, ['product', 'customer', 'warehouse'])) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Focus پارامتر نامعتبر است.',
+                ], 422);
+            }
+
+            $focusValue = $request->get($focus);
+
+            if (!$focusValue) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'برای مشاهده خلاصه، مقدار تمرکز باید مشخص شود.',
+                ], 422);
+            }
+
+            $baseQuery = $this->buildAnalyticsQuery($request);
+
+            $orderCount = (clone $baseQuery)->count();
+            $totalAmount = (clone $baseQuery)->sum('base_sales_amount') ?? 0;
+            $totalNetAmount = (clone $baseQuery)->sum('base_net_amount') ?? 0;
+            $totalQuantity = (clone $baseQuery)->sum('main_quantity') ?? 0;
+
+            $firstSale = (clone $baseQuery)->min('document_date');
+            $lastSale = (clone $baseQuery)->max('document_date');
+
+            $uniqueCustomers = (clone $baseQuery)->distinct()->count('customer_name');
+            $uniqueProducts = (clone $baseQuery)->distinct()->count('product_name');
+            $uniqueWarehouses = (clone $baseQuery)->distinct()->count('warehouse');
+
+            $topEntities = [];
+
+            if ($focus === 'product') {
+                $topEntities['customers'] = (clone $baseQuery)
+                    ->selectRaw('customer_name as label, SUM(base_sales_amount) as total_amount, SUM(main_quantity) as total_quantity, COUNT(*) as order_count')
+                    ->whereNotNull('customer_name')
+                    ->where('customer_name', '!=', '')
+                    ->groupBy('customer_name')
+                    ->orderByDesc('total_amount')
+                    ->limit(5)
+                    ->get();
+
+                $topEntities['warehouses'] = (clone $baseQuery)
+                    ->selectRaw('warehouse as label, SUM(base_sales_amount) as total_amount, SUM(main_quantity) as total_quantity, COUNT(*) as order_count')
+                    ->whereNotNull('warehouse')
+                    ->where('warehouse', '!=', '')
+                    ->groupBy('warehouse')
+                    ->orderByDesc('total_amount')
+                    ->limit(5)
+                    ->get();
+            } elseif ($focus === 'customer') {
+                $topEntities['products'] = (clone $baseQuery)
+                    ->selectRaw('product_name as label, SUM(base_sales_amount) as total_amount, SUM(main_quantity) as total_quantity, COUNT(*) as order_count')
+                    ->whereNotNull('product_name')
+                    ->where('product_name', '!=', '')
+                    ->groupBy('product_name')
+                    ->orderByDesc('total_amount')
+                    ->limit(5)
+                    ->get();
+
+                $topEntities['warehouses'] = (clone $baseQuery)
+                    ->selectRaw('warehouse as label, SUM(base_sales_amount) as total_amount, COUNT(*) as order_count')
+                    ->whereNotNull('warehouse')
+                    ->where('warehouse', '!=', '')
+                    ->groupBy('warehouse')
+                    ->orderByDesc('total_amount')
+                    ->limit(5)
+                    ->get();
+            } elseif ($focus === 'warehouse') {
+                $topEntities['products'] = (clone $baseQuery)
+                    ->selectRaw('product_name as label, SUM(base_sales_amount) as total_amount, SUM(main_quantity) as total_quantity, COUNT(*) as order_count')
+                    ->whereNotNull('product_name')
+                    ->where('product_name', '!=', '')
+                    ->groupBy('product_name')
+                    ->orderByDesc('total_amount')
+                    ->limit(5)
+                    ->get();
+
+                $topEntities['customers'] = (clone $baseQuery)
+                    ->selectRaw('customer_name as label, SUM(base_sales_amount) as total_amount, COUNT(*) as order_count')
+                    ->whereNotNull('customer_name')
+                    ->where('customer_name', '!=', '')
+                    ->groupBy('customer_name')
+                    ->orderByDesc('total_amount')
+                    ->limit(5)
+                    ->get();
+            }
+
+            $responseData = [
+                'focus' => $focus,
+                'label' => $focusValue,
+                'order_count' => (int) $orderCount,
+                'total_amount' => (float) round($totalAmount, 2),
+                'total_net_amount' => (float) round($totalNetAmount, 2),
+                'total_quantity' => (float) round($totalQuantity, 2),
+                'first_sale_date' => $firstSale,
+                'last_sale_date' => $lastSale,
+                'unique_customers' => (int) $uniqueCustomers,
+                'unique_products' => (int) $uniqueProducts,
+                'unique_warehouses' => (int) $uniqueWarehouses,
+                'top_entities' => [
+                    'customers' => $topEntities['customers'] ?? [],
+                    'products' => $topEntities['products'] ?? [],
+                    'warehouses' => $topEntities['warehouses'] ?? [],
+                ],
+            ];
+
+            return response()->json([
+                'success' => true,
+                'data' => $responseData,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Focus Summary Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Provide distribution breakdowns for the current focus
+     */
+    public function getFocusDistributions(Request $request) {
+        try {
+            $focus = $request->get('focus');
+
+            if (!in_array($focus, ['product', 'customer', 'warehouse'])) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Focus پارامتر نامعتبر است.',
+                ], 422);
+            }
+
+            $focusValue = $request->get($focus);
+
+            if (!$focusValue) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'برای مشاهده توزیع، مقدار تمرکز باید مشخص شود.',
+                ], 422);
+            }
+
+            $baseQuery = $this->buildAnalyticsQuery($request);
+
+            $distributions = [
+                'customers' => [],
+                'products' => [],
+                'warehouses' => [],
+                'statuses' => [],
+            ];
+
+            $statusDistribution = (clone $baseQuery)
+                ->selectRaw('sales_status as label, COUNT(*) as order_count, SUM(base_sales_amount) as total_amount')
+                ->groupBy('sales_status')
+                ->orderByDesc('order_count')
+                ->get();
+
+            $distributions['statuses'] = $statusDistribution;
+
+            if ($focus === 'product') {
+                $distributions['customers'] = (clone $baseQuery)
+                    ->selectRaw('customer_name as label, SUM(base_sales_amount) as total_amount, SUM(main_quantity) as total_quantity, COUNT(*) as order_count')
+                    ->whereNotNull('customer_name')
+                    ->where('customer_name', '!=', '')
+                    ->groupBy('customer_name')
+                    ->orderByDesc('total_amount')
+                    ->limit(10)
+                    ->get();
+
+                $distributions['warehouses'] = (clone $baseQuery)
+                    ->selectRaw('warehouse as label, SUM(base_sales_amount) as total_amount, SUM(main_quantity) as total_quantity, COUNT(*) as order_count')
+                    ->whereNotNull('warehouse')
+                    ->where('warehouse', '!=', '')
+                    ->groupBy('warehouse')
+                    ->orderByDesc('total_amount')
+                    ->limit(10)
+                    ->get();
+            } elseif ($focus === 'customer') {
+                $distributions['products'] = (clone $baseQuery)
+                    ->selectRaw('product_name as label, SUM(base_sales_amount) as total_amount, SUM(main_quantity) as total_quantity, COUNT(*) as order_count')
+                    ->whereNotNull('product_name')
+                    ->where('product_name', '!=', '')
+                    ->groupBy('product_name')
+                    ->orderByDesc('total_amount')
+                    ->limit(10)
+                    ->get();
+
+                $distributions['warehouses'] = (clone $baseQuery)
+                    ->selectRaw('warehouse as label, SUM(base_sales_amount) as total_amount, SUM(main_quantity) as total_quantity, COUNT(*) as order_count')
+                    ->whereNotNull('warehouse')
+                    ->where('warehouse', '!=', '')
+                    ->groupBy('warehouse')
+                    ->orderByDesc('total_amount')
+                    ->limit(10)
+                    ->get();
+            } elseif ($focus === 'warehouse') {
+                $distributions['products'] = (clone $baseQuery)
+                    ->selectRaw('product_name as label, SUM(base_sales_amount) as total_amount, SUM(main_quantity) as total_quantity, COUNT(*) as order_count')
+                    ->whereNotNull('product_name')
+                    ->where('product_name', '!=', '')
+                    ->groupBy('product_name')
+                    ->orderByDesc('total_amount')
+                    ->limit(10)
+                    ->get();
+
+                $distributions['customers'] = (clone $baseQuery)
+                    ->selectRaw('customer_name as label, SUM(base_sales_amount) as total_amount, COUNT(*) as order_count')
+                    ->whereNotNull('customer_name')
+                    ->where('customer_name', '!=', '')
+                    ->groupBy('customer_name')
+                    ->orderByDesc('total_amount')
+                    ->limit(10)
+                    ->get();
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'focus' => $focus,
+                    'label' => $focusValue,
+                    'distributions' => $distributions,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Focus Distribution Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Get monthly sales trend
      */
     public function getMonthlyTrend(Request $request) {
@@ -509,20 +782,16 @@ class SalesReports extends Controller {
                         'year_month' => $key,
                         'count' => 0,
                         'total_amount' => 0,
-                        'amounts' => []
                     ];
                 }
-                
+
                 $grouped[$key]['count']++;
                 $grouped[$key]['total_amount'] += $sale->base_sales_amount;
-                $grouped[$key]['amounts'][] = $sale->base_sales_amount;
             }
             
-            // Calculate averages and sort
+            // Sort grouped data by year_month
             $monthlyData = [];
             foreach ($grouped as $key => $data) {
-                $data['avg_amount'] = $data['count'] > 0 ? $data['total_amount'] / $data['count'] : 0;
-                unset($data['amounts']); // Remove raw amounts array
                 $monthlyData[] = $data;
             }
             
@@ -641,7 +910,7 @@ class SalesReports extends Controller {
             }
 
             // Group by customer
-            $topCustomers = $query->selectRaw('customer_name, COUNT(*) as order_count, SUM(base_sales_amount) as total_amount, AVG(base_sales_amount) as avg_amount')
+            $topCustomers = $query->selectRaw('customer_name, COUNT(*) as order_count, SUM(base_sales_amount) as total_amount')
                 ->groupBy('customer_name')
                 ->orderBy('total_amount', 'desc')
                 ->limit($limit)
@@ -736,8 +1005,7 @@ class SalesReports extends Controller {
             $customerSales = $query->selectRaw('
                     customer_name,
                     COUNT(*) as order_count,
-                    SUM(base_sales_amount) as total_amount,
-                    AVG(base_sales_amount) as avg_amount
+                    SUM(base_sales_amount) as total_amount
                 ')
                 ->groupBy('customer_name')
                 ->orderBy('total_amount', 'desc')
@@ -764,7 +1032,6 @@ class SalesReports extends Controller {
                     'customer_name' => $customer->customer_name,
                     'order_count' => (int) $customer->order_count,
                     'total_amount' => (float) $customer->total_amount,
-                    'avg_amount' => (float) $customer->avg_amount,
                     'percentage' => round($percentage, 2),
                     'cumulative_percentage' => round($cumulativePercentage, 2),
                     'classification' => $classification

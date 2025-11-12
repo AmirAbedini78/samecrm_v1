@@ -45,12 +45,11 @@
                                 <th>ماه</th>
                                 <th>تعداد</th>
                                 <th>مبلغ کل</th>
-                                <th>میانگین</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td colspan="4" class="text-center text-muted">
+                                <td colspan="3" class="text-center text-muted">
                                     <i class="spinner-border spinner-border-sm"></i> در حال بارگذاری...
                                 </td>
                             </tr>
@@ -64,7 +63,7 @@
     <!-- Key Statistics Cards -->
     <div class="col-12">
         <div class="row" id="timeStatsCards">
-            <div class="col-md-3 mb-3">
+            <div class="col-md-4 mb-3">
                 <div class="card stat-card">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
@@ -79,7 +78,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3 mb-3">
+            <div class="col-md-4 mb-3">
                 <div class="card stat-card">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
@@ -94,22 +93,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3 mb-3">
-                <div class="card stat-card">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <p class="text-muted mb-1">میانگین ماهانه</p>
-                                <h4 class="mb-0" id="avgMonthlySales">-</h4>
-                            </div>
-                            <div class="text-info">
-                                <i class="ti-bar-chart" style="font-size: 32px;"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 mb-3">
+            <div class="col-md-4 mb-3">
                 <div class="card stat-card">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
@@ -390,7 +374,7 @@ function updateMonthlyStatsTable(data) {
     tbody.empty();
     
     if (data.length === 0) {
-        tbody.append('<tr><td colspan="4" class="text-center text-muted">داده‌ای یافت نشد</td></tr>');
+        tbody.append('<tr><td colspan="3" class="text-center text-muted">داده‌ای یافت نشد</td></tr>');
         return;
     }
     
@@ -406,7 +390,6 @@ function updateMonthlyStatsTable(data) {
                 <td><strong>${monthName}</strong></td>
                 <td>${formatNumber(item.count)}</td>
                 <td>${formatNumber(Math.round(item.total_amount))} ریال</td>
-                <td>${formatNumber(Math.round(item.avg_amount))} ریال</td>
             </tr>
         `;
         tbody.append(row);
@@ -429,9 +412,6 @@ function calculateTimeStatistics(data) {
     const totalSales = data.reduce((sum, item) => sum + parseFloat(item.total_amount), 0);
     $('#totalSales').text(formatNumber(Math.round(totalSales)) + ' ریال');
     
-    // Average monthly sales
-    const avgSales = totalSales / data.length;
-    $('#avgMonthlySales').text(formatNumber(Math.round(avgSales)) + ' ریال');
 }
 </script>
 

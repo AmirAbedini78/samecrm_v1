@@ -8,7 +8,7 @@
 						<div class="col-md-3">
 							<label class="form-label">از تاریخ</label>
                             <div class="input-group">
-                                <input type="text" id="document_date_from" class="form-control persian-datepicker" autocomplete="off" placeholder="1403/01/01">
+                                <input type="text" id="document_date_from" class="form-control persian-datepicker" autocomplete="off" placeholder="لطفاً تاریخ شروع گزارش را وارد کنید">
                                 <button type="button" class="btn btn-outline-secondary" onclick="showPersianDatePicker('document_date_from')">
                                     <i class="ti-calendar"></i>
                                 </button>
@@ -17,7 +17,7 @@
 						<div class="col-md-3">
 							<label class="form-label">تا تاریخ</label>
                             <div class="input-group">
-                                <input type="text" id="document_date_to" class="form-control persian-datepicker" autocomplete="off" placeholder="1403/12/29">
+                                <input type="text" id="document_date_to" class="form-control persian-datepicker" autocomplete="off" placeholder="لطفاً تاریخ پایان گزارش را وارد کنید">
                                 <button type="button" class="btn btn-outline-secondary" onclick="showPersianDatePicker('document_date_to')">
                                     <i class="ti-calendar"></i>
                                 </button>
@@ -25,11 +25,11 @@
 						</div>
 						<div class="col-md-3">
 							<label class="form-label">مشتری (یونیک)</label>
-							<input type="text" id="column_customer_name" class="form-control" placeholder="نام مشتری">
+							<input type="text" id="column_customer_name" class="form-control" placeholder="لطفاً نام مشتری را بنویسید">
 						</div>
 						<div class="col-md-3">
 							<label class="form-label">انبار (یونیک)</label>
-							<input type="text" id="column_warehouse" class="form-control" placeholder="انبار">
+							<input type="text" id="column_warehouse" class="form-control" placeholder="لطفاً نام انبار را بنویسید">
 						</div>
 					</div>
 					<div class="text-end mt-3">
@@ -44,8 +44,7 @@
 								<div class="card-body">
 									<h5 class="mb-3">نتایج تجمیعی</h5>
 									<p class="mb-1">تعداد رکورد: <span id="agg-count">0</span></p>
-									<p class="mb-1">مجموع مبلغ فروش: <span id="agg-total">0</span></p>
-									<p class="mb-0">میانگین مبلغ فروش: <span id="agg-avg">0</span></p>
+									<p class="mb-0">مجموع مبلغ فروش: <span id="agg-total">0</span></p>
 								</div>
 							</div>
 						</div>
@@ -201,7 +200,6 @@ $('#run-aggregates').on('click', function(){
 			$('#aggregates-results').show();
 			$('#agg-count').text(resp.data.count);
 			$('#agg-total').text(fmt(resp.data.total_sales_amount));
-			$('#agg-avg').text(fmt(resp.data.average_sales_amount));
 		}
 	}).fail(function(xhr){
 		console.error(xhr.responseText);

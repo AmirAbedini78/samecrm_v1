@@ -35,11 +35,11 @@
 						</div>
 						<div class="col-md-3">
 							<label class="form-label">مشتری (یونیک)</label>
-							<input type="text" id="column_customer_name" class="form-control" placeholder="نام مشتری">
+							<input type="text" id="column_customer_name" class="form-control" placeholder="لطفاً نام مشتری را بنویسید">
 						</div>
 						<div class="col-md-3">
 							<label class="form-label">انبار (یونیک)</label>
-							<input type="text" id="column_warehouse" class="form-control" placeholder="انبار">
+							<input type="text" id="column_warehouse" class="form-control" placeholder="لطفاً نام انبار را بنویسید">
 						</div>
 					</div>
 					<div class="text-end mt-3">
@@ -53,8 +53,7 @@
 							<div class="card bg-light">
 								<div class="card-body">
 									<p class="mb-1">تعداد رکورد: <span id="agg-count">0</span></p>
-									<p class="mb-1">مجموع مبلغ فروش: <span id="agg-total">0</span></p>
-									<p class="mb-0">میانگین مبلغ فروش: <span id="agg-avg">0</span></p>
+									<p class="mb-0">مجموع مبلغ فروش: <span id="agg-total">0</span></p>
 								</div>
 							</div>
 						</div>
@@ -80,7 +79,6 @@ $('#run-aggregates').on('click', function(){
 		if(resp.success){
 			$('#agg-count').text(resp.data.count);
 			$('#agg-total').text(fmt(resp.data.total_sales_amount));
-			$('#agg-avg').text(fmt(resp.data.average_sales_amount));
 		}
 	}).fail(function(xhr){
 		console.error(xhr.responseText);

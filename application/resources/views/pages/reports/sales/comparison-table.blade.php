@@ -6,8 +6,7 @@
                 <div class="card-body">
                     <h5 class="mb-3">بازه 1</h5>
                     <p class="mb-1">تعداد رکورد: <span id="r1-count">{{ $report['range1']['count'] ?? 0 }}</span></p>
-                    <p class="mb-1">مجموع مبلغ فروش: <span id="r1-total">{{ number_format($report['range1']['total_sales_amount'] ?? 0) }}</span></p>
-                    <p class="mb-0">میانگین مبلغ فروش: <span id="r1-avg">{{ number_format($report['range1']['average_sales_amount'] ?? 0) }}</span></p>
+                    <p class="mb-0">مجموع مبلغ فروش: <span id="r1-total">{{ number_format($report['range1']['total_sales_amount'] ?? 0) }}</span></p>
                 </div>
             </div>
         </div>
@@ -16,8 +15,7 @@
                 <div class="card-body">
                     <h5 class="mb-3">بازه 2</h5>
                     <p class="mb-1">تعداد رکورد: <span id="r2-count">{{ $report['range2']['count'] ?? 0 }}</span></p>
-                    <p class="mb-1">مجموع مبلغ فروش: <span id="r2-total">{{ number_format($report['range2']['total_sales_amount'] ?? 0) }}</span></p>
-                    <p class="mb-0">میانگین مبلغ فروش: <span id="r2-avg">{{ number_format($report['range2']['average_sales_amount'] ?? 0) }}</span></p>
+                    <p class="mb-0">مجموع مبلغ فروش: <span id="r2-total">{{ number_format($report['range2']['total_sales_amount'] ?? 0) }}</span></p>
                 </div>
             </div>
         </div>

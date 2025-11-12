@@ -80,21 +80,6 @@
                 </div>
             </div>
         </div>
-        <div class="col-lg-3 col-md-6 col-sm-12 col-12 mb-3">
-            <div class="card">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-shrink-0">
-                            <i class="ti-bar-chart font-24 text-info"></i>
-                        </div>
-                        <div class="flex-grow-1 ms-3">
-                            <p class="text-uppercase fw-medium text-muted mb-0">میانگین مبلغ فروش</p>
-                            <h4 class="my-1 stats-average-sales-amount">{{ formatCurrency($stats['average_sales_amount'] ?? 0, 'IRR') }}</h4>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- Page Actions -->
