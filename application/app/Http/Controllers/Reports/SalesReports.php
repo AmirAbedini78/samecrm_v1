@@ -5,16 +5,24 @@ namespace App\Http\Controllers\Reports;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\Reports\Sales\SalesComparisonResponse;
 use App\Models\Sales;
+use App\Services\CustomerCategoryService;
 use App\Helpers\PersianCalendarHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class SalesReports extends Controller {
 
-    public function __construct() {
+    /**
+     * @var CustomerCategoryService
+     */
+    private $categoryService;
+
+    public function __construct(CustomerCategoryService $categoryService) {
         parent::__construct();
         $this->middleware('auth');
         $this->middleware('reportsMiddlewareShow')->only(['comparison', 'aggregates', 'analytics']);
+
+        $this->categoryService = $categoryService;
     }
 
     public function comparison(Request $request) {
@@ -50,6 +58,7 @@ class SalesReports extends Controller {
     public function getUniqueValues(Request $request) {
         try {
             $column = $request->get('column');
+            $customerCategory = $request->get('customer_category');
             
             // For comparison page (range-based)
             $range = $request->get('range', 1);
@@ -98,6 +107,18 @@ class SalesReports extends Controller {
                 $query->where('warehouse', 'LIKE', '%' . $warehouse . '%');
             }
             
+            if ($customerCategory) {
+                $categoryCustomers = $this->categoryService->customersForSlug($customerCategory);
+                if (empty($categoryCustomers)) {
+                    return response()->json([
+                        'success' => true,
+                        'data' => [],
+                        'count' => 0,
+                    ]);
+                }
+                $query->whereIn('customer_name', $categoryCustomers);
+            }
+
             $values = [];
             
             // Handle different column types
@@ -142,6 +163,27 @@ class SalesReports extends Controller {
                 'success' => false,
                 'error' => $e->getMessage()
             ]);
+        }
+    }
+    
+    /**
+     * Fetch customer categories for analytics filters.
+     */
+    public function getCustomerCategories(Request $request)
+    {
+        try {
+            $categories = $this->categoryService->allCategories();
+
+            return response()->json([
+                'success' => true,
+                'data' => $categories,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Get Customer Categories Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 500);
         }
     }
     
@@ -463,6 +505,7 @@ class SalesReports extends Controller {
         $customer = $request->get('customer');
         $warehouse = $request->get('warehouse');
         $status = $request->get('status');
+        $customerCategory = $request->get('customer_category');
 
         if ($from_date && PersianCalendarHelper::isValidPersianDate($from_date)) {
             $query->where('document_date', '>=', $from_date);
@@ -481,6 +524,15 @@ class SalesReports extends Controller {
         }
         if ($status) {
             $query->where('sales_status', $status);
+        }
+
+        if ($customerCategory) {
+            $categoryCustomers = $this->categoryService->customersForSlug($customerCategory);
+            if (empty($categoryCustomers)) {
+                $query->whereRaw('1 = 0');
+            } else {
+                $query->whereIn('customer_name', $categoryCustomers);
+            }
         }
 
         return $query;
@@ -527,7 +579,7 @@ class SalesReports extends Controller {
 
             if ($focus === 'product') {
                 $topEntities['customers'] = (clone $baseQuery)
-                    ->selectRaw('customer_name as label, SUM(base_sales_amount) as total_amount, SUM(main_quantity) as total_quantity, COUNT(*) as order_count')
+                    ->selectRaw('customer_name as label, SUM(base_sales_amount) as total_amount, SUM(main_quantity) as total_quantity, COUNT(*) as order_count, MAX(main_unit) as unit_label')
                     ->whereNotNull('customer_name')
                     ->where('customer_name', '!=', '')
                     ->groupBy('customer_name')
@@ -536,7 +588,7 @@ class SalesReports extends Controller {
                     ->get();
 
                 $topEntities['warehouses'] = (clone $baseQuery)
-                    ->selectRaw('warehouse as label, SUM(base_sales_amount) as total_amount, SUM(main_quantity) as total_quantity, COUNT(*) as order_count')
+                    ->selectRaw('warehouse as label, SUM(base_sales_amount) as total_amount, SUM(main_quantity) as total_quantity, COUNT(*) as order_count, MAX(main_unit) as unit_label')
                     ->whereNotNull('warehouse')
                     ->where('warehouse', '!=', '')
                     ->groupBy('warehouse')
@@ -545,7 +597,7 @@ class SalesReports extends Controller {
                     ->get();
             } elseif ($focus === 'customer') {
                 $topEntities['products'] = (clone $baseQuery)
-                    ->selectRaw('product_name as label, SUM(base_sales_amount) as total_amount, SUM(main_quantity) as total_quantity, COUNT(*) as order_count')
+                    ->selectRaw('product_name as label, SUM(base_sales_amount) as total_amount, SUM(main_quantity) as total_quantity, COUNT(*) as order_count, MAX(main_unit) as unit_label')
                     ->whereNotNull('product_name')
                     ->where('product_name', '!=', '')
                     ->groupBy('product_name')
@@ -554,7 +606,7 @@ class SalesReports extends Controller {
                     ->get();
 
                 $topEntities['warehouses'] = (clone $baseQuery)
-                    ->selectRaw('warehouse as label, SUM(base_sales_amount) as total_amount, COUNT(*) as order_count')
+                    ->selectRaw('warehouse as label, SUM(base_sales_amount) as total_amount, COUNT(*) as order_count, MAX(main_unit) as unit_label')
                     ->whereNotNull('warehouse')
                     ->where('warehouse', '!=', '')
                     ->groupBy('warehouse')
@@ -563,7 +615,7 @@ class SalesReports extends Controller {
                     ->get();
             } elseif ($focus === 'warehouse') {
                 $topEntities['products'] = (clone $baseQuery)
-                    ->selectRaw('product_name as label, SUM(base_sales_amount) as total_amount, SUM(main_quantity) as total_quantity, COUNT(*) as order_count')
+                    ->selectRaw('product_name as label, SUM(base_sales_amount) as total_amount, SUM(main_quantity) as total_quantity, COUNT(*) as order_count, MAX(main_unit) as unit_label')
                     ->whereNotNull('product_name')
                     ->where('product_name', '!=', '')
                     ->groupBy('product_name')
@@ -572,7 +624,7 @@ class SalesReports extends Controller {
                     ->get();
 
                 $topEntities['customers'] = (clone $baseQuery)
-                    ->selectRaw('customer_name as label, SUM(base_sales_amount) as total_amount, COUNT(*) as order_count')
+                    ->selectRaw('customer_name as label, SUM(base_sales_amount) as total_amount, COUNT(*) as order_count, MAX(main_unit) as unit_label')
                     ->whereNotNull('customer_name')
                     ->where('customer_name', '!=', '')
                     ->groupBy('customer_name')
@@ -581,6 +633,14 @@ class SalesReports extends Controller {
                     ->get();
             }
 
+            $unitLabel = (clone $baseQuery)
+                ->whereNotNull('main_unit')
+                ->selectRaw('main_unit, SUM(main_quantity) as quantity_sum')
+                ->groupBy('main_unit')
+                ->orderByDesc('quantity_sum')
+                ->limit(1)
+                ->value('main_unit');
+
             $responseData = [
                 'focus' => $focus,
                 'label' => $focusValue,
@@ -588,6 +648,7 @@ class SalesReports extends Controller {
                 'total_amount' => (float) round($totalAmount, 2),
                 'total_net_amount' => (float) round($totalNetAmount, 2),
                 'total_quantity' => (float) round($totalQuantity, 2),
+                'unit_label' => $unitLabel,
                 'first_sale_date' => $firstSale,
                 'last_sale_date' => $lastSale,
                 'unique_customers' => (int) $uniqueCustomers,
@@ -646,7 +707,7 @@ class SalesReports extends Controller {
             ];
 
             $statusDistribution = (clone $baseQuery)
-                ->selectRaw('sales_status as label, COUNT(*) as order_count, SUM(base_sales_amount) as total_amount')
+                ->selectRaw('sales_status as label, COUNT(*) as order_count, SUM(base_sales_amount) as total_amount, MAX(main_unit) as unit_label')
                 ->groupBy('sales_status')
                 ->orderByDesc('order_count')
                 ->get();
@@ -655,7 +716,7 @@ class SalesReports extends Controller {
 
             if ($focus === 'product') {
                 $distributions['customers'] = (clone $baseQuery)
-                    ->selectRaw('customer_name as label, SUM(base_sales_amount) as total_amount, SUM(main_quantity) as total_quantity, COUNT(*) as order_count')
+                    ->selectRaw('customer_name as label, SUM(base_sales_amount) as total_amount, SUM(main_quantity) as total_quantity, COUNT(*) as order_count, MAX(main_unit) as unit_label')
                     ->whereNotNull('customer_name')
                     ->where('customer_name', '!=', '')
                     ->groupBy('customer_name')
@@ -664,7 +725,7 @@ class SalesReports extends Controller {
                     ->get();
 
                 $distributions['warehouses'] = (clone $baseQuery)
-                    ->selectRaw('warehouse as label, SUM(base_sales_amount) as total_amount, SUM(main_quantity) as total_quantity, COUNT(*) as order_count')
+                    ->selectRaw('warehouse as label, SUM(base_sales_amount) as total_amount, SUM(main_quantity) as total_quantity, COUNT(*) as order_count, MAX(main_unit) as unit_label')
                     ->whereNotNull('warehouse')
                     ->where('warehouse', '!=', '')
                     ->groupBy('warehouse')
@@ -673,7 +734,7 @@ class SalesReports extends Controller {
                     ->get();
             } elseif ($focus === 'customer') {
                 $distributions['products'] = (clone $baseQuery)
-                    ->selectRaw('product_name as label, SUM(base_sales_amount) as total_amount, SUM(main_quantity) as total_quantity, COUNT(*) as order_count')
+                    ->selectRaw('product_name as label, SUM(base_sales_amount) as total_amount, SUM(main_quantity) as total_quantity, COUNT(*) as order_count, MAX(main_unit) as unit_label')
                     ->whereNotNull('product_name')
                     ->where('product_name', '!=', '')
                     ->groupBy('product_name')
@@ -682,7 +743,7 @@ class SalesReports extends Controller {
                     ->get();
 
                 $distributions['warehouses'] = (clone $baseQuery)
-                    ->selectRaw('warehouse as label, SUM(base_sales_amount) as total_amount, SUM(main_quantity) as total_quantity, COUNT(*) as order_count')
+                    ->selectRaw('warehouse as label, SUM(base_sales_amount) as total_amount, SUM(main_quantity) as total_quantity, COUNT(*) as order_count, MAX(main_unit) as unit_label')
                     ->whereNotNull('warehouse')
                     ->where('warehouse', '!=', '')
                     ->groupBy('warehouse')
@@ -691,7 +752,7 @@ class SalesReports extends Controller {
                     ->get();
             } elseif ($focus === 'warehouse') {
                 $distributions['products'] = (clone $baseQuery)
-                    ->selectRaw('product_name as label, SUM(base_sales_amount) as total_amount, SUM(main_quantity) as total_quantity, COUNT(*) as order_count')
+                    ->selectRaw('product_name as label, SUM(base_sales_amount) as total_amount, SUM(main_quantity) as total_quantity, COUNT(*) as order_count, MAX(main_unit) as unit_label')
                     ->whereNotNull('product_name')
                     ->where('product_name', '!=', '')
                     ->groupBy('product_name')
@@ -700,7 +761,7 @@ class SalesReports extends Controller {
                     ->get();
 
                 $distributions['customers'] = (clone $baseQuery)
-                    ->selectRaw('customer_name as label, SUM(base_sales_amount) as total_amount, COUNT(*) as order_count')
+                    ->selectRaw('customer_name as label, SUM(base_sales_amount) as total_amount, COUNT(*) as order_count, MAX(main_unit) as unit_label')
                     ->whereNotNull('customer_name')
                     ->where('customer_name', '!=', '')
                     ->groupBy('customer_name')
@@ -731,36 +792,7 @@ class SalesReports extends Controller {
      */
     public function getMonthlyTrend(Request $request) {
         try {
-            $from_date = $request->get('from_date');
-            $to_date = $request->get('to_date');
-            $product = $request->get('product');
-            $customer = $request->get('customer');
-            $warehouse = $request->get('warehouse');
-            $status = $request->get('status');
-
-            $query = Sales::query();
-            
-            // Date filters
-            if ($from_date && PersianCalendarHelper::isValidPersianDate($from_date)) {
-                $query->where('document_date', '>=', $from_date);
-            }
-            if ($to_date && PersianCalendarHelper::isValidPersianDate($to_date)) {
-                $query->where('document_date', '<=', $to_date);
-            }
-            
-            // Additional filters
-            if ($product) {
-                $query->where('product_name', 'LIKE', '%' . $product . '%');
-            }
-            if ($customer) {
-                $query->where('customer_name', 'LIKE', '%' . $customer . '%');
-            }
-            if ($warehouse) {
-                $query->where('warehouse', 'LIKE', '%' . $warehouse . '%');
-            }
-            if ($status) {
-                $query->where('sales_status', $status);
-            }
+            $query = $this->buildAnalyticsQuery($request);
 
             // Get all sales data
             $sales = $query->select('document_date', 'month', 'base_sales_amount')->get();
@@ -819,40 +851,11 @@ class SalesReports extends Controller {
      */
     public function getTopProducts(Request $request) {
         try {
-            $from_date = $request->get('from_date');
-            $to_date = $request->get('to_date');
             $limit = $request->get('limit', 10);
-            $product = $request->get('product');
-            $customer = $request->get('customer');
-            $warehouse = $request->get('warehouse');
-            $status = $request->get('status');
-
-            $query = Sales::query();
-            
-            // Date filters
-            if ($from_date && PersianCalendarHelper::isValidPersianDate($from_date)) {
-                $query->where('document_date', '>=', $from_date);
-            }
-            if ($to_date && PersianCalendarHelper::isValidPersianDate($to_date)) {
-                $query->where('document_date', '<=', $to_date);
-            }
-            
-            // Additional filters
-            if ($product) {
-                $query->where('product_name', 'LIKE', '%' . $product . '%');
-            }
-            if ($customer) {
-                $query->where('customer_name', 'LIKE', '%' . $customer . '%');
-            }
-            if ($warehouse) {
-                $query->where('warehouse', 'LIKE', '%' . $warehouse . '%');
-            }
-            if ($status) {
-                $query->where('sales_status', $status);
-            }
+            $query = $this->buildAnalyticsQuery($request);
 
             // Group by product
-            $topProducts = $query->selectRaw('product_name, COUNT(*) as sales_count, SUM(main_quantity) as total_quantity, SUM(base_sales_amount) as total_amount')
+            $topProducts = $query->selectRaw('product_name, COUNT(*) as sales_count, SUM(main_quantity) as total_quantity, SUM(base_sales_amount) as total_amount, MAX(main_unit) as unit_label')
                 ->groupBy('product_name')
                 ->orderBy('total_amount', 'desc')
                 ->limit($limit)
@@ -877,37 +880,8 @@ class SalesReports extends Controller {
      */
     public function getTopCustomers(Request $request) {
         try {
-            $from_date = $request->get('from_date');
-            $to_date = $request->get('to_date');
             $limit = $request->get('limit', 10);
-            $product = $request->get('product');
-            $customer = $request->get('customer');
-            $warehouse = $request->get('warehouse');
-            $status = $request->get('status');
-
-            $query = Sales::query();
-            
-            // Date filters
-            if ($from_date && PersianCalendarHelper::isValidPersianDate($from_date)) {
-                $query->where('document_date', '>=', $from_date);
-            }
-            if ($to_date && PersianCalendarHelper::isValidPersianDate($to_date)) {
-                $query->where('document_date', '<=', $to_date);
-            }
-            
-            // Additional filters
-            if ($product) {
-                $query->where('product_name', 'LIKE', '%' . $product . '%');
-            }
-            if ($customer) {
-                $query->where('customer_name', 'LIKE', '%' . $customer . '%');
-            }
-            if ($warehouse) {
-                $query->where('warehouse', 'LIKE', '%' . $warehouse . '%');
-            }
-            if ($status) {
-                $query->where('sales_status', $status);
-            }
+            $query = $this->buildAnalyticsQuery($request);
 
             // Group by customer
             $topCustomers = $query->selectRaw('customer_name, COUNT(*) as order_count, SUM(base_sales_amount) as total_amount')
@@ -935,70 +909,24 @@ class SalesReports extends Controller {
      */
     public function getCustomerPercentageAnalysis(Request $request) {
         try {
-            $from_date = $request->get('from_date');
-            $to_date = $request->get('to_date');
-            $product = $request->get('product');
-            $customer = $request->get('customer');
-            $warehouse = $request->get('warehouse');
-            $status = $request->get('status');
+            $query = $this->buildAnalyticsQuery($request);
 
-            // First, get total sales amount
-            $totalQuery = Sales::query();
+            $totalSales = (clone $query)->sum('base_sales_amount') ?? 0;
             
-            // Date filters
-            if ($from_date && PersianCalendarHelper::isValidPersianDate($from_date)) {
-                $totalQuery->where('document_date', '>=', $from_date);
-            }
-            if ($to_date && PersianCalendarHelper::isValidPersianDate($to_date)) {
-                $totalQuery->where('document_date', '<=', $to_date);
-            }
-            
-            // Additional filters
-            if ($product) {
-                $totalQuery->where('product_name', 'LIKE', '%' . $product . '%');
-            }
-            if ($customer) {
-                $totalQuery->where('customer_name', 'LIKE', '%' . $customer . '%');
-            }
-            if ($warehouse) {
-                $totalQuery->where('warehouse', 'LIKE', '%' . $warehouse . '%');
-            }
-            if ($status) {
-                $totalQuery->where('sales_status', $status);
-            }
-
-            $totalSales = $totalQuery->sum('base_sales_amount') ?? 0;
-            
-            if ($totalSales == 0) {
+            if ($totalSales === 0.0) {
                 return response()->json([
                     'success' => true,
                     'data' => [],
-                    'total_sales' => 0,
-                    'message' => 'هیچ داده‌ای برای این بازه زمانی یافت نشد'
+                    'summary' => [
+                        'total_sales' => 0,
+                        'total_customers' => 0,
+                        'top_10_percentage' => 0,
+                        'top_20_percentage' => 0,
+                        'class_a_customers' => 0,
+                        'class_b_customers' => 0,
+                        'class_c_customers' => 0,
+                    ],
                 ]);
-            }
-
-            // Get sales by customer
-            $query = Sales::query();
-            
-            // Apply same filters
-            if ($from_date && PersianCalendarHelper::isValidPersianDate($from_date)) {
-                $query->where('document_date', '>=', $from_date);
-            }
-            if ($to_date && PersianCalendarHelper::isValidPersianDate($to_date)) {
-                $query->where('document_date', '<=', $to_date);
-            }
-            if ($product) {
-                $query->where('product_name', 'LIKE', '%' . $product . '%');
-            }
-            if ($customer) {
-                $query->where('customer_name', 'LIKE', '%' . $customer . '%');
-            }
-            if ($warehouse) {
-                $query->where('warehouse', 'LIKE', '%' . $warehouse . '%');
-            }
-            if ($status) {
-                $query->where('sales_status', $status);
             }
 
             // Group by customer and calculate amounts
@@ -1008,23 +936,21 @@ class SalesReports extends Controller {
                     SUM(base_sales_amount) as total_amount
                 ')
                 ->groupBy('customer_name')
-                ->orderBy('total_amount', 'desc')
+                ->orderByDesc('total_amount')
                 ->get();
 
-            // Calculate percentages and cumulative percentages
-            $cumulativePercentage = 0;
+            $cumulativePercentage = 0.0;
             $analysisData = [];
             
             foreach ($customerSales as $index => $customer) {
-                $percentage = ($customer->total_amount / $totalSales) * 100;
+                $percentage = $totalSales > 0 ? ($customer->total_amount / $totalSales) * 100 : 0;
                 $cumulativePercentage += $percentage;
                 
-                // ABC Classification (Pareto Analysis)
                 $classification = 'C';
                 if ($cumulativePercentage <= 80) {
-                    $classification = 'A'; // Top 80% of sales
+                    $classification = 'A';
                 } elseif ($cumulativePercentage <= 95) {
-                    $classification = 'B'; // Next 15% of sales
+                    $classification = 'B';
                 }
                 
                 $analysisData[] = [
@@ -1034,11 +960,10 @@ class SalesReports extends Controller {
                     'total_amount' => (float) $customer->total_amount,
                     'percentage' => round($percentage, 2),
                     'cumulative_percentage' => round($cumulativePercentage, 2),
-                    'classification' => $classification
+                    'classification' => $classification,
                 ];
             }
 
-            // Prepare summary statistics
             $summary = [
                 'total_sales' => (float) $totalSales,
                 'total_customers' => count($customerSales),
@@ -1046,39 +971,39 @@ class SalesReports extends Controller {
                 'top_20_percentage' => 0,
                 'class_a_customers' => 0,
                 'class_b_customers' => 0,
-                'class_c_customers' => 0
+                'class_c_customers' => 0,
             ];
 
-            // Calculate statistics
             if (count($analysisData) > 0) {
-                // Top 10 customers percentage
                 $top10 = array_slice($analysisData, 0, min(10, count($analysisData)));
                 $summary['top_10_percentage'] = round(array_sum(array_column($top10, 'percentage')), 2);
                 
-                // Top 20% customers percentage (Pareto)
-                $top20Count = max(1, ceil(count($analysisData) * 0.2));
+                $top20Count = max(1, (int) ceil(count($analysisData) * 0.2));
                 $top20 = array_slice($analysisData, 0, $top20Count);
                 $summary['top_20_percentage'] = round(array_sum(array_column($top20, 'percentage')), 2);
                 
-                // Count customers by classification
                 foreach ($analysisData as $item) {
-                    if ($item['classification'] == 'A') $summary['class_a_customers']++;
-                    elseif ($item['classification'] == 'B') $summary['class_b_customers']++;
-                    else $summary['class_c_customers']++;
+                    if ($item['classification'] === 'A') {
+                        $summary['class_a_customers']++;
+                    } elseif ($item['classification'] === 'B') {
+                        $summary['class_b_customers']++;
+                    } else {
+                        $summary['class_c_customers']++;
+                    }
                 }
             }
 
             return response()->json([
                 'success' => true,
                 'data' => $analysisData,
-                'summary' => $summary
+                'summary' => $summary,
             ]);
 
         } catch (\Exception $e) {
             Log::error('Customer Percentage Analysis Error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
         }
     }
@@ -1088,36 +1013,7 @@ class SalesReports extends Controller {
      */
     public function getProfitAnalysis(Request $request) {
         try {
-            $from_date = $request->get('from_date');
-            $to_date = $request->get('to_date');
-            $product = $request->get('product');
-            $customer = $request->get('customer');
-            $warehouse = $request->get('warehouse');
-            $status = $request->get('status');
-
-            $query = Sales::query();
-            
-            // Date filters
-            if ($from_date && PersianCalendarHelper::isValidPersianDate($from_date)) {
-                $query->where('document_date', '>=', $from_date);
-            }
-            if ($to_date && PersianCalendarHelper::isValidPersianDate($to_date)) {
-                $query->where('document_date', '<=', $to_date);
-            }
-            
-            // Additional filters
-            if ($product) {
-                $query->where('product_name', 'LIKE', '%' . $product . '%');
-            }
-            if ($customer) {
-                $query->where('customer_name', 'LIKE', '%' . $customer . '%');
-            }
-            if ($warehouse) {
-                $query->where('warehouse', 'LIKE', '%' . $warehouse . '%');
-            }
-            if ($status) {
-                $query->where('sales_status', $status);
-            }
+            $query = $this->buildAnalyticsQuery($request);
 
             // Calculate profit by product
             $profitData = $query->selectRaw('product_name, SUM(base_net_amount) as net_amount, SUM(base_sales_amount) as sales_amount, SUM(base_net_amount - base_sales_amount) as profit, COUNT(*) as count')
@@ -1145,39 +1041,7 @@ class SalesReports extends Controller {
      */
     public function getSeasonalAnalysis(Request $request) {
         try {
-            $from_date = $request->get('from_date');
-            $to_date = $request->get('to_date');
-            $product = $request->get('product');
-            $customer = $request->get('customer');
-            $warehouse = $request->get('warehouse');
-            $status = $request->get('status');
-
-            $query = Sales::query();
-            
-            // Date filters
-            if ($from_date && PersianCalendarHelper::isValidPersianDate($from_date)) {
-                $query->where('document_date', '>=', $from_date);
-            }
-            if ($to_date && PersianCalendarHelper::isValidPersianDate($to_date)) {
-                $query->where('document_date', '<=', $to_date);
-            }
-            
-            // Additional filters
-            if ($product) {
-                $query->where('product_name', 'LIKE', '%' . $product . '%');
-            }
-            if ($customer) {
-                $query->where('customer_name', 'LIKE', '%' . $customer . '%');
-            }
-            if ($warehouse) {
-                $query->where('warehouse', 'LIKE', '%' . $warehouse . '%');
-            }
-            if ($status) {
-                $query->where('sales_status', $status);
-            }
-
-            // Get all sales
-            $sales = $query->get();
+            $sales = $this->buildAnalyticsQuery($request)->get();
 
             // Group by season (فصل)
             $seasonalData = [
@@ -1224,32 +1088,10 @@ class SalesReports extends Controller {
             $warehouse = $request->get('warehouse');
             $status = $request->get('status');
 
-            $query = Sales::query();
-            
-            // Date filters
-            if ($from_date && PersianCalendarHelper::isValidPersianDate($from_date)) {
-                $query->where('document_date', '>=', $from_date);
-            }
-            if ($to_date && PersianCalendarHelper::isValidPersianDate($to_date)) {
-                $query->where('document_date', '<=', $to_date);
-            }
-            
-            // Additional filters
-            if ($product) {
-                $query->where('product_name', 'LIKE', '%' . $product . '%');
-            }
-            if ($customer) {
-                $query->where('customer_name', 'LIKE', '%' . $customer . '%');
-            }
-            if ($warehouse) {
-                $query->where('warehouse', 'LIKE', '%' . $warehouse . '%');
-            }
-            if ($status) {
-                $query->where('sales_status', $status);
-            }
+            $query = $this->buildAnalyticsQuery($request);
 
             // Calculate delivery statistics
-            $stats = $query->selectRaw('
+            $stats = (clone $query)->selectRaw('
                 COUNT(*) as total_orders,
                 SUM(issued_main_quantity) as total_issued,
                 SUM(remaining_main_quantity) as total_remaining,
@@ -1261,8 +1103,20 @@ class SalesReports extends Controller {
                 $deliveryRate = ($stats->total_issued / $stats->total_quantity) * 100;
             }
 
+            $unitLabel = (clone $query)
+                ->whereNotNull('main_unit')
+                ->selectRaw('main_unit, SUM(main_quantity) as quantity_sum')
+                ->groupBy('main_unit')
+                ->orderByDesc('quantity_sum')
+                ->limit(1)
+                ->value('main_unit');
+
+            if ($stats) {
+                $stats->unit_label = $unitLabel;
+            }
+
             // Top products with pending delivery
-            $pendingProducts = $query->selectRaw('product_name, SUM(remaining_main_quantity) as pending_quantity, COUNT(*) as order_count')
+            $pendingProducts = (clone $query)->selectRaw('product_name, SUM(remaining_main_quantity) as pending_quantity, COUNT(*) as order_count, MAX(main_unit) as unit_label')
                 ->where('remaining_main_quantity', '>', 0)
                 ->groupBy('product_name')
                 ->orderBy('pending_quantity', 'desc')

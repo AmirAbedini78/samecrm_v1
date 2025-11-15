@@ -83,7 +83,7 @@
                             <th>محصول</th>
                             <th width="120">تعداد سفارش</th>
                             <th width="160">مبلغ کل</th>
-                            <th width="140">مقدار کل</th>
+                            <th width="160">مقدار کل (واحد)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -519,7 +519,9 @@ function renderCustomerFocusWarehouseList(data) {
         const label = item.label || '-';
         const amount = formatCurrency(item.total_amount || 0);
         const orders = item.order_count ? formatNumber(item.order_count) + ' سفارش' : '';
-        const quantity = item.total_quantity ? formatNumber(Math.round(item.total_quantity)) + ' واحد' : '';
+        const unitLabel = getUnitLabel(item);
+        const quantityValue = window.toFiniteNumber(item.total_quantity, 0);
+        const quantity = quantityValue ? formatQuantityValue(quantityValue, unitLabel) : '';
         const meta = [orders, quantity].filter(Boolean).join(' • ');
 
         const li = `
@@ -611,12 +613,20 @@ function renderCustomerFocusStats(summary) {
     const $list = $('#customerFocusStats');
     if (!$list.length || !summary) return;
 
+    const totalAmount = window.toFiniteNumber(summary.total_amount, 0);
+    const orderCount = window.toFiniteNumber(summary.order_count, 0);
+    const hasQuantity = summary.total_quantity !== null && summary.total_quantity !== undefined;
+    const totalQuantity = hasQuantity ? window.toFiniteNumber(summary.total_quantity, 0) : null;
+    const uniqueProducts = window.toFiniteNumber(summary.unique_products, 0);
+    const uniqueWarehouses = window.toFiniteNumber(summary.unique_warehouses, 0);
+    const unitLabel = getUnitLabel(summary);
+
     const stats = [
-        { label: 'کل خرید', value: formatCurrency(summary.total_amount) },
-        { label: 'تعداد سفارش', value: formatNumber(summary.order_count || 0) },
-        { label: 'کل مقدار خرید', value: formatNumber(Math.round(summary.total_quantity || 0)) + ' واحد' },
-        { label: 'محصولات یکتا', value: formatNumber(summary.unique_products || 0) },
-        { label: 'انبارهای فعال', value: formatNumber(summary.unique_warehouses || 0) }
+        { label: 'کل خرید', value: formatCurrency(totalAmount) },
+        { label: 'تعداد سفارش', value: formatNumber(orderCount) },
+        { label: 'کل مقدار خرید (واحد ثبت‌شده)', value: hasQuantity && totalQuantity !== null ? formatQuantityValue(totalQuantity, unitLabel) : '-' },
+        { label: 'محصولات یکتا', value: formatNumber(uniqueProducts) },
+        { label: 'انبارهای فعال', value: formatNumber(uniqueWarehouses) }
     ];
 
     $list.empty();
@@ -647,14 +657,19 @@ function renderCustomerFocusProductsTable(products) {
 
     $tbody.empty();
     products.forEach((product, index) => {
-        const quantity = product.total_quantity ? formatNumber(Math.round(product.total_quantity)) : '-';
+        const hasQuantity = product.total_quantity !== null && product.total_quantity !== undefined;
+        const quantityValue = hasQuantity ? window.toFiniteNumber(product.total_quantity, 0) : 0;
+        const unitLabel = getUnitLabel(product);
+        const quantityDisplay = hasQuantity && quantityValue ? formatQuantityValue(quantityValue, unitLabel) : '-';
+        const orderCount = window.toFiniteNumber(product.order_count, 0);
+        const totalAmount = window.toFiniteNumber(product.total_amount, 0);
         $tbody.append(`
             <tr>
                 <td><span class="badge badge-secondary">${index + 1}</span></td>
                 <td>${product.label || '-'}</td>
-                <td>${formatNumber(product.order_count || 0)}</td>
-                <td>${formatCurrency(product.total_amount || 0)}</td>
-                <td>${quantity}</td>
+                <td>${formatNumber(orderCount)}</td>
+                <td>${formatCurrency(totalAmount)}</td>
+                <td>${quantityDisplay}</td>
             </tr>
         `);
     });
@@ -668,9 +683,12 @@ function renderTopCustomersChart(data) {
         topCustomersChart.destroy();
     }
     
-    const labels = data.map(item => item.customer_name.length > 25 ? item.customer_name.substring(0, 25) + '...' : item.customer_name);
-    const amounts = data.map(item => item.total_amount);
-    const counts = data.map(item => item.order_count);
+    const labels = data.map(item => {
+        const name = item.customer_name || 'نامشخص';
+        return name.length > 25 ? name.substring(0, 25) + '...' : name;
+    });
+    const amounts = data.map(item => window.toFiniteNumber(item.total_amount, 0));
+    const counts = data.map(item => window.toFiniteNumber(item.order_count, 0));
     
     topCustomersChart = new Chart(ctx, {
         type: 'bar',
@@ -721,7 +739,7 @@ function renderTopCustomersChart(data) {
                             if (label) {
                                 label += ': ';
                             }
-                            label += formatNumber(context.parsed.y);
+                            label += formatNumber(window.toFiniteNumber(context.parsed.y, 0));
                             if (context.datasetIndex === 0) {
                                 label += ' ریال';
                             }
@@ -790,12 +808,14 @@ function updateTopCustomersTable(data) {
     
     data.forEach((item, index) => {
         const badgeClass = index === 0 ? 'bg-warning' : (index === 1 ? 'bg-secondary' : (index === 2 ? 'bg-bronze' : 'bg-light text-dark'));
+        const orderCount = window.toFiniteNumber(item.order_count, 0);
+        const totalAmount = window.toFiniteNumber(item.total_amount, 0);
         const row = `
             <tr>
                 <td><span class="badge ${badgeClass}">${index + 1}</span></td>
                 <td><strong>${item.customer_name}</strong></td>
-                <td>${formatNumber(item.order_count)}</td>
-                <td>${formatNumber(Math.round(item.total_amount))} ریال</td>
+                <td>${formatNumber(orderCount)}</td>
+                <td>${formatNumber(Math.round(totalAmount))} ریال</td>
             </tr>
         `;
         tbody.append(row);
@@ -819,30 +839,38 @@ function calculateCustomerStatistics(data) {
 
 // Calculate Pareto Analysis (80/20 rule)
 function calculateParetoAnalysis(data) {
-    if (data.length === 0) {
+    if (!Array.isArray(data) || data.length === 0) {
         $('#paretoAnalysis').html('<i class="ti-alert"></i> داده کافی برای تحلیل موجود نیست');
         return;
     }
     
-    const totalSales = data.reduce((sum, item) => sum + parseFloat(item.total_amount), 0);
+    const totalSales = data.reduce((sum, item) => {
+        return sum + window.toFiniteNumber(item.total_amount, 0);
+    }, 0);
+
+    if (totalSales <= 0) {
+        $('#paretoAnalysis').html('<i class="ti-alert"></i> داده معتبر برای تحلیل پارتو یافت نشد');
+        return;
+    }
+
     const target80 = totalSales * 0.8;
     
     let cumulativeSum = 0;
     let count80 = 0;
     
     for (let i = 0; i < data.length; i++) {
-        cumulativeSum += parseFloat(data[i].total_amount);
+        cumulativeSum += window.toFiniteNumber(data[i].total_amount, 0);
         count80++;
         if (cumulativeSum >= target80) {
             break;
         }
     }
     
-    const percentage = ((count80 / data.length) * 100).toFixed(1);
+    const percentage = window.toPercentageValue((count80 / data.length) * 100, 1);
     
     $('#paretoAnalysis').html(`
         <i class="ti-info-alt"></i> 
-        <strong>${count80}</strong> مشتری از ${data.length} (${percentage}%) مشتری برتر، 
+        <strong>${formatNumber(count80)}</strong> مشتری از ${formatNumber(data.length)} (${formatNumber(percentage)}%) مشتری برتر، 
         <strong>80%</strong> از کل فروش را تشکیل می‌دهند.
         <br>
         <small class="text-muted">این تحلیل به شما کمک می‌کند روی مشتریان کلیدی تمرکز کنید.</small>
@@ -855,14 +883,22 @@ function calculateParetoAnalysis(data) {
 function updatePercentageSummary(summary) {
     if (!summary) return;
     
-    $('#percentage-total-sales').text(formatNumber(Math.round(summary.total_sales)) + ' ریال');
-    $('#percentage-total-customers').text(formatNumber(summary.total_customers) + ' مشتری');
-    $('#percentage-top10').text(summary.top_10_percentage + '%');
-    $('#percentage-top20').text(summary.top_20_percentage + '%');
+    const totalSales = window.toFiniteNumber(summary.total_sales, 0);
+    const totalCustomers = window.toFiniteNumber(summary.total_customers, 0);
+    const top10Percentage = window.clampPercentage(summary.top_10_percentage, 1);
+    const top20Percentage = window.clampPercentage(summary.top_20_percentage, 1);
+    const classACount = window.toFiniteNumber(summary.class_a_customers, 0);
+    const classBCount = window.toFiniteNumber(summary.class_b_customers, 0);
+    const classCCount = window.toFiniteNumber(summary.class_c_customers, 0);
     
-    $('#class-a-count').text(formatNumber(summary.class_a_customers));
-    $('#class-b-count').text(formatNumber(summary.class_b_customers));
-    $('#class-c-count').text(formatNumber(summary.class_c_customers));
+    $('#percentage-total-sales').text(formatNumber(Math.round(totalSales)) + ' ریال');
+    $('#percentage-total-customers').text(formatNumber(totalCustomers) + ' مشتری');
+    $('#percentage-top10').text(formatPercentageValue(top10Percentage, 1) + '٪');
+    $('#percentage-top20').text(formatPercentageValue(top20Percentage, 1) + '٪');
+    
+    $('#class-a-count').text(formatNumber(classACount));
+    $('#class-b-count').text(formatNumber(classBCount));
+    $('#class-c-count').text(formatNumber(classCCount));
 }
 
 // Render Customer Percentage Pie Chart
@@ -884,8 +920,8 @@ function renderCustomerPercentagePieChart(data) {
     
     // Take top 15 customers for pie chart
     const top15 = data.slice(0, 15);
-    const labels = top15.map(item => item.customer_name);
-    const percentages = top15.map(item => item.percentage);
+    const labels = top15.map(item => item.customer_name || 'نامشخص');
+    const percentages = top15.map(item => window.clampPercentage(item.percentage, 2));
     
     // Generate colors
     const colors = generatePieColors(top15.length);
@@ -939,13 +975,13 @@ function renderCustomerPercentagePieChart(data) {
                     callbacks: {
                         label: function(context) {
                             const label = context.label || '';
-                            const value = context.parsed || 0;
+                            const value = window.toFiniteNumber(context.parsed, 0);
                             const dataItem = top15[context.dataIndex];
                             return [
                                 `${label}`,
-                                `درصد: ${value}%`,
-                                `مبلغ: ${formatNumber(Math.round(dataItem.total_amount))} ریال`,
-                                `تعداد: ${formatNumber(dataItem.order_count)} سفارش`
+                                `درصد: ${formatPercentageValue(value, 2)}٪`,
+                                `مبلغ: ${formatNumber(Math.round(window.toFiniteNumber(dataItem.total_amount, 0)))} ریال`,
+                                `تعداد: ${formatNumber(window.toFiniteNumber(dataItem.order_count, 0))} سفارش`
                             ];
                         }
                     }
@@ -982,28 +1018,37 @@ function updateCustomerPercentageTable(data) {
         else if (item.rank === 2) rankBadge = `<span class="badge badge-secondary">🥈 ${item.rank}</span>`;
         else if (item.rank === 3) rankBadge = `<span class="badge bg-bronze text-white">🥉 ${item.rank}</span>`;
         
-        // Progress bar for percentage
+        const orderCount = window.toFiniteNumber(item.order_count, 0);
+        const totalAmount = window.toFiniteNumber(item.total_amount, 0);
+        const percentageValue = window.clampPercentage(item.percentage, 2);
+        const percentageDisplay = formatPercentageValue(percentageValue, 2);
+        const cumulativeValue = window.clampPercentage(item.cumulative_percentage, 2);
+        const cumulativeDisplay = formatPercentageValue(cumulativeValue, 2);
         const progressColor = item.classification === 'A' ? 'success' : (item.classification === 'B' ? 'warning' : 'info');
-        
+        const progressWidth = percentageValue;
         const row = `
             <tr>
                 <td>${rankBadge}</td>
                 <td>
-                    <strong>${item.customer_name}</strong>
-                    <br><small class="text-muted">${formatNumber(item.order_count)} سفارش</small>
+                    <strong>${item.customer_name || 'نامشخص'}</strong>
+                    <br><small class="text-muted">${formatNumber(orderCount)} سفارش</small>
                 </td>
-                <td>${formatNumber(Math.round(item.total_amount))}</td>
+                <td>${formatNumber(Math.round(totalAmount))}</td>
                 <td>
-                    <div class="progress" style="height: 20px;">
-                        <div class="progress-bar bg-${progressColor}" role="progressbar" 
-                             style="width: ${item.percentage}%" 
-                             aria-valuenow="${item.percentage}" aria-valuemin="0" aria-valuemax="100">
-                            ${item.percentage}%
+                    <div class="customer-percentage-progress">
+                        <div class="flex-grow-1">
+                            <div class="progress" style="height: 14px;">
+                                <div class="progress-bar bg-${progressColor}" role="progressbar" 
+                                     style="width: ${progressWidth}%;" 
+                                     aria-valuenow="${percentageValue}" aria-valuemin="0" aria-valuemax="100">
+                                </div>
+                            </div>
                         </div>
+                        <span class="badge badge-light progress-value">${percentageDisplay}٪</span>
                     </div>
                 </td>
                 <td>
-                    <strong class="${item.cumulative_percentage <= 80 ? 'text-success' : ''}">${item.cumulative_percentage}%</strong>
+                    <strong class="${cumulativeValue <= 80 ? 'text-success' : ''}">${cumulativeDisplay}٪</strong>
                 </td>
                 <td>${classBadge}</td>
             </tr>
@@ -1029,9 +1074,13 @@ function renderParetoChart(data) {
         return;
     }
     
-    const labels = data.map(item => `${item.rank}. ${item.customer_name.substring(0, 15)}...`);
-    const percentages = data.map(item => item.percentage);
-    const cumulativePercentages = data.map(item => item.cumulative_percentage);
+    const labels = data.map(item => {
+        const name = item.customer_name || 'نامشخص';
+        const shortName = name.length > 15 ? name.substring(0, 15) + '...' : name;
+        return `${item.rank}. ${shortName}`;
+    });
+    const percentages = data.map(item => window.clampPercentage(item.percentage, 2));
+    const cumulativePercentages = data.map(item => window.clampPercentage(item.cumulative_percentage, 2));
     
     paretoChart = new Chart(ctx, {
         type: 'bar',
@@ -1080,9 +1129,11 @@ function renderParetoChart(data) {
                         label: function(context) {
                             const dataItem = data[context.dataIndex];
                             if (context.dataset.type === 'bar') {
-                                return `درصد: ${context.parsed.y}%`;
+                                const safeValue = window.toFiniteNumber(context.parsed.y, 0);
+                                return `درصد: ${formatPercentageValue(safeValue, 2)}٪`;
                             } else {
-                                return `تجمعی: ${context.parsed.y}%`;
+                                const safeValue = window.toFiniteNumber(context.parsed.y, 0);
+                                return `تجمعی: ${formatPercentageValue(safeValue, 2)}٪`;
                             }
                         }
                     }
@@ -1169,6 +1220,26 @@ function generatePieColors(count) {
 </script>
 
 <style>
+.customer-percentage-progress {
+    display: flex;
+    align-items: center;
+}
+
+.customer-percentage-progress .progress {
+    flex-grow: 1;
+    margin-bottom: 0;
+    background-color: #f1f3f5;
+}
+
+.customer-percentage-progress .progress-value {
+    margin-right: 0.75rem;
+    margin-left: 0.75rem;
+    font-weight: 600;
+    color: #343a40;
+    min-width: 64px;
+    text-align: center;
+}
+
 .bg-bronze {
     background-color: #CD7F32;
     color: white;

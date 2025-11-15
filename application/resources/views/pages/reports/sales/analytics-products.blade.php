@@ -128,8 +128,8 @@
                             <tr>
                                 <th>رتبه</th>
                                 <th>محصول</th>
-                                <th>تعداد</th>
-                                <th>مقدار</th>
+                                <th>تعداد سفارش</th>
+                                <th>مقدار (واحد)</th>
                                 <th>مبلغ کل</th>
                             </tr>
                         </thead>
@@ -199,7 +199,7 @@
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <p class="text-muted mb-1">مجموع مقدار</p>
+                                <p class="text-muted mb-1">مجموع مقدار (واحد ثبت‌شده)</p>
                                 <h4 class="mb-0" id="totalQuantity">-</h4>
                             </div>
                             <div class="text-success">
@@ -317,7 +317,7 @@ function renderProductFocusCustomersChart(data) {
     $('#productFocusCustomersEmpty').hide();
 
     const labels = data.map(item => item.label || '-');
-    const amounts = data.map(item => item.total_amount || 0);
+    const amounts = data.map(item => window.toFiniteNumber(item.total_amount, 0));
 
     productFocusCustomersChart = new Chart(ctx, {
         type: 'bar',
@@ -341,7 +341,7 @@ function renderProductFocusCustomersChart(data) {
                     rtl: true,
                     callbacks: {
                         label: function(context) {
-                            return formatCurrency(context.parsed.x);
+                            return formatCurrency(window.toFiniteNumber(context.parsed.x, 0));
                         }
                     }
                 }
@@ -380,9 +380,13 @@ function renderProductFocusWarehouseList(data) {
 
     data.forEach((item, index) => {
         const label = item.label || '-';
-        const amount = formatCurrency(item.total_amount || 0);
-        const orders = item.order_count ? formatNumber(item.order_count) + ' سفارش' : '';
-        const quantity = item.total_quantity ? formatNumber(Math.round(item.total_quantity)) + ' واحد' : '';
+        const amount = formatCurrency(window.toFiniteNumber(item.total_amount, 0));
+        const orderCount = window.toFiniteNumber(item.order_count, 0);
+        const orders = orderCount ? formatNumber(orderCount) + ' سفارش' : '';
+        const unitLabel = getUnitLabel(item);
+        const hasQuantity = item.total_quantity !== null && item.total_quantity !== undefined;
+        const quantityValue = hasQuantity ? window.toFiniteNumber(item.total_quantity, 0) : 0;
+        const quantity = hasQuantity && quantityValue ? formatQuantityValue(quantityValue, unitLabel) : '';
         const meta = [orders, quantity].filter(Boolean).join(' • ');
 
         const listItem = `
@@ -416,7 +420,7 @@ function renderProductFocusStatusChart(data) {
     $('#productFocusStatusEmpty').hide();
 
     const labels = data.map(item => item.label || 'نامشخص');
-    const counts = data.map(item => item.order_count || 0);
+    const counts = data.map(item => window.toFiniteNumber(item.order_count, 0));
     const bgColors = [
         'rgba(89, 105, 255, 0.8)',
         'rgba(255, 152, 0, 0.8)',
@@ -446,7 +450,7 @@ function renderProductFocusStatusChart(data) {
                     callbacks: {
                         label: function(context) {
                             const label = context.label || '';
-                            const value = formatNumber(context.parsed);
+                            const value = formatNumber(window.toFiniteNumber(context.parsed, 0));
                             return `${label}: ${value} سفارش`;
                         }
                     }
@@ -463,7 +467,7 @@ function renderProductFocusStatusChart(data) {
                 <span class="badge badge-pill mr-2" style="background:${color};">&nbsp;</span>
                 <div>
                     <strong>${item.label || 'نامشخص'}</strong>
-                    <div class="text-muted small">${formatNumber(item.order_count || 0)} سفارش</div>
+                    <div class="text-muted small">${formatNumber(window.toFiniteNumber(item.order_count, 0))} سفارش</div>
                 </div>
             </div>
         `;
@@ -476,12 +480,20 @@ function renderProductFocusStats(summary) {
     const $list = $('#productFocusStats');
     if (!$list.length || !summary) return;
 
+    const totalAmount = window.toFiniteNumber(summary.total_amount, 0);
+    const orderCount = window.toFiniteNumber(summary.order_count, 0);
+    const hasQuantity = summary.total_quantity !== null && summary.total_quantity !== undefined;
+    const totalQuantity = hasQuantity ? window.toFiniteNumber(summary.total_quantity, 0) : null;
+    const uniqueCustomers = window.toFiniteNumber(summary.unique_customers, 0);
+    const uniqueWarehouses = window.toFiniteNumber(summary.unique_warehouses, 0);
+    const unitLabel = getUnitLabel(summary);
+
     const stats = [
-        { label: 'کل فروش', value: formatCurrency(summary.total_amount) },
-        { label: 'تعداد سفارش', value: formatNumber(summary.order_count || 0) },
-        { label: 'کل مقدار فروش', value: formatNumber(Math.round(summary.total_quantity || 0)) + ' واحد' },
-        { label: 'مشتریان یکتا', value: formatNumber(summary.unique_customers || 0) },
-        { label: 'انبارهای فعال', value: formatNumber(summary.unique_warehouses || 0) }
+        { label: 'کل فروش', value: formatCurrency(totalAmount) },
+        { label: 'تعداد سفارش', value: formatNumber(orderCount) },
+        { label: 'کل مقدار فروش (واحد ثبت‌شده)', value: hasQuantity && totalQuantity !== null ? formatQuantityValue(totalQuantity, unitLabel) : '-' },
+        { label: 'مشتریان یکتا', value: formatNumber(uniqueCustomers) },
+        { label: 'انبارهای فعال', value: formatNumber(uniqueWarehouses) }
     ];
 
     $list.empty();
@@ -513,13 +525,18 @@ function renderProductFocusCustomersTable(customers) {
 
     $tbody.empty();
     customers.forEach((customer, index) => {
-        const quantity = customer.total_quantity ? formatNumber(Math.round(customer.total_quantity)) : '-';
+        const orderCount = window.toFiniteNumber(customer.order_count, 0);
+        const totalAmount = window.toFiniteNumber(customer.total_amount, 0);
+        const hasQuantity = customer.total_quantity !== null && customer.total_quantity !== undefined;
+        const quantityValue = hasQuantity ? window.toFiniteNumber(customer.total_quantity, 0) : 0;
+        const unitLabel = getUnitLabel(customer);
+        const quantity = hasQuantity && quantityValue ? formatQuantityValue(quantityValue, unitLabel) : '-';
         const row = `
             <tr>
                 <td><span class="badge badge-secondary">${index + 1}</span></td>
                 <td>${customer.label || '-'}</td>
-                <td>${formatNumber(customer.order_count || 0)}</td>
-                <td>${formatCurrency(customer.total_amount || 0)}</td>
+                <td>${formatNumber(orderCount)}</td>
+                <td>${formatCurrency(totalAmount)}</td>
                 <td>${quantity}</td>
             </tr>
         `;
@@ -535,8 +552,11 @@ function renderTopProductsChart(data) {
         topProductsChart.destroy();
     }
     
-    const labels = data.map(item => item.product_name.length > 30 ? item.product_name.substring(0, 30) + '...' : item.product_name);
-    const amounts = data.map(item => item.total_amount);
+    const labels = data.map(item => {
+        const name = item.product_name || 'نامشخص';
+        return name.length > 30 ? name.substring(0, 30) + '...' : name;
+    });
+    const amounts = data.map(item => window.toFiniteNumber(item.total_amount, 0));
     
     topProductsChart = new Chart(ctx, {
         type: 'bar',
@@ -562,7 +582,7 @@ function renderTopProductsChart(data) {
                     rtl: true,
                     callbacks: {
                         label: function(context) {
-                            return 'مبلغ: ' + formatNumber(context.parsed.x) + ' ریال';
+                            return 'مبلغ: ' + formatNumber(window.toFiniteNumber(context.parsed.x, 0)) + ' ریال';
                         }
                     }
                 }
@@ -597,12 +617,15 @@ function renderProductsDistributionChart(data) {
         productsDistributionChart.destroy();
     }
     
-    const labels = data.slice(0, 5).map(item => item.product_name.length > 20 ? item.product_name.substring(0, 20) + '...' : item.product_name);
-    const amounts = data.slice(0, 5).map(item => item.total_amount);
+    const labels = data.slice(0, 5).map(item => {
+        const name = item.product_name || 'نامشخص';
+        return name.length > 20 ? name.substring(0, 20) + '...' : name;
+    });
+    const amounts = data.slice(0, 5).map(item => window.toFiniteNumber(item.total_amount, 0));
     
     // Add "سایر" category if more than 5 products
     if (data.length > 5) {
-        const otherTotal = data.slice(5).reduce((sum, item) => sum + parseFloat(item.total_amount), 0);
+        const otherTotal = data.slice(5).reduce((sum, item) => sum + window.toFiniteNumber(item.total_amount, 0), 0);
         labels.push('سایر محصولات');
         amounts.push(otherTotal);
     }
@@ -647,10 +670,10 @@ function renderProductsDistributionChart(data) {
                     callbacks: {
                         label: function(context) {
                             const label = context.label || '';
-                            const value = formatNumber(context.parsed);
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percentage = ((context.parsed / total) * 100).toFixed(1);
-                            return `${label}: ${value} ریال (${percentage}%)`;
+                            const value = window.toFiniteNumber(context.parsed, 0);
+                            const total = context.dataset.data.reduce((a, b) => a + window.toFiniteNumber(b, 0), 0);
+                            const percentage = total ? window.toPercentageValue((value / total) * 100, 1) : 0;
+                            return `${label}: ${formatNumber(value)} ریال (${formatNumber(percentage)}%)`;
                         }
                     }
                 }
@@ -670,13 +693,20 @@ function updateTopProductsTable(data) {
     }
     
     data.forEach((item, index) => {
+        const productName = item.product_name || 'نامشخص';
+        const salesCount = window.toFiniteNumber(item.sales_count, 0);
+        const hasQuantity = item.total_quantity !== null && item.total_quantity !== undefined;
+        const quantityValue = hasQuantity ? window.toFiniteNumber(item.total_quantity, 0) : 0;
+        const totalAmount = window.toFiniteNumber(item.total_amount, 0);
+        const unitLabel = getUnitLabel(item);
+        const quantityDisplay = hasQuantity && quantityValue ? formatQuantityValue(quantityValue, unitLabel) : '-';
         const row = `
             <tr>
                 <td><span class="badge bg-${index < 3 ? 'warning' : 'secondary'}">${index + 1}</span></td>
-                <td><strong>${item.product_name}</strong></td>
-                <td>${formatNumber(item.sales_count)}</td>
-                <td>${formatNumber(item.total_quantity)}</td>
-                <td>${formatNumber(Math.round(item.total_amount))} ریال</td>
+                <td><strong>${productName}</strong></td>
+                <td>${formatNumber(salesCount)}</td>
+                <td>${quantityDisplay}</td>
+                <td>${formatNumber(Math.round(totalAmount))} ریال</td>
             </tr>
         `;
         tbody.append(row);
@@ -696,8 +726,9 @@ function calculateProductStatistics(data) {
     }
     
     // Total quantity
-    const totalQty = data.reduce((sum, item) => sum + parseFloat(item.total_quantity), 0);
-    $('#totalQuantity').text(formatNumber(Math.round(totalQty)));
+    const totalQty = data.reduce((sum, item) => sum + window.toFiniteNumber(item.total_quantity, 0), 0);
+    const dominantUnit = getDominantUnitLabel(data);
+    $('#totalQuantity').text(formatQuantityValue(totalQty, dominantUnit));
 }
 </script>
 

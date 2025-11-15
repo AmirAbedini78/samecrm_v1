@@ -1315,6 +1315,7 @@ Route::group(['prefix' => 'report'], function () {
     Route::post("/sales/analytics/focus-summary", "Reports\\SalesReports@getFocusSummary");
     Route::post("/sales/analytics/focus-distributions", "Reports\\SalesReports@getFocusDistributions");
     Route::post("/sales/analytics/unique-values", "Reports\\SalesReports@getUniqueValues");
+    Route::get("/sales/analytics/customer-categories", "Reports\\SalesReports@getCustomerCategories");
     Route::get("/sales/analytics/test-data", "Reports\\SalesReports@testAnalyticsData");
     
     Route::get("/sales/test-date-conversion", "Reports\\SalesReports@testDateConversion");

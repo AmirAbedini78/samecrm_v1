@@ -199,8 +199,8 @@ function renderMonthlyTrendChart(data) {
         }
     });
     
-    const counts = data.map(item => item.count);
-    const amounts = data.map(item => item.total_amount);
+    const counts = data.map(item => window.toFiniteNumber(item.count, 0));
+    const amounts = data.map(item => window.toFiniteNumber(item.total_amount, 0));
     
     console.log('Chart labels:', labels);
     console.log('Chart counts:', counts);
@@ -255,7 +255,8 @@ function renderMonthlyTrendChart(data) {
                             if (label) {
                                 label += ': ';
                             }
-                            label += formatNumber(context.parsed.y);
+                            const value = window.toFiniteNumber(context.parsed.y, 0);
+                            label += formatNumber(value);
                             return label;
                         }
                     }
@@ -309,7 +310,7 @@ function renderSeasonalChart(data) {
     }
     
     const labels = data.map(item => item.name);
-    const totals = data.map(item => item.total);
+    const totals = data.map(item => window.toFiniteNumber(item.total, 0));
     
     seasonalChart = new Chart(ctx, {
         type: 'doughnut',
@@ -352,10 +353,11 @@ function renderSeasonalChart(data) {
                     callbacks: {
                         label: function(context) {
                             const label = context.label || '';
-                            const value = formatNumber(context.parsed);
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percentage = ((context.parsed / total) * 100).toFixed(1);
-                            return `${label}: ${value} ریال (${percentage}%)`;
+                            const parsedValue = window.toFiniteNumber(context.parsed, 0);
+                            const value = formatNumber(parsedValue);
+                            const total = context.dataset.data.reduce((sum, item) => sum + window.toFiniteNumber(item, 0), 0);
+                            const percentage = total ? formatPercentageValue((parsedValue / total) * 100, 1) : formatPercentageValue(0, 1);
+                            return `${label}: ${value} ریال (${percentage}٪)`;
                         }
                     }
                 }
@@ -388,8 +390,8 @@ function updateMonthlyStatsTable(data) {
         const row = `
             <tr>
                 <td><strong>${monthName}</strong></td>
-                <td>${formatNumber(item.count)}</td>
-                <td>${formatNumber(Math.round(item.total_amount))} ریال</td>
+                <td>${formatNumber(window.toFiniteNumber(item.count, 0))}</td>
+                <td>${formatNumber(Math.round(window.toFiniteNumber(item.total_amount, 0)))} ریال</td>
             </tr>
         `;
         tbody.append(row);
@@ -409,7 +411,7 @@ function calculateTimeStatistics(data) {
     $('#bestMonth').text(monthLabel);
     
     // Total sales
-    const totalSales = data.reduce((sum, item) => sum + parseFloat(item.total_amount), 0);
+    const totalSales = data.reduce((sum, item) => sum + window.toFiniteNumber(item.total_amount, 0), 0);
     $('#totalSales').text(formatNumber(Math.round(totalSales)) + ' ریال');
     
 }

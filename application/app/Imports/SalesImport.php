@@ -58,7 +58,6 @@ class SalesImport implements ToModel, WithStartRow, SkipsOnFailure, WithChunkRea
         //     $this->skipped++;
         //     return null;
         // }
-k;m,
         ++$this->rows;
 
         try {

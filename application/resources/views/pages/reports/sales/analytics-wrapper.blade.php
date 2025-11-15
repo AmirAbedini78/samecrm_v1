@@ -121,7 +121,16 @@
                 
                 <!-- Additional Filters -->
                 <div class="row mb-3">
-                    <div class="col-md-4 order-md-1">
+                    <div class="col-md-3 order-md-1">
+                        <label class="form-label d-flex justify-content-between align-items-center">
+                            <span>دسته‌بندی مشتری</span>
+                            <small class="text-muted" id="customer-category-count"></small>
+                        </label>
+                        <select id="filter_customer_category" class="form-control form-control-sm">
+                            <option value="">تمام دسته‌ها</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 order-md-2">
                         <label class="form-label d-flex justify-content-between align-items-center">
                             <span>فیلتر مشتری</span>
                             <small class="text-muted" id="customer-count"></small>
@@ -131,7 +140,7 @@
                             <option value="loading" disabled>در حال بارگذاری...</option>
                         </select>
                     </div>
-                    <div class="col-md-4 order-md-2">
+                    <div class="col-md-3 order-md-3">
                         <label class="form-label d-flex justify-content-between align-items-center">
                             <span>فیلتر انبار</span>
                             <small class="text-muted" id="warehouse-count"></small>
@@ -141,7 +150,7 @@
                             <option value="loading" disabled>در حال بارگذاری...</option>
                         </select>
                     </div>
-                    <div class="col-md-4 order-md-3">
+                    <div class="col-md-3 order-md-4">
                         <label class="form-label d-flex justify-content-between align-items-center">
                             <span>فیلتر محصول</span>
                             <small class="text-muted" id="product-count"></small>
@@ -380,13 +389,99 @@ const persianMonths = [
     'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'
 ];
 
+// Ensure numeric values are safe before using them inside charts or UI components
+window.toFiniteNumber = window.toFiniteNumber || function(value, fallback = 0) {
+    if (value === null || value === undefined || value === '') {
+        return fallback;
+    }
+
+    let numericValue = value;
+    if (typeof numericValue === 'string') {
+        numericValue = numericValue.replace(/[,\s]/g, '');
+    }
+
+    const parsed = Number(numericValue);
+    return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+window.toPercentageValue = window.toPercentageValue || function(value, digits = 1) {
+    const base = window.toFiniteNumber(value, 0);
+    const factor = Math.pow(10, digits);
+    return Math.round(base * factor) / factor;
+};
+
+window.clampPercentage = window.clampPercentage || function(value, digits = 1) {
+    const percentage = window.toPercentageValue(value, digits);
+    return Math.min(100, Math.max(0, percentage));
+};
+
 // Format numbers with Persian separators
 function formatNumber(num) {
-    return new Intl.NumberFormat('fa-IR').format(num);
+    const safeNum = window.toFiniteNumber(num, 0);
+    return new Intl.NumberFormat('fa-IR').format(safeNum);
 }
 
 function formatCurrency(num) {
-    return formatNumber(Math.round(num || 0)) + ' ریال';
+    const safeNum = Math.round(window.toFiniteNumber(num, 0));
+    return formatNumber(safeNum) + ' ریال';
+}
+
+function formatDecimal(num, digits = 2) {
+    const safeNum = window.toFiniteNumber(num, 0);
+    return new Intl.NumberFormat('fa-IR', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: digits
+    }).format(safeNum);
+}
+
+function formatPercentageValue(value, digits = 1) {
+    const safePercentage = window.clampPercentage(value, digits);
+    return new Intl.NumberFormat('fa-IR', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: digits
+    }).format(safePercentage);
+}
+
+function getUnitLabel(source, fallback = 'واحد') {
+    if (!source || typeof source !== 'object') {
+        return fallback;
+    }
+
+    const candidateKeys = ['unit_label', 'main_unit', 'unit', 'measurement_unit', 'unitName'];
+    for (let i = 0; i < candidateKeys.length; i++) {
+        const key = candidateKeys[i];
+        if (source[key] && typeof source[key] === 'string' && source[key].trim() !== '') {
+            return source[key].trim();
+        }
+    }
+
+    return fallback;
+}
+
+function getDominantUnitLabel(items = [], fallback = 'واحد') {
+    if (!Array.isArray(items) || items.length === 0) {
+        return fallback;
+    }
+
+    const unitCounter = items.reduce((acc, item) => {
+        const unit = getUnitLabel(item, fallback);
+        acc[unit] = (acc[unit] || 0) + window.toFiniteNumber(item.total_quantity || item.quantity || 1, 0);
+        return acc;
+    }, {});
+
+    const dominantUnit = Object.entries(unitCounter)
+        .sort((a, b) => b[1] - a[1])
+        .map(entry => entry[0])[0];
+
+    return dominantUnit || fallback;
+}
+
+function formatQuantityValue(quantity, unitLabel = 'واحد', digits = 2) {
+    const value = window.toFiniteNumber(quantity, 0);
+    if (value === 0) {
+        return `0 ${unitLabel}`;
+    }
+    return `${formatDecimal(value, digits)} ${unitLabel}`;
 }
 
 let focusDataLoading = false;
@@ -459,7 +554,7 @@ function hideFocusSummary() {
 }
 
 function applyFocusBadges(focus, summaryData = null) {
-    $('#filter_product, #filter_customer, #filter_warehouse').removeClass('focus-highlight');
+    $('#filter_product, #filter_customer, #filter_warehouse, #filter_customer_category').removeClass('focus-highlight');
     $('#focus-active-badge').hide();
 
     if (!focus) {
@@ -477,6 +572,7 @@ function applyFocusBadges(focus, summaryData = null) {
         $('#filter_product').addClass('focus-highlight');
     } else if (focus.type === 'customer') {
         $('#filter_customer').addClass('focus-highlight');
+        $('#filter_customer_category').addClass('focus-highlight');
     } else if (focus.type === 'warehouse') {
         $('#filter_warehouse').addClass('focus-highlight');
     }
@@ -498,10 +594,12 @@ function renderFocusList(containerSelector, list, options = {}) {
     $list.empty();
     list.forEach((item, index) => {
         const label = truncateLabel(item.label || '-', 45);
-        const totalAmount = formatCurrency(item.total_amount || 0);
+        const totalAmount = formatCurrency(window.toFiniteNumber(item.total_amount, 0));
         const quantityKey = options.quantityKey;
-        const quantityLabel = quantityKey && item[quantityKey] ? formatNumber(Math.round(item[quantityKey])) + ' واحد' : '';
-        const countLabel = item.order_count ? formatNumber(item.order_count) + ' سفارش' : '';
+        const unitLabel = getUnitLabel(item);
+        const quantityValue = quantityKey && item[quantityKey] ? window.toFiniteNumber(item[quantityKey], 0) : 0;
+        const quantityLabel = quantityKey && quantityValue ? formatQuantityValue(quantityValue, unitLabel) : '';
+        const countLabel = item.order_count ? formatNumber(window.toFiniteNumber(item.order_count, 0)) + ' سفارش' : '';
 
         const badgeHtml = `<span class="badge badge-light mr-2">${index + 1}</span>`;
         const metaHtml = [quantityLabel, countLabel].filter(Boolean).map(text => `<small class="text-muted d-block">${text}</small>`).join('');
@@ -547,7 +645,8 @@ function renderFocusSummary(summary) {
 
     $('#focus-total-amount').text(formatCurrency(summary.total_amount));
     $('#focus-order-count').text(formatNumber(summary.order_count || 0));
-    $('#focus-total-quantity').text(formatNumber(Math.round(summary.total_quantity || 0)));
+    const summaryUnitLabel = getUnitLabel(summary);
+    $('#focus-total-quantity').text(summary.total_quantity ? formatQuantityValue(summary.total_quantity, summaryUnitLabel) : '-');
 
     $('#focus-unique-customers').text(formatNumber(summary.unique_customers || 0));
     $('#focus-unique-products').text(formatNumber(summary.unique_products || 0));
@@ -699,6 +798,11 @@ $('#update-analytics').on('click', function() {
     if (customer) filterParts.push(`مشتری: ${customer}`);
     if (warehouse) filterParts.push(`انبار: ${warehouse}`);
     if (product) filterParts.push(`محصول: ${product}`);
+    const customerCategoryValue = $('#filter_customer_category').val();
+    if (customerCategoryValue) {
+        const categoryLabel = $('#filter_customer_category option:selected').text();
+        filterParts.push(`دسته‌بندی: ${categoryLabel}`);
+    }
     
     if (filterParts.length > 0) {
         filterText = filterParts.join(' | ');
@@ -757,7 +861,8 @@ $('#update-analytics').on('click', function() {
         ...filters,
         product: product,
         customer: customer,
-        warehouse: warehouse
+        warehouse: warehouse,
+        customer_category: $('#filter_customer_category').val()
     });
 });
 
@@ -867,6 +972,7 @@ function getFilterDates() {
     const product = $('#filter_product').val();
     const customer = $('#filter_customer').val();
     const warehouse = $('#filter_warehouse').val();
+    const customerCategory = $('#filter_customer_category').val();
     if (product) {
         filters.product = product;
         console.log('Filter - Product:', product);
@@ -878,6 +984,10 @@ function getFilterDates() {
     if (warehouse) {
         filters.warehouse = warehouse;
         console.log('Filter - Warehouse:', warehouse);
+    }
+    if (customerCategory) {
+        filters.customer_category = customerCategory;
+        console.log('Filter - Customer Category:', customerCategory);
     }
     
     return filters;
@@ -1087,6 +1197,45 @@ $('#test-data-btn').on('click', function() {
     });
 });
 
+// Load customer categories for category filter
+function loadCustomerCategories() {
+    $.ajax({
+        url: '/report/sales/analytics/customer-categories',
+        method: 'GET',
+        dataType: 'json'
+    }).done(function(response) {
+        const categories = response && response.success ? (response.data || []) : [];
+        populateCategorySelect('#filter_customer_category', categories);
+    }).fail(function(xhr) {
+        console.error('Error loading customer categories', xhr);
+        populateCategorySelect('#filter_customer_category', []);
+    });
+}
+
+function populateCategorySelect(selector, categories) {
+    const $select = $(selector);
+    const previousValue = $select.val() || '';
+
+    $select.empty();
+    $select.append('<option value="">تمام دسته‌ها</option>');
+
+    categories.forEach(function(category) {
+        if (!category || !category.slug) {
+            return;
+        }
+        const count = typeof category.client_count === 'number' ? category.client_count : '';
+        const label = count !== '' ? `${category.name} (${count})` : category.name;
+        const selected = category.slug === previousValue ? 'selected' : '';
+        $select.append(`<option value="${category.slug}" ${selected}>${label}</option>`);
+    });
+
+    $('#customer-category-count').text(`(${categories.length})`);
+
+    if (previousValue && !$select.find(`option[value="${previousValue}"]`).length) {
+        $select.val('');
+    }
+}
+
 // Load unique values for filters (with optional date filter)
 function loadUniqueFilterValues(useDateFilter = false) {
     console.log('Loading unique filter values...');
@@ -1098,12 +1247,18 @@ function loadUniqueFilterValues(useDateFilter = false) {
         if (dates.to_date) filterData.to_date = dates.to_date;
     }
     
+    const customerCategory = $('#filter_customer_category').val();
+
     const currentValues = {
         product: $('#filter_product').val(),
         customer: $('#filter_customer').val(),
         warehouse: $('#filter_warehouse').val()
     };
     
+    if (customerCategory) {
+        filterData.customer_category = customerCategory;
+    }
+
     const requests = [
         { selector: '#filter_customer', column: 'customer_name', current: currentValues.customer, countId: 'customer-count' },
         { selector: '#filter_warehouse', column: 'warehouse', current: currentValues.warehouse, countId: 'warehouse-count' },
@@ -1183,7 +1338,14 @@ $(document).ready(function() {
     $('.tab-pane .card, .tab-pane .chart-container, #focus-summary-wrapper').hide();
     console.log('Default year placeholder active. Current year is:', currentYear);
     
+    loadCustomerCategories();
     loadUniqueFilterValues(true);
+
+    $('#filter_customer_category').on('change', function() {
+        $('#filter_customer').val('');
+        loadUniqueFilterValues(true);
+        applyFocusBadges(getActiveFocus());
+    });
 
     // Initialize Bootstrap tabs manually with click handler
     $('#analyticsTab a[data-toggle="tab"]').each(function() {

@@ -257,9 +257,11 @@ function renderLogisticsFocusList(listSelector, emptySelector, data, type) {
 
     data.forEach((item, index) => {
         const label = truncateLabel(item.label || '-', 50);
-        const amount = formatCurrency(item.total_amount || 0);
-        const quantity = item.total_quantity ? formatNumber(Math.round(item.total_quantity)) + ' واحد' : '';
-        const orders = item.order_count ? formatNumber(item.order_count) + ' سفارش' : '';
+        const amount = formatCurrency(window.toFiniteNumber(item.total_amount, 0));
+        const unitLabel = getUnitLabel(item);
+        const quantityValue = window.toFiniteNumber(item.total_quantity, 0);
+        const quantity = quantityValue ? formatQuantityValue(quantityValue, unitLabel) : '';
+        const orders = item.order_count ? formatNumber(window.toFiniteNumber(item.order_count, 0)) + ' سفارش' : '';
         const meta = [quantity, orders].filter(Boolean).join(' • ');
 
         const li = `
@@ -283,14 +285,15 @@ function renderDeliveryRateChart(deliveryRate) {
         deliveryRateChart.destroy();
     }
     
-    const remaining = 100 - deliveryRate;
+    const safeRate = window.clampPercentage(deliveryRate, 2);
+    const remaining = Math.max(0, 100 - safeRate);
     
     deliveryRateChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
             labels: ['تحویل شده', 'باقیمانده'],
             datasets: [{
-                data: [deliveryRate, remaining],
+                data: [safeRate, remaining],
                 backgroundColor: [
                     'rgba(36, 210, 181, 0.8)',
                     'rgba(255, 180, 77, 0.3)'
@@ -316,7 +319,8 @@ function renderDeliveryRateChart(deliveryRate) {
                     rtl: true,
                     callbacks: {
                         label: function(context) {
-                            return context.label + ': ' + context.parsed.toFixed(1) + '%';
+                            const safeValue = window.clampPercentage(context.parsed, 1);
+                            return context.label + ': ' + formatPercentageValue(safeValue, 1) + '٪';
                         }
                     }
                 }
@@ -324,7 +328,7 @@ function renderDeliveryRateChart(deliveryRate) {
         }
     });
     
-    $('#deliveryRatePercent').text(deliveryRate.toFixed(1) + '%');
+    $('#deliveryRatePercent').text(formatPercentageValue(safeRate, 1) + '٪');
 }
 
 // Render Pending Products Chart
@@ -336,7 +340,8 @@ function renderPendingProductsChart(data) {
     }
     
     const labels = data.map(item => item.product_name.length > 25 ? item.product_name.substring(0, 25) + '...' : item.product_name);
-    const quantities = data.map(item => item.pending_quantity);
+    const quantities = data.map(item => window.toFiniteNumber(item.pending_quantity, 0));
+    const unitLabels = data.map(item => getUnitLabel(item));
     
     pendingProductsChart = new Chart(ctx, {
         type: 'bar',
@@ -347,7 +352,8 @@ function renderPendingProductsChart(data) {
                 data: quantities,
                 backgroundColor: 'rgba(255, 180, 77, 0.7)',
                 borderColor: 'rgba(255, 180, 77, 1)',
-                borderWidth: 2
+                borderWidth: 2,
+                unitLabels: unitLabels
             }]
         },
         options: {
@@ -362,7 +368,8 @@ function renderPendingProductsChart(data) {
                     rtl: true,
                     callbacks: {
                         label: function(context) {
-                            return 'مقدار: ' + formatNumber(context.parsed.x);
+                            const unitLabel = context.dataset.unitLabels ? context.dataset.unitLabels[context.dataIndex] : getUnitLabel({});
+                            return 'مقدار: ' + formatQuantityValue(context.parsed.x, unitLabel);
                         }
                     }
                 }
@@ -400,11 +407,12 @@ function updatePendingProductsTable(data) {
     }
     
     data.forEach(item => {
+        const unitLabel = getUnitLabel(item);
         const row = `
             <tr>
                 <td><strong>${item.product_name.length > 25 ? item.product_name.substring(0, 25) + '...' : item.product_name}</strong></td>
-                <td class="text-warning"><strong>${formatNumber(item.pending_quantity)}</strong></td>
-                <td>${formatNumber(item.order_count)}</td>
+                <td class="text-warning"><strong>${formatQuantityValue(item.pending_quantity, unitLabel)}</strong></td>
+                <td>${formatNumber(window.toFiniteNumber(item.order_count, 0))}</td>
             </tr>
         `;
         tbody.append(row);
@@ -413,9 +421,10 @@ function updatePendingProductsTable(data) {
 
 // Update Delivery Statistics
 function updateDeliveryStatistics(stats, deliveryRate) {
-    $('#deliveredQty').text(formatNumber(Math.round(stats.total_issued || 0)));
-    $('#pendingQty').text(formatNumber(Math.round(stats.total_remaining || 0)));
-    $('#totalOrders').text(formatNumber(stats.total_orders || 0));
+    const unitLabel = getUnitLabel(stats);
+    $('#deliveredQty').text(formatQuantityValue(stats.total_issued || 0, unitLabel));
+    $('#pendingQty').text(formatQuantityValue(stats.total_remaining || 0, unitLabel));
+    $('#totalOrders').text(formatNumber(window.toFiniteNumber(stats.total_orders, 0)));
 }
 
 // Evaluate Delivery Performance
@@ -425,17 +434,25 @@ function evaluateDeliveryPerformance(deliveryRate, stats) {
     let message = '';
     let recommendation = '';
     
-    if (deliveryRate >= 90) {
+    const safeRate = window.clampPercentage(deliveryRate, 2);
+    const totalOrders = window.toFiniteNumber(stats.total_orders, 0);
+    const deliveredOrders = totalOrders * (safeRate / 100);
+    const pendingOrders = Math.max(0, totalOrders - deliveredOrders);
+    const unitLabel = getUnitLabel(stats);
+    const deliveredQuantity = window.toFiniteNumber(stats.total_issued, 0);
+    const pendingQuantity = window.toFiniteNumber(stats.total_remaining, 0);
+    
+    if (safeRate >= 90) {
         alertClass = 'alert-success';
         icon = 'ti-check';
         message = 'عملکرد عالی! نرخ تحویل شما بسیار بالاست.';
         recommendation = 'ادامه دهید و این عملکرد را حفظ کنید.';
-    } else if (deliveryRate >= 75) {
+    } else if (safeRate >= 75) {
         alertClass = 'alert-info';
         icon = 'ti-info-alt';
         message = 'عملکرد خوب! نرخ تحویل شما قابل قبول است.';
         recommendation = 'سعی کنید فرآیندهای تحویل را بهینه‌تر کنید تا به نرخ 90% برسید.';
-    } else if (deliveryRate >= 50) {
+    } else if (safeRate >= 50) {
         alertClass = 'alert-warning';
         icon = 'ti-alert';
         message = 'توجه! نرخ تحویل شما نیاز به بهبود دارد.';
@@ -447,8 +464,6 @@ function evaluateDeliveryPerformance(deliveryRate, stats) {
         recommendation = 'فوراً به سفارشات معلق رسیدگی کنید و موانع تحویل را شناسایی نمایید.';
     }
     
-    const pendingOrders = stats.total_orders - (stats.total_orders * (deliveryRate / 100));
-    
     $('#deliveryPerformanceAlert').removeClass('alert-success alert-info alert-warning alert-danger')
         .addClass(alertClass)
         .html(`
@@ -458,7 +473,7 @@ function evaluateDeliveryPerformance(deliveryRate, stats) {
             <div class="row">
                 <div class="col-md-4">
                     <small class="text-muted">سفارشات تحویل شده:</small>
-                    <br><strong>${formatNumber(Math.round(stats.total_orders * (deliveryRate / 100)))}</strong>
+                    <br><strong>${formatNumber(Math.round(deliveredOrders))}</strong>
                 </div>
                 <div class="col-md-4">
                     <small class="text-muted">سفارشات معلق:</small>
@@ -466,7 +481,17 @@ function evaluateDeliveryPerformance(deliveryRate, stats) {
                 </div>
                 <div class="col-md-4">
                     <small class="text-muted">نرخ تحویل:</small>
-                    <br><strong>${deliveryRate.toFixed(1)}%</strong>
+                    <br><strong>${formatPercentageValue(safeRate, 1)}٪</strong>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <small class="text-muted">کل مقدار صادر شده:</small>
+                    <br><strong>${formatQuantityValue(deliveredQuantity, unitLabel)}</strong>
+                </div>
+                <div class="col-md-6">
+                    <small class="text-muted">کل مقدار باقی‌مانده:</small>
+                    <br><strong class="text-warning">${formatQuantityValue(pendingQuantity, unitLabel)}</strong>
                 </div>
             </div>
         `);
