@@ -1429,6 +1429,18 @@ Route::group(['prefix' => 'import/inventory', 'middleware' => ['auth']], functio
     Route::post("/", "Import\Inventory@store");
 });
 
+//INVOICE SETTLEMENTS
+Route::group(['prefix' => 'invoice-settlements'], function () {
+    Route::any("/search", "InvoiceSettlementController@index");
+});
+Route::resource('invoice-settlements', 'InvoiceSettlementController')->only(['index']);
+
+//INVOICE SETTLEMENT IMPORT
+Route::group(['prefix' => 'import/invoice-settlements', 'middleware' => ['auth']], function () {
+    Route::get("/", "Import\InvoiceSettlements@index");
+    Route::post("/", "Import\InvoiceSettlements@store");
+});
+
 //SALES
 Route::group(['prefix' => 'sales'], function () {
     Route::any("/search", "SalesController@index");

@@ -424,6 +424,13 @@
                                 {{ cleanLang(__('lang.sales')) }}
                             </a>
                         </li>
+                        <li class="sidenav-submenu {{ $page['submenu_invoice_settlements'] ?? '' }}" id="submenu_invoice_settlements">
+                            <a href="{{ _url('/invoice-settlements') }}"
+                                class="{{ $page['submenu_invoice_settlements'] ?? '' }}">
+                                <i class="ti-clipboard"></i>
+                                {{ cleanLang(__('lang.invoice_settlements')) }}
+                            </a>
+                        </li>
                     </ul>
                 </li>
                 <!--accounting-->
