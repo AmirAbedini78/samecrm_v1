@@ -112,6 +112,12 @@ class Kernel extends ConsoleKernel {
         //[cleanup] - delete large log files (over 50MB) daily
         $schedule->call(new \App\Cronjobs\Cleanup\CleanUpCron)->daily();
 
+        //[inventory] - check inventory alerts (expiry, quantity, etc.)
+        $schedule->call(new \App\Cronjobs\InventoryAlertCron)->everyFiveMinutes();
+
+        //[sms] - process SMS queue
+        $schedule->call(new \App\Cronjobs\SmsQueueCron)->everyMinute();
+
     }
 
     /**

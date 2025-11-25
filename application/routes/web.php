@@ -1321,6 +1321,17 @@ Route::group(['prefix' => 'report'], function () {
     Route::get("/sales/test-date-conversion", "Reports\\SalesReports@testDateConversion");
     Route::get("/sales/simple-date-test", "Reports\\SalesReports@simpleDateTest");
     Route::get("/sales/check-database-data", "Reports\\SalesReports@checkDatabaseData");
+    
+    // warehouse reports
+    Route::any("/warehouse", "Reports\\WarehouseReportsController@index");
+    Route::post("/warehouse/current-stock", "Reports\\WarehouseReportsController@getCurrentStock");
+    Route::post("/warehouse/expiry", "Reports\\WarehouseReportsController@getExpiryReport");
+    Route::post("/warehouse/sales", "Reports\\WarehouseReportsController@getSalesReport");
+    Route::post("/warehouse/outside-inventory", "Reports\\WarehouseReportsController@getOutsideInventory");
+    Route::post("/warehouse/top-selling", "Reports\\WarehouseReportsController@getTopSelling");
+    Route::post("/warehouse/analytics", "Reports\\WarehouseReportsController@getAnalytics");
+    Route::post("/warehouse/transactions", "Reports\\WarehouseReportsController@getTransactions");
+    Route::get("/warehouse/summary", "Reports\\WarehouseReportsController@getSummary");
 });
 
 //SPACES
@@ -1427,6 +1438,25 @@ Route::resource('inventory', 'InventoryController');
 Route::group(['prefix' => 'import/inventory', 'middleware' => ['auth']], function () {
     Route::get("/", "Import\Inventory@index");
     Route::post("/", "Import\Inventory@store");
+});
+
+//INVENTORY CUSTOM CATEGORIES
+Route::group(['prefix' => 'inventory/custom-categories', 'middleware' => ['auth']], function () {
+    Route::get("/", "InventoryCustomCategoryController@index");
+    Route::post("/", "InventoryCustomCategoryController@store");
+    Route::put("/{id}", "InventoryCustomCategoryController@update");
+    Route::delete("/{id}", "InventoryCustomCategoryController@destroy");
+    Route::post("/add-inventory", "InventoryCustomCategoryController@addInventory");
+    Route::post("/remove-inventory", "InventoryCustomCategoryController@removeInventory");
+});
+
+//INVENTORY ALERTS
+Route::group(['prefix' => 'inventory/alerts', 'middleware' => ['auth']], function () {
+    Route::get("/", "InventoryAlertController@index");
+    Route::post("/", "InventoryAlertController@store");
+    Route::put("/{id}", "InventoryAlertController@update");
+    Route::delete("/{id}", "InventoryAlertController@destroy");
+    Route::post("/{id}/toggle", "InventoryAlertController@toggle");
 });
 
 //INVOICE SETTLEMENTS

@@ -31,7 +31,8 @@ class Inventory extends Model {
         'weighing_input', 'weighing_output',
         'minimum_stock', 'maximum_stock', 'discrepancy',
         'main_unit', 'sub_unit',
-        'inventory_status', 'inventory_creatorid', 'inventory_categoryid'
+        'inventory_status', 'inventory_creatorid', 'inventory_categoryid',
+        'entry_date', 'physical_available', 'auto_expiry_default_days'
     ];
 
     // Relationships
@@ -43,8 +44,6 @@ class Inventory extends Model {
         return $this->belongsTo('App\Models\Category', 'inventory_categoryid', 'category_id');
     }
 
-
-
     /**
      * relatioship business rules:
      *         - the Inventory can have many Tags
@@ -53,6 +52,41 @@ class Inventory extends Model {
      */
     public function tags() {
         return $this->morphMany('App\Models\Tag', 'tagresource');
+    }
+
+    /**
+     * Transactions relationship
+     */
+    public function transactions() {
+        return $this->hasMany('App\Models\InventoryTransaction', 'inventory_id', 'inventory_id');
+    }
+
+    /**
+     * Expiry date relationship
+     */
+    public function expiryDate() {
+        return $this->hasOne('App\Models\InventoryExpiryDate', 'inventory_id', 'inventory_id');
+    }
+
+    /**
+     * Custom categories relationship
+     */
+    public function customCategories() {
+        return $this->belongsToMany(
+            'App\Models\InventoryCustomCategory',
+            'inventory_custom_category_items',
+            'inventory_id',
+            'custom_category_id',
+            'inventory_id',
+            'category_id'
+        )->withPivot('alias_name')->withTimestamps();
+    }
+
+    /**
+     * Alert settings relationship
+     */
+    public function alertSettings() {
+        return $this->hasMany('App\Models\InventoryAlertSetting', 'inventory_id', 'inventory_id');
     }
 
     /**

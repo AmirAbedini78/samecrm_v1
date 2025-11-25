@@ -215,6 +215,16 @@
                 </div>
             </li>
 
+            <!--warehouse (custom) -->
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle tabs-menu-item" data-loading-class="loading-tabs" data-toggle="dropdown" href="javascript:void(0)" role="button" aria-haspopup="true" id="reports_tabs_warehouse" aria-expanded="false">
+                    <span class="hidden-xs-down"><i class="ti-package"></i> گزارش انبار</span>
+                </a>
+                <div class="dropdown-menu" x-placement="bottom-start" id="fx-topnav-dropdown">
+                    <a class="dropdown-item js-dynamic-url js-ajax-ux-request" data-toggle="tab" data-loading-class="loading-tabs" data-loading-target="embed-content-container" data-dynamic-url="{{ url('/report/warehouse') }}" data-url="{{ url('/report/warehouse') }}" href="javascript:void(0);" role="tab"><i class="ti-package"></i> گزارش انبار</a>
+                </div>
+            </li>
+
         </ul>
         <!-- Tab panes -->
     </div>
