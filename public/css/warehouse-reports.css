@@ -1,4 +1,12 @@
 /* Warehouse reports styles */
+.warehouse-modal {
+    z-index: 1200;
+}
+
+.modal-backdrop.warehouse-modal-backdrop {
+    z-index: 1190;
+}
+
 .warehouse-section {
     padding: 20px 0;
 }

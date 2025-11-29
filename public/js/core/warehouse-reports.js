@@ -19,6 +19,7 @@ var monthlySalesChart = null;
 var categoryDistributionChart = null;
 var customCategoriesCache = [];
 var inventoryAlertsCache = [];
+var currentStockTableInstance = null;
 
 function setupAjaxDefaults() {
     var token = $('meta[name="csrf-token"]').attr('content');
@@ -251,6 +252,27 @@ function getFilterPayload(extra) {
     return payload;
 }
 
+function destroyDataTable(selector) {
+    if (!$.fn.DataTable) {
+        return;
+    }
+    var table = $(selector).get(0);
+    if (!table) {
+        return;
+    }
+    if (!table.parentNode) {
+        // Table has been detached; nothing to destroy
+        return;
+    }
+    if ($.fn.DataTable.isDataTable(table)) {
+        try {
+            $(table).DataTable().clear().destroy();
+        } catch (error) {
+            console.warn('DataTable destroy skipped for selector', selector, error);
+        }
+    }
+}
+
 function activateWarehouseTab(target) {
     var tabTarget = target || '#current-stock';
     var $link = $('#warehouse-tabs .nav-link[href="' + tabTarget + '"]');
@@ -377,7 +399,7 @@ function renderCustomActions(summary) {
                         '<h6>' + action.title + '</h6>' +
                         '<p>' + action.description + '</p>' +
                     '</div>' +
-                    '<button class="btn btn-sm btn-outline-dark js-action-cta" data-tab="' + (action.tab || '') + '" data-action="' + (action.action || '') + '">' +
+                '<button type="button" class="btn btn-sm btn-outline-dark js-action-cta" data-tab="' + (action.tab || '') + '" data-action="' + (action.action || '') + '">' +
                         (action.cta || 'مشاهده') +
                     '</button>' +
                 '</div>' +
@@ -433,7 +455,7 @@ function initCustomCategoryPanel() {
 
     $(document).off('click', '#btn-new-custom-category').on('click', '#btn-new-custom-category', function () {
         resetCustomCategoryForm();
-        $('#customCategoryModal').modal('show');
+        openCustomCategoryModal();
     });
 
     $('#custom-category-form').off('submit').on('submit', submitCustomCategoryForm);
@@ -446,7 +468,7 @@ function initCustomCategoryPanel() {
         });
         if (category) {
             populateCustomCategoryForm(category);
-            $('#customCategoryModal').modal('show');
+            openCustomCategoryModal();
         }
     });
 
@@ -460,8 +482,14 @@ function initCustomCategoryPanel() {
     $(document).off('click', '.js-attach-item').on('click', '.js-attach-item', function () {
         var categoryId = $(this).data('id');
         $('#item-category-id').val(categoryId);
-        $('#customCategoryItemModal').modal('show');
+        toggleCustomCategoryPanel(false);
+        showModal('#customCategoryItemModal');
     });
+}
+
+function openCustomCategoryModal() {
+    toggleCustomCategoryPanel(false);
+    showModal('#customCategoryModal');
 }
 
 function toggleCustomCategoryPanel(open) {
@@ -663,18 +691,18 @@ function deleteCustomCategory(categoryId) {
 
 function initInventoryAlertPanel() {
     $(document).off('click', '#btn-open-alert-panel').on('click', '#btn-open-alert-panel', function () {
-        toggleCustomCategoryPanel(false);
-        $('#inventory-alert-panel').addClass('open');
+        toggleInventoryAlertPanel(true);
         fetchInventoryAlerts();
     });
 
     $(document).off('click', '#inventory-alert-panel .btn-close-panel').on('click', '#inventory-alert-panel .btn-close-panel', function () {
-        $('#inventory-alert-panel').removeClass('open');
+        toggleInventoryAlertPanel(false);
     });
 
     $(document).off('click', '#btn-create-alert').on('click', '#btn-create-alert', function () {
         resetInventoryAlertForm();
-        $('#inventoryAlertModal').modal('show');
+        toggleInventoryAlertPanel(false);
+        showModal('#inventoryAlertModal');
     });
 
     $('#inventory-alert-form').off('submit').on('submit', submitInventoryAlertForm);
@@ -686,7 +714,8 @@ function initInventoryAlertPanel() {
         });
         if (alert) {
             populateInventoryAlertForm(alert);
-            $('#inventoryAlertModal').modal('show');
+            toggleInventoryAlertPanel(false);
+            showModal('#inventoryAlertModal');
         }
     });
 
@@ -885,6 +914,80 @@ function toggleInventoryAlert(alertId) {
     });
 }
 
+function toggleInventoryAlertPanel(open) {
+    var $panel = $('#inventory-alert-panel');
+    if (!$panel.length) {
+        return;
+    }
+    if (open) {
+        toggleCustomCategoryPanel(false);
+    }
+    $panel.toggleClass('open', !!open);
+}
+
+function showModal(selector) {
+    var $modal = $(selector);
+    if (!$modal.length) {
+        return;
+    }
+    if (!$modal.parent().is('body')) {
+        $modal.appendTo('body');
+    }
+    if ($.fn.modal) {
+        $modal.off('shown.warehouseModal hidden.warehouseModal');
+
+        $modal.on('shown.warehouseModal', function () {
+            $('body').addClass('modal-open');
+            $('.modal-backdrop').addClass('warehouse-modal-backdrop');
+        });
+
+        $modal.on('hidden.warehouseModal', function () {
+            var fallbackBackdrop = $('.modal-backdrop.warehouse-modal-backdrop');
+            if (!$('.modal.show').length) {
+                fallbackBackdrop.remove();
+                $('body').removeClass('modal-open');
+            }
+        });
+
+        $modal.modal('show');
+
+        setTimeout(function () {
+            if (!$modal.hasClass('show')) {
+                fallbackDisplayModal($modal);
+            }
+        }, 300);
+    } else {
+        fallbackDisplayModal($modal);
+    }
+}
+
+function fallbackDisplayModal($modal) {
+    $modal.addClass('show').css('display', 'block').attr('aria-modal', 'true');
+    if (!$modal.parent().is('body')) {
+        $modal.appendTo('body');
+    }
+    $('body').addClass('modal-open');
+    if (!$('.modal-backdrop.warehouse-modal-backdrop').length) {
+        $('<div class="modal-backdrop fade show warehouse-modal-backdrop"></div>').appendTo('body');
+    }
+}
+
+function fallbackHideModal($modal) {
+    $modal.removeClass('show').css('display', 'none');
+    if (!$('.modal.show').length) {
+        $('body').removeClass('modal-open');
+        $('.modal-backdrop.warehouse-modal-backdrop').remove();
+    }
+}
+
+$(document).off('click.warehouseFallback', '[data-dismiss="modal"]').on('click.warehouseFallback', '[data-dismiss="modal"]', function (e) {
+    if (!$.fn.modal) {
+        e.preventDefault();
+        var $modal = $(this).closest('.modal');
+        fallbackHideModal($modal);
+    }
+});
+
 function deleteInventoryAlert(alertId) {
     $.ajax({
         url: '/inventory/alerts/' + alertId,
@@ -945,19 +1048,21 @@ function loadSummary() {
  * Load current stock
  */
 function loadCurrentStock() {
-    if ($('#current-stock-table').length === 0) {
+    var $table = $('#current-stock-table');
+    if ($table.length === 0) {
         console.error('Current stock table not found');
         return;
     }
-    
-    if ($('#current-stock-table').hasClass('dataTable')) {
-        $('#current-stock-table').DataTable().destroy();
+
+    if (currentStockTableInstance) {
+        currentStockTableInstance.ajax.reload(null, false);
+        return;
     }
-    
+
     // Show loading message
-    $('#current-stock-table tbody').html('<tr><td colspan="8" class="text-center">در حال بارگذاری...</td></tr>');
+    $table.find('tbody').html('<tr><td colspan="8" class="text-center">در حال بارگذاری...</td></tr>');
     
-    $('#current-stock-table').DataTable({
+    currentStockTableInstance = $table.DataTable({
         processing: true,
         serverSide: false,
         ajax: {
@@ -969,14 +1074,20 @@ function loadCurrentStock() {
             dataSrc: function(json) {
                 if (!json.success) {
                     console.error('Failed to load current stock:', json.error || 'Unknown error');
-                    $('#current-stock-table tbody').html('<tr><td colspan="8" class="text-center text-danger">خطا در بارگذاری داده‌ها</td></tr>');
+                    $table.find('tbody').html('<tr><td colspan="8" class="text-center text-danger">خطا در بارگذاری داده‌ها</td></tr>');
                     return [];
                 }
                 return json.data || [];
             },
             error: function(xhr, error, thrown) {
                 console.error('AJAX error loading current stock:', error, thrown);
-                $('#current-stock-table tbody').html('<tr><td colspan="8" class="text-center text-danger">خطا در ارتباط با سرور</td></tr>');
+                var message = 'خطا در ارتباط با سرور';
+                if (xhr && xhr.status === 401) {
+                    message = 'نشست شما منقضی شده است. لطفاً دوباره وارد شوید.';
+                } else if (xhr && typeof xhr.responseText === 'string' && xhr.responseText.trim().indexOf('<!DOCTYPE') === 0) {
+                    message = 'پاسخ نامعتبر از سرور دریافت شد.';
+                }
+                $table.find('tbody').html('<tr><td colspan="8" class="text-center text-danger">' + message + '</td></tr>');
             }
         },
         columns: [
@@ -1038,9 +1149,7 @@ function loadCurrentStock() {
  * Load expiry report
  */
 function loadExpiryReport(status) {
-    if ($('#expiry-table').hasClass('dataTable')) {
-        $('#expiry-table').DataTable().destroy();
-    }
+    destroyDataTable('#expiry-table');
     
     // Show loading message
     if ($('#expiry-table tbody').length) {
@@ -1144,9 +1253,7 @@ function loadSalesReport(year) {
     if (typeof year !== 'undefined') {
         warehouseFilterState.sales_year = year;
     }
-    if ($('#sales-report-table').hasClass('dataTable')) {
-        $('#sales-report-table').DataTable().destroy();
-    }
+    destroyDataTable('#sales-report-table');
     
     $.ajax({
         url: '/report/warehouse/sales',
@@ -1254,9 +1361,7 @@ function loadAnalytics() {
  * Load transactions
  */
 function loadTransactions() {
-    if ($('#transactions-table').hasClass('dataTable')) {
-        $('#transactions-table').DataTable().destroy();
-    }
+    destroyDataTable('#transactions-table');
     
     $('#transactions-table').DataTable({
         processing: true,
@@ -1306,9 +1411,7 @@ function loadTransactions() {
  * Helper function to load simple table
  */
 function loadTable(selector, data) {
-    if ($(selector).hasClass('dataTable')) {
-        $(selector).DataTable().destroy();
-    }
+    destroyDataTable(selector);
     
     $(selector).DataTable({
         data: data,
@@ -1338,9 +1441,7 @@ function loadTopProductsTable(data) {
         return;
     }
 
-    if ($('#top-products-table').hasClass('dataTable')) {
-        $('#top-products-table').DataTable().destroy();
-    }
+    destroyDataTable('#top-products-table');
     
     $('#top-products-table').DataTable({
         data: data.map(function(item, index) {
@@ -1374,9 +1475,7 @@ function showEmptyTopProductsTable(message) {
     if (!$table.length) {
         return;
     }
-    if ($table.hasClass('dataTable')) {
-        $table.DataTable().clear().destroy();
-    }
+    destroyDataTable('#top-products-table');
     $table.find('tbody').html('<tr><td colspan="4" class="text-center text-muted">' + (message || 'داده‌ای برای نمایش وجود ندارد') + '</td></tr>');
 }
 

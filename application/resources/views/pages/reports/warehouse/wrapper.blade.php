@@ -274,7 +274,7 @@
 </div>
 
 <!-- Custom Category Modal -->
-<div class="modal fade" id="customCategoryModal" tabindex="-1" role="dialog" aria-hidden="true">
+<div class="modal fade warehouse-modal" id="customCategoryModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog-right" role="document">
         <div class="modal-content">
             <form id="custom-category-form">
@@ -334,7 +334,7 @@
 </div>
 
 <!-- Custom Category Item Modal -->
-<div class="modal fade" id="customCategoryItemModal" tabindex="-1" role="dialog" aria-hidden="true">
+<div class="modal fade warehouse-modal" id="customCategoryItemModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <form id="custom-category-item-form">
@@ -429,7 +429,7 @@
 </div>
 
 <!-- Inventory Alert Modal -->
-<div class="modal fade" id="inventoryAlertModal" tabindex="-1" role="dialog" aria-hidden="true">
+<div class="modal fade warehouse-modal" id="inventoryAlertModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <form id="inventory-alert-form">
