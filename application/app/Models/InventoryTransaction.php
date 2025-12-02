@@ -57,3 +57,4 @@ class InventoryTransaction extends Model
     }
 }
 
+

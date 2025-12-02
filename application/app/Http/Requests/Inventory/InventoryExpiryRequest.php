@@ -53,3 +53,4 @@ class InventoryExpiryRequest extends FormRequest
     }
 }
 
+

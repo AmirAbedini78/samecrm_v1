@@ -286,38 +286,66 @@
                 </div>
                 <div class="modal-body">
                     <input type="hidden" id="custom-category-id" name="category_id">
+                    <input type="hidden" id="custom-category-image-upload" name="category_image_upload">
+                    <input type="hidden" id="custom-category-image-remove" name="category_image_remove" value="0">
                     <div class="form-group">
                         <label>عنوان</label>
                         <input type="text" class="form-control" id="custom-category-name" name="category_name" required>
                     </div>
                     <div class="form-group">
-                        <label>نوع</label>
+                        <label>نوع دسته‌بندی</label>
                         <select class="form-control" id="custom-category-type" name="category_type" required>
                             <option value="item">کالا</option>
                             <option value="customer">مشتری</option>
                         </select>
+                        <small class="text-muted">پس از انتخاب، گزینه‌های مرتبط فعال می‌شوند.</small>
                     </div>
                     <div class="form-group">
                         <label>رنگ</label>
                         <input type="color" class="form-control form-control-color" id="custom-category-color" name="category_color" value="#5a9ba5">
                     </div>
                     <div class="form-group">
-                        <label>آیکن (کلاس یا متن)</label>
-                        <input type="text" class="form-control" id="custom-category-icon" name="category_icon" placeholder="مثال: ti-package یا 🔥">
-                    </div>
-                    <div class="form-group">
-                        <label>تصویر (URL)</label>
-                        <input type="text" class="form-control" id="custom-category-image" name="category_image" placeholder="https://example.com/image.png">
+                        <label>آیکن (کلاس) یا تصویر نمایشی</label>
+                        <input type="text" class="form-control mb-2" id="custom-category-icon" name="category_icon" placeholder="مثال: ti-package یا 🔥">
+                        <div class="category-icon-uploader d-flex align-items-center gap-3">
+                            <div class="icon-preview" id="custom-category-image-preview">
+                                <span class="text-muted">بدون تصویر</span>
+                            </div>
+                            <div>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-upload-category-image">
+                                    <i class="ti-image"></i> آپلود تصویر
+                                </button>
+                                <button type="button" class="btn btn-link btn-sm text-danger" id="btn-remove-category-image">حذف تصویر</button>
+                                <input type="file" id="custom-category-image-file" accept="image/*" class="d-none">
+                                <input type="hidden" id="custom-category-image" name="category_image">
+                            </div>
+                        </div>
+                        <small class="text-muted d-block mt-2">می‌توانید از کلاس‌های آیکن یا تصویر اختصاصی استفاده کنید.</small>
                     </div>
                     <div class="form-row">
                         <div class="form-group col-sm-6">
                             <label>شروع بازه فعال</label>
-                            <input type="date" class="form-control" id="custom-category-start-date" name="start_date">
+                            <div class="input-group input-group-sm">
+                                <input type="text" class="form-control persian-date-input" id="custom-category-start-date" name="start_date" autocomplete="off" placeholder="مثال: 1403/01/01">
+                                <button type="button" class="btn btn-outline-secondary btn-date-picker" data-target="custom-category-start-date">
+                                    <i class="ti-calendar"></i>
+                                </button>
+                            </div>
                         </div>
                         <div class="form-group col-sm-6">
                             <label>پایان بازه فعال</label>
-                            <input type="date" class="form-control" id="custom-category-end-date" name="end_date">
+                            <div class="input-group input-group-sm">
+                                <input type="text" class="form-control persian-date-input" id="custom-category-end-date" name="end_date" autocomplete="off" placeholder="مثال: 1403/12/29">
+                                <button type="button" class="btn btn-outline-secondary btn-date-picker" data-target="custom-category-end-date">
+                                    <i class="ti-calendar"></i>
+                                </button>
+                            </div>
                         </div>
+                    </div>
+                    <div class="form-group">
+                        <label>افزودن سریع اعضا (اختیاری)</label>
+                        <select class="form-control js-select2-basic-search-modal" id="custom-category-entities" name="entity_ids[]" multiple data-placeholder="انتخاب کنید"></select>
+                        <small class="text-muted" id="custom-category-entities-hint">ابتدا نوع دسته را انتخاب کنید تا لیست کالاها یا مشتریان نمایش داده شود.</small>
                     </div>
                     <div class="form-group">
                         <label>توضیحات</label>
@@ -339,17 +367,23 @@
         <div class="modal-content">
             <form id="custom-category-item-form">
                 <div class="modal-header">
-                    <h5 class="modal-title">افزودن کالا به دسته‌بندی</h5>
+                    <h5 class="modal-title" id="custom-category-item-modal-title">افزودن عضو به دسته</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body">
                     <input type="hidden" id="item-category-id" name="custom_category_id">
-                    <div class="form-group">
-                        <label>شناسه کالا</label>
-                        <input type="number" class="form-control" id="item-inventory-id" name="inventory_id" required>
-                        <small class="text-muted">برای جستجوی دقیق‌تر از شناسه یا کد کالا استفاده کنید</small>
+                    <input type="hidden" id="item-entity-type" name="entity_type" value="item">
+                    <div class="form-group entity-field entity-field-item">
+                        <label>انتخاب کالا</label>
+                        <select class="form-control js-select2-basic-search-modal" id="item-inventory-id" name="inventory_id" data-ajax--url="{{ url('/feed/inventory-items') }}"></select>
+                        <small class="text-muted">نام یا کد کالا را جستجو کنید.</small>
+                    </div>
+                    <div class="form-group entity-field entity-field-customer d-none">
+                        <label>انتخاب مشتری</label>
+                        <select class="form-control js-select2-basic-search-modal" id="item-client-id" name="client_id" data-ajax--url="{{ url('/feed/company_names') }}"></select>
+                        <small class="text-muted">نام مشتری یا شرکت را جستجو کنید.</small>
                     </div>
                     <div class="form-group">
                         <label>نام مستعار</label>
@@ -362,11 +396,21 @@
                     <div class="form-row">
                         <div class="form-group col-sm-6">
                             <label>شروع</label>
-                            <input type="date" class="form-control" id="item-start-date" name="start_date">
+                            <div class="input-group input-group-sm">
+                                <input type="text" class="form-control persian-date-input" id="item-start-date" name="start_date" autocomplete="off" placeholder="1403/01/01">
+                                <button type="button" class="btn btn-outline-secondary btn-date-picker" data-target="item-start-date">
+                                    <i class="ti-calendar"></i>
+                                </button>
+                            </div>
                         </div>
                         <div class="form-group col-sm-6">
                             <label>پایان</label>
-                            <input type="date" class="form-control" id="item-end-date" name="end_date">
+                            <div class="input-group input-group-sm">
+                                <input type="text" class="form-control persian-date-input" id="item-end-date" name="end_date" autocomplete="off" placeholder="1403/12/29">
+                                <button type="button" class="btn btn-outline-secondary btn-date-picker" data-target="item-end-date">
+                                    <i class="ti-calendar"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div class="form-group">

@@ -628,6 +628,7 @@ Route::group(['prefix' => 'feed'], function () {
     Route::get("/project-milestones", "Feed@projectsMilestones");
     Route::get("/project-client-users", "Feed@projectClientUsers");
     Route::get("/users-projects", "Feed@usersProjects");
+    Route::get("/inventory-items", "Feed@inventoryItems");
 
 });
 

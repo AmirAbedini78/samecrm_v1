@@ -62,3 +62,4 @@ class CreateInventoryAlertSettingsTable extends Migration
     }
 }
 
+

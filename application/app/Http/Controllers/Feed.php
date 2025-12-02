@@ -8,6 +8,7 @@
  *----------------------------------------------------------------------------------*/
 
 namespace App\Http\Controllers;
+use App\Models\Inventory;
 use App\Permissions\ProjectPermissions;
 use App\Repositories\ClientRepository;
 use App\Repositories\LeadRepository;
@@ -56,6 +57,37 @@ class Feed extends Controller {
         $feed = $clientrepo->autocompleteFeed('company_name', request('term'));
 
         return response()->json($feed);
+    }
+
+    /**
+     * ajax search results for inventory items
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function inventoryItems()
+    {
+        $term = request('term', '');
+
+        $results = Inventory::query()
+            ->select(['inventory_id', 'inventory_name', 'inventory_code'])
+            ->when($term, function ($query) use ($term) {
+                $query->where(function ($subQuery) use ($term) {
+                    $subQuery->where('inventory_name', 'LIKE', "%{$term}%")
+                        ->orWhere('inventory_code', 'LIKE', "%{$term}%");
+                });
+            })
+            ->orderBy('inventory_name')
+            ->limit(20)
+            ->get()
+            ->map(function ($inventory) {
+                $label = trim($inventory->inventory_name . ' ' . ($inventory->inventory_code ? '(' . $inventory->inventory_code . ')' : ''));
+                return [
+                    'value' => $label,
+                    'id' => $inventory->inventory_id,
+                ];
+            });
+
+        return response()->json($results);
     }
 
     /**

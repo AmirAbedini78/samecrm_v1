@@ -75,3 +75,4 @@ class InventoryAlertRequest extends FormRequest
     }
 }
 
+

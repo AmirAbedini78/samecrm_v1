@@ -49,3 +49,4 @@ class CreateInventoryCustomCategoryItemsTable extends Migration
     }
 }
 
+

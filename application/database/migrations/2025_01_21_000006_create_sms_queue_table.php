@@ -50,3 +50,4 @@ class CreateSmsQueueTable extends Migration
     }
 }
 
+

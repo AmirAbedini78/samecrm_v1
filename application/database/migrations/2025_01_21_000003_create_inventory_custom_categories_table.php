@@ -52,3 +52,4 @@ class CreateInventoryCustomCategoriesTable extends Migration
     }
 }
 
+

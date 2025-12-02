@@ -51,6 +51,11 @@ class InventoryCustomCategory extends Model
         return $this->hasMany('App\Models\InventoryCustomCategoryItem', 'custom_category_id', 'category_id');
     }
 
+    public function clients()
+    {
+        return $this->hasMany('App\Models\InventoryCustomCategoryClient', 'custom_category_id', 'category_id');
+    }
+
     public function inventories()
     {
         return $this->belongsToMany(

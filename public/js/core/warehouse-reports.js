@@ -20,6 +20,312 @@ var categoryDistributionChart = null;
 var customCategoriesCache = [];
 var inventoryAlertsCache = [];
 var currentStockTableInstance = null;
+var warehousePersianPickerState = {
+    activeInput: null,
+    selectedDate: { year: 1403, month: 1, day: 1 }
+};
+var warehousePersianMonths = [
+    'فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور',
+    'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'
+];
+
+function initCategoryFormEnhancements() {
+    bindCategoryImageUpload();
+    initDynamicSelect($('#custom-category-entities'), '#customCategoryModal');
+    initDynamicSelect($('#item-inventory-id'), '#customCategoryItemModal');
+    initDynamicSelect($('#item-client-id'), '#customCategoryItemModal');
+    initWarehousePersianDatePickers($('#customCategoryModal'));
+    initWarehousePersianDatePickers($('#customCategoryItemModal'));
+    updateCategoryEntitySelector($('#custom-category-type').val() || 'item');
+
+    $('#custom-category-type').off('change').on('change', function () {
+        updateCategoryEntitySelector($(this).val());
+    });
+
+    renderCategoryImagePreview($('#custom-category-image-preview'), $('#custom-category-image').val() || null);
+}
+
+function bindCategoryImageUpload() {
+    var $fileInput = $('#custom-category-image-file');
+    var $uploadInput = $('#custom-category-image-upload');
+    var $removeInput = $('#custom-category-image-remove');
+    var $imagePath = $('#custom-category-image');
+    var $preview = $('#custom-category-image-preview');
+
+    $('#btn-upload-category-image').off('click').on('click', function () {
+        $fileInput.trigger('click');
+    });
+
+    $fileInput.off('change').on('change', function (event) {
+        var file = event.target.files[0];
+        if (!file) {
+            return;
+        }
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            $uploadInput.val(e.target.result);
+            $removeInput.val(0);
+            renderCategoryImagePreview($preview, e.target.result);
+        };
+        reader.readAsDataURL(file);
+    });
+
+    $('#btn-remove-category-image').off('click').on('click', function () {
+        $uploadInput.val('');
+        $imagePath.val('');
+        $removeInput.val(1);
+        $fileInput.val('');
+        renderCategoryImagePreview($preview, null);
+    });
+}
+
+function renderCategoryImagePreview($preview, src) {
+    if (!$preview.length) {
+        return;
+    }
+    if (src) {
+        $preview.html('<img src="' + src + '" alt="category preview">');
+    } else {
+        $preview.html('<span class="text-muted">بدون تصویر</span>');
+    }
+}
+
+function updateCategoryEntitySelector(type) {
+    var $select = $('#custom-category-entities');
+    if (!$select.length) {
+        return;
+    }
+
+    var hint = type === 'customer'
+        ? 'لیست مشتریان برای این دسته فعال شد.'
+        : 'لیست کالاها برای این دسته فعال شد.';
+    $('#custom-category-entities-hint').text(hint);
+
+    var url = type === 'customer' ? '/feed/company_names' : '/feed/inventory-items';
+    $select.attr('data-ajax--url', url);
+    initDynamicSelect($select, '#customCategoryModal');
+    $select.val(null).trigger('change');
+}
+
+function initDynamicSelect($element, parentSelector) {
+    if (!$element.length || !$.fn.select2) {
+        return;
+    }
+
+    var $parent = parentSelector ? $(parentSelector) : null;
+    if ($element.hasClass('select2-hidden-accessible')) {
+        $element.select2('destroy');
+    }
+
+    var ajaxUrl = $element.attr('data-ajax--url');
+    $element.select2({
+        theme: 'bootstrap',
+        width: null,
+        containerCssClass: ':all:',
+        minimumInputLength: 1,
+        minimumResultsForSearch: 1,
+        placeholder: $element.attr('data-placeholder') || $element.data('placeholder') || '',
+        dropdownParent: $parent && $parent.length ? $parent : undefined,
+        ajax: {
+            url: ajaxUrl,
+            dataType: 'json',
+            type: 'GET',
+            data: function (params) {
+                return { term: params.term };
+            },
+            processResults: function (data) {
+                return {
+                    results: $.map(data, function (item) {
+                        return {
+                            text: item.value,
+                            id: item.id
+                        };
+                    })
+                };
+            }
+        }
+    });
+}
+
+function configureCustomCategoryEntityModal(type) {
+    type = type || 'item';
+    $('#item-entity-type').val(type);
+    var $inventoryField = $('.entity-field-item');
+    var $customerField = $('.entity-field-customer');
+
+    if (type === 'customer') {
+        $inventoryField.addClass('d-none');
+        $('#item-inventory-id').prop('disabled', true).val(null).trigger('change');
+        $customerField.removeClass('d-none');
+        $('#item-client-id').prop('disabled', false);
+        initDynamicSelect($('#item-client-id'), '#customCategoryItemModal');
+        $('#custom-category-item-modal-title').text('افزودن مشتری به دسته');
+    } else {
+        $customerField.addClass('d-none');
+        $('#item-client-id').prop('disabled', true).val(null).trigger('change');
+        $inventoryField.removeClass('d-none');
+        $('#item-inventory-id').prop('disabled', false);
+        initDynamicSelect($('#item-inventory-id'), '#customCategoryItemModal');
+        $('#custom-category-item-modal-title').text('افزودن کالا به دسته');
+    }
+
+    $('#item-start-date, #item-end-date').val('');
+    initWarehousePersianDatePickers($('#customCategoryItemModal'));
+}
+
+function initWarehousePersianDatePickers($context) {
+    $context = $context && $context.length ? $context : $(document);
+    $context.find('.persian-date-input').each(function () {
+        var inputId = $(this).attr('id');
+        if (!inputId) {
+            return;
+        }
+
+        $('[data-target="' + inputId + '"]').off('click.warehouseDate').on('click.warehouseDate', function (e) {
+            e.preventDefault();
+            openWarehousePersianDatePicker(inputId);
+        });
+
+        $('#' + inputId).off('focus.warehouseDate').on('focus.warehouseDate', function () {
+            openWarehousePersianDatePicker(inputId);
+        });
+    });
+}
+
+function openWarehousePersianDatePicker(inputId) {
+    warehousePersianPickerState.activeInput = inputId;
+    var currentValue = $('#' + inputId).val();
+
+    if (currentValue && currentValue.trim() !== '') {
+        var parts = currentValue.split('/');
+        if (parts.length === 3) {
+            warehousePersianPickerState.selectedDate = {
+                year: parseInt(parts[0]),
+                month: parseInt(parts[1]),
+                day: parseInt(parts[2])
+            };
+        }
+    }
+
+    $('.persian-datepicker-popup').remove();
+    var $popup = buildWarehousePersianPickerPopup();
+    $('body').append($popup);
+
+    var $input = $('#' + inputId);
+    var offset = $input.offset();
+    $popup.css({
+        top: offset.top + $input.outerHeight() + 6,
+        left: offset.left
+    });
+
+    $(document).off('click.warehouse-picker').on('click.warehouse-picker', function (e) {
+        if (!$(e.target).closest('.persian-datepicker-popup').length &&
+            !$(e.target).closest('#' + inputId).length &&
+            !$(e.target).closest('[data-target="' + inputId + '"]').length) {
+            closeWarehousePersianDatePicker();
+        }
+    });
+}
+
+function buildWarehousePersianPickerPopup() {
+    var current = warehousePersianPickerState.selectedDate;
+    var $popup = $('<div class="persian-datepicker-popup" id="warehouse-persian-picker"></div>');
+
+    var header = $(
+        '<div class="d-flex justify-content-between align-items-center mb-3">' +
+            '<h6 class="mb-0">انتخاب تاریخ</h6>' +
+            '<button type="button" class="btn btn-link p-0 text-dark" aria-label="Close">&times;</button>' +
+        '</div>'
+    );
+    header.find('button').on('click', closeWarehousePersianDatePicker);
+
+    var selectors =
+        '<div class="row g-2 mb-3">' +
+            '<div class="col-6">' +
+                '<label class="form-label mb-1">سال</label>' +
+                '<select class="form-select form-select-sm" id="warehouse-picker-year">' +
+                    Array.from({ length: 40 }, function (_, index) {
+                        var year = 1385 + index;
+                        var selected = year === current.year ? 'selected' : '';
+                        return '<option value="' + year + '" ' + selected + '>' + year + '</option>';
+                    }).join('') +
+                '</select>' +
+            '</div>' +
+            '<div class="col-6">' +
+                '<label class="form-label mb-1">ماه</label>' +
+                '<select class="form-select form-select-sm" id="warehouse-picker-month">' +
+                    warehousePersianMonths.map(function (month, index) {
+                        var selected = (index + 1) === current.month ? 'selected' : '';
+                        return '<option value="' + (index + 1) + '" ' + selected + '>' + month + '</option>';
+                    }).join('') +
+                '</select>' +
+            '</div>' +
+        '</div>';
+
+    var calendarContainer = '<div class="warehouse-calendar mb-3"></div>';
+    var actions =
+        '<div class="d-flex justify-content-end gap-2">' +
+            '<button type="button" class="btn btn-sm btn-secondary" id="warehouse-picker-cancel">لغو</button>' +
+            '<button type="button" class="btn btn-sm btn-primary" id="warehouse-picker-confirm">تأیید</button>' +
+        '</div>';
+
+    $popup.append(header, selectors, calendarContainer, actions);
+    renderWarehouseCalendarDays($popup);
+
+    $popup.on('change', '#warehouse-picker-year, #warehouse-picker-month', function () {
+        warehousePersianPickerState.selectedDate.year = parseInt($('#warehouse-picker-year').val());
+        warehousePersianPickerState.selectedDate.month = parseInt($('#warehouse-picker-month').val());
+        renderWarehouseCalendarDays($popup);
+    });
+
+    $popup.on('click', '.warehouse-calendar-day', function () {
+        warehousePersianPickerState.selectedDate.day = parseInt($(this).data('day'));
+        renderWarehouseCalendarDays($popup);
+    });
+
+    $popup.on('click', '#warehouse-picker-confirm', function () {
+        confirmWarehousePersianDate();
+    });
+
+    $popup.on('click', '#warehouse-picker-cancel', function () {
+        closeWarehousePersianDatePicker();
+    });
+
+    return $popup;
+}
+
+function renderWarehouseCalendarDays($popup) {
+    var container = $popup.find('.warehouse-calendar');
+    var state = warehousePersianPickerState.selectedDate;
+    var daysInMonth = state.month <= 6 ? 31 : (state.month <= 11 ? 30 : 29);
+    var daysHtml = '<div class="d-grid" style="grid-template-columns: repeat(7, 1fr); gap: 6px;">' +
+        ['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج'].map(function (day) {
+            return '<div class="text-center fw-bold text-muted">' + day + '</div>';
+        }).join('') +
+        Array.from({ length: daysInMonth }, function (_, index) {
+            var day = index + 1;
+            var isSelected = day === state.day;
+            return '<div class="warehouse-calendar-day text-center ' + (isSelected ? 'selected' : '') + '" data-day="' + day + '">' + day + '</div>';
+        }).join('') +
+        '</div>';
+    container.html(daysHtml);
+}
+
+function confirmWarehousePersianDate() {
+    if (!warehousePersianPickerState.activeInput) {
+        return;
+    }
+    var date = warehousePersianPickerState.selectedDate;
+    var value = date.year + '/' + String(date.month).padStart(2, '0') + '/' + String(date.day).padStart(2, '0');
+    $('#' + warehousePersianPickerState.activeInput).val(value).trigger('change');
+    closeWarehousePersianDatePicker();
+}
+
+function closeWarehousePersianDatePicker() {
+    $('.persian-datepicker-popup').remove();
+    $(document).off('click.warehouse-picker');
+    warehousePersianPickerState.activeInput = null;
+}
 
 function setupAjaxDefaults() {
     var token = $('meta[name="csrf-token"]').attr('content');
@@ -54,6 +360,7 @@ function initWarehouseReports() {
     initCustomCategoryPanel();
     initInventoryAlertPanel();
     initOutsideInventoryTabs();
+    initCategoryFormEnhancements();
 
     $(document).off('click', '#warehouse-tabs .nav-link').on('click', '#warehouse-tabs .nav-link', function (e) {
         e.preventDefault();
@@ -399,7 +706,7 @@ function renderCustomActions(summary) {
                         '<h6>' + action.title + '</h6>' +
                         '<p>' + action.description + '</p>' +
                     '</div>' +
-                '<button type="button" class="btn btn-sm btn-outline-dark js-action-cta" data-tab="' + (action.tab || '') + '" data-action="' + (action.action || '') + '">' +
+                '<button type="button" class="btn btn-sm btn-outline-dark js-action-cta" data-tab="' + (action.tab || '') + '" data-action="' + (action.action || '') + '" onclick="return window.handleWarehouseActionCTA(this);">' +
                         (action.cta || 'مشاهده') +
                     '</button>' +
                 '</div>' +
@@ -414,10 +721,7 @@ $(document).off('click', '#btn-refresh-actions').on('click', function () {
     loadSummary();
 });
 
-$(document).off('click', '.js-action-cta').on('click', function () {
-    var tab = $(this).data('tab');
-    var action = $(this).data('action');
-
+function processWarehouseActionCTA(tab, action) {
     if (tab) {
         $('#warehouse-tabs a[href="' + tab + '"]').trigger('click');
     }
@@ -433,13 +737,35 @@ $(document).off('click', '.js-action-cta').on('click', function () {
             $('#expiry-status-filter').val('expired').trigger('change');
             break;
         case 'open-alert-panel':
-            $('#btn-open-alert-panel').trigger('click');
+            if (!inventoryAlertsCache.length) {
+                fetchInventoryAlerts();
+            }
+            resetInventoryAlertForm();
+            toggleInventoryAlertPanel(false);
+            showModal('#inventoryAlertModal');
             break;
         case 'open-category-panel':
-            $('#btn-open-custom-panel').trigger('click');
+            if (!customCategoriesCache.length) {
+                fetchCustomCategories();
+            }
+            resetCustomCategoryForm();
+            openCustomCategoryModal();
             break;
     }
+}
+
+$(document).off('click', '.js-action-cta').on('click', function () {
+    processWarehouseActionCTA($(this).data('tab'), $(this).data('action'));
 });
+
+window.handleWarehouseActionCTA = function(element) {
+    if (!element) {
+        return false;
+    }
+    var $el = $(element);
+    processWarehouseActionCTA($el.data('tab'), $el.data('action'));
+    return false;
+};
 
 function initCustomCategoryPanel() {
     $(document).off('click', '#btn-open-custom-panel').on('click', '#btn-open-custom-panel', function () {
@@ -479,9 +805,11 @@ function initCustomCategoryPanel() {
         }
     });
 
-    $(document).off('click', '.js-attach-item').on('click', '.js-attach-item', function () {
+    $(document).off('click', '.js-attach-entity').on('click', '.js-attach-entity', function () {
         var categoryId = $(this).data('id');
+        var categoryType = $(this).data('type') || 'item';
         $('#item-category-id').val(categoryId);
+        configureCustomCategoryEntityModal(categoryType);
         toggleCustomCategoryPanel(false);
         showModal('#customCategoryItemModal');
     });
@@ -490,6 +818,7 @@ function initCustomCategoryPanel() {
 function openCustomCategoryModal() {
     toggleCustomCategoryPanel(false);
     showModal('#customCategoryModal');
+    initWarehousePersianDatePickers($('#customCategoryModal'));
 }
 
 function toggleCustomCategoryPanel(open) {
@@ -541,20 +870,31 @@ function renderCustomCategoryList(categories) {
         var color = category.category_color || '#e5e7eb';
         var typeLabel = category.category_type === 'customer' ? 'مشتری' : 'کالا';
         var activeBadge = category.is_active ? '<span class="badge badge-success ms-2">فعال</span>' : '<span class="badge badge-secondary ms-2">غیرفعال</span>';
+        var entitiesCount = category.entities_count || category.items_count || 0;
+        var iconHtml = '<span class="category-avatar fallback"><i class="ti-tag"></i></span>';
+
+        if (category.category_image_url) {
+            iconHtml = '<span class="category-avatar"><img src="' + category.category_image_url + '" alt=""></span>';
+        } else if (category.category_icon) {
+            iconHtml = '<span class="category-avatar has-icon"><i class="' + category.category_icon + '"></i></span>';
+        }
 
         return (
             '<div class="category-card mb-3" style="border-color:' + color + '" data-id="' + category.category_id + '">' +
                 '<div class="d-flex justify-content-between align-items-start gap-3">' +
-                    '<div>' +
-                        '<div class="d-flex align-items-center gap-2 mb-1">' +
-                            '<span class="badge" style="background-color:' + color + ';color:#1f2933;">' + category.category_name + '</span>' +
-                            '<small class="text-muted">' + typeLabel + '</small>' +
-                            activeBadge +
+                    '<div class="d-flex align-items-start gap-3">' +
+                        iconHtml +
+                        '<div>' +
+                            '<div class="d-flex align-items-center gap-2 mb-1">' +
+                                '<span class="badge" style="background-color:' + color + ';color:#1f2933;">' + category.category_name + '</span>' +
+                                '<small class="text-muted">' + typeLabel + '</small>' +
+                                activeBadge +
+                            '</div>' +
+                            '<small class="text-muted">' + entitiesCount + ' عضو ثبت شده</small>' +
                         '</div>' +
-                        '<small class="text-muted">' + (category.items_count || 0) + ' مورد ثبت شده</small>' +
                     '</div>' +
                     '<div class="btn-group btn-group-sm category-actions" role="group">' +
-                        '<button type="button" class="btn btn-light js-attach-item" data-id="' + category.category_id + '"><i class="ti-plus"></i></button>' +
+                        '<button type="button" class="btn btn-light js-attach-entity" data-id="' + category.category_id + '" data-type="' + category.category_type + '"><i class="ti-plus"></i></button>' +
                         '<button type="button" class="btn btn-light js-edit-custom-category" data-id="' + category.category_id + '"><i class="ti-pencil"></i></button>' +
                         '<button type="button" class="btn btn-light js-delete-custom-category" data-id="' + category.category_id + '"><i class="ti-trash"></i></button>' +
                     '</div>' +
@@ -592,18 +932,50 @@ function resetCustomCategoryForm() {
         $form[0].reset();
     }
     $('#custom-category-id').val('');
+    $('#custom-category-image-upload').val('');
+    $('#custom-category-image-remove').val(0);
+    $('#custom-category-image').val('');
+    renderCategoryImagePreview($('#custom-category-image-preview'), null);
+    $('#custom-category-type').val('item');
+    updateCategoryEntitySelector('item');
+    var $entities = $('#custom-category-entities');
+    if ($entities.length) {
+        $entities.val(null).trigger('change');
+    }
+    initWarehousePersianDatePickers($('#customCategoryModal'));
 }
 
 function populateCustomCategoryForm(category) {
     $('#custom-category-id').val(category.category_id);
     $('#custom-category-name').val(category.category_name);
     $('#custom-category-type').val(category.category_type || 'item');
+    updateCategoryEntitySelector(category.category_type || 'item');
     $('#custom-category-color').val(category.category_color || '#5a9ba5');
     $('#custom-category-icon').val(category.category_icon || '');
     $('#custom-category-image').val(category.category_image || '');
+    $('#custom-category-image-upload').val('');
+    $('#custom-category-image-remove').val(0);
+    renderCategoryImagePreview($('#custom-category-image-preview'), category.category_image_url || null);
     $('#custom-category-description').val(category.description || '');
-    $('#custom-category-start-date').val(category.start_date || '');
-    $('#custom-category-end-date').val(category.end_date || '');
+    $('#custom-category-start-date').val(category.start_date_persian || category.start_date || '');
+    $('#custom-category-end-date').val(category.end_date_persian || category.end_date || '');
+
+    var $entities = $('#custom-category-entities');
+    if ($entities.length) {
+        $entities.empty();
+        var collection = category.category_type === 'customer' ? (category.clients || []) : (category.items || []);
+        collection.forEach(function (entity) {
+            var value = category.category_type === 'customer' ? entity.client_id : entity.inventory_id;
+            var label = category.category_type === 'customer'
+                ? (entity.client_name || ('مشتری #' + entity.client_id))
+                : ((entity.inventory_name || 'کالا') + (entity.inventory_code ? ' (' + entity.inventory_code + ')' : ''));
+            var option = new Option(label, value, true, true);
+            $entities.append(option);
+        });
+        $entities.trigger('change');
+    }
+
+    initWarehousePersianDatePickers($('#customCategoryModal'));
 }
 
 function submitCustomCategoryForm(event) {
@@ -654,6 +1026,8 @@ function submitCustomCategoryItemForm(event) {
             if (response.success) {
                 $('#customCategoryItemModal').modal('hide');
                 $form[0].reset();
+                $('#item-inventory-id, #item-client-id').val(null).trigger('change');
+                configureCustomCategoryEntityModal('item');
                 showWarehouseToast('success', response.message || 'کالا ثبت شد');
                 fetchCustomCategories();
             } else {
