@@ -62,3 +62,4 @@ class CreateInventoryTransactionsTable extends Migration
 }
 
 
+

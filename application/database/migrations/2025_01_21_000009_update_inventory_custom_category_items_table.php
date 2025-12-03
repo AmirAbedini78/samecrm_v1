@@ -56,3 +56,4 @@ class UpdateInventoryCustomCategoryItemsTable extends Migration
 }
 
 
+

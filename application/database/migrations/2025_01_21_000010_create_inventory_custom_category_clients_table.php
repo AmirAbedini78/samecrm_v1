@@ -42,3 +42,4 @@ class CreateInventoryCustomCategoryClientsTable extends Migration
     }
 }
 
+

@@ -43,3 +43,4 @@ class AddFieldsToInventoryTable extends Migration
 }
 
 
+

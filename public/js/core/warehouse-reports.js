@@ -994,7 +994,7 @@ function submitCustomCategoryForm(event) {
         data: $form.serialize(),
         success: function (response) {
             if (response.success) {
-                $('#customCategoryModal').modal('hide');
+                hideModal('#customCategoryModal');
                 showWarehouseToast('success', response.message || 'دسته‌بندی ذخیره شد');
                 fetchCustomCategories();
             } else {
@@ -1024,7 +1024,7 @@ function submitCustomCategoryItemForm(event) {
         data: $form.serialize(),
         success: function (response) {
             if (response.success) {
-                $('#customCategoryItemModal').modal('hide');
+                hideModal('#customCategoryItemModal');
                 $form[0].reset();
                 $('#item-inventory-id, #item-client-id').val(null).trigger('change');
                 configureCustomCategoryEntityModal('item');
@@ -1252,7 +1252,7 @@ function submitInventoryAlertForm(event) {
         data: $form.serialize(),
         success: function (response) {
             if (response.success) {
-                $('#inventoryAlertModal').modal('hide');
+                hideModal('#inventoryAlertModal');
                 showWarehouseToast('success', response.message || 'هشدار ذخیره شد');
                 fetchInventoryAlerts();
             } else {
@@ -1347,11 +1347,8 @@ function fallbackDisplayModal($modal) {
 }
 
 function fallbackHideModal($modal) {
-    $modal.removeClass('show').css('display', 'none');
-    if (!$('.modal.show').length) {
-        $('body').removeClass('modal-open');
-        $('.modal-backdrop.warehouse-modal-backdrop').remove();
-    }
+    $modal.removeClass('show').css('display', 'none').removeAttr('aria-modal');
+    cleanupWarehouseModalState();
 }
 
 $(document).off('click.warehouseFallback', '[data-dismiss="modal"]').on('click.warehouseFallback', '[data-dismiss="modal"]', function (e) {
@@ -1361,6 +1358,41 @@ $(document).off('click.warehouseFallback', '[data-dismiss="modal"]').on('click.w
         fallbackHideModal($modal);
     }
 });
+
+function hideModal(selector) {
+    var $modal = typeof selector === 'string' ? $(selector) : selector;
+    if (!$modal || !$modal.length) {
+        return;
+    }
+    if ($.fn.modal) {
+        $modal.off('hidden.warehouseManual').on('hidden.warehouseManual', function () {
+            cleanupWarehouseModalState();
+            $modal.off('hidden.warehouseManual');
+        });
+        $modal.modal('hide');
+        setTimeout(function () {
+            if ($modal.hasClass('show')) {
+                fallbackHideModal($modal);
+            }
+        }, 300);
+    } else {
+        fallbackHideModal($modal);
+    }
+}
+
+$(document).off('click.warehouseModalClose').on('click.warehouseModalClose', '.modal [data-dismiss="modal"], .modal .close', function (e) {
+    e.preventDefault();
+    var $modal = $(this).closest('.modal');
+    hideModal($modal);
+});
+
+function cleanupWarehouseModalState() {
+    if ($('.modal.show').length) {
+        return;
+    }
+    $('body').removeClass('modal-open');
+    $('.modal-backdrop').remove();
+}
 
 function deleteInventoryAlert(alertId) {
     $.ajax({

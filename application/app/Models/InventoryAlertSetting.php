@@ -77,3 +77,4 @@ class InventoryAlertSetting extends Model
 }
 
 
+

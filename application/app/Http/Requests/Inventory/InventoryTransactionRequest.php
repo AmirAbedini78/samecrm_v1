@@ -58,3 +58,4 @@ class InventoryTransactionRequest extends FormRequest
 }
 
 
+
