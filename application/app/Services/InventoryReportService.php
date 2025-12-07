@@ -372,6 +372,45 @@ protected function getMonthlySalesTrend($filters = [])
      * @param array $filters
      * @return \Illuminate\Database\Eloquent\Collection
      */
+    /**
+     * Get transaction flow report with detailed transaction data
+     *
+     * @param array $filters
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getTransactionFlowReport($filters = [])
+    {
+        $query = InventoryTransaction::with(['inventory', 'user']);
+
+        if (isset($filters['inventory_id']) && $filters['inventory_id']) {
+            $query->where('inventory_id', $filters['inventory_id']);
+        }
+
+        if (isset($filters['transaction_type']) && $filters['transaction_type']) {
+            $query->where('transaction_type', $filters['transaction_type']);
+        }
+
+        if (isset($filters['from_date']) && $filters['from_date']) {
+            $query->where('transaction_date', '>=', $filters['from_date']);
+        }
+
+        if (isset($filters['to_date']) && $filters['to_date']) {
+            $query->where('transaction_date', '<=', $filters['to_date']);
+        }
+
+        if (isset($filters['document_number']) && $filters['document_number']) {
+            $query->where('document_number', 'LIKE', '%' . $filters['document_number'] . '%');
+        }
+
+        if (isset($filters['base_document_number']) && $filters['base_document_number']) {
+            $query->where('base_document_number', 'LIKE', '%' . $filters['base_document_number'] . '%');
+        }
+
+        return $query->orderBy('transaction_date', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
+
     public function getTransactions($filters = [])
     {
         $query = InventoryTransaction::with(['inventory', 'user']);

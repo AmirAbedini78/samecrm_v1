@@ -2898,3 +2898,43 @@
 #21 C:\\laragon\\www\\samecrm_v1\\application\\artisan(35): Illuminate\\Foundation\\Console\\Kernel->handle(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
 #22 {main}
 "} 
+[2025-12-05 09:40:30] local.ERROR: Debug Error {"message":"Command \"migarte\" is not defined.
+
+Did you mean one of these?
+    migrate
+    migrate:fresh
+    migrate:install
+    migrate:refresh
+    migrate:reset
+    migrate:rollback
+    migrate:status","file":"C:\\laragon\\www\\samecrm_v1\\application\\vendor\\symfony\\console\\Application.php","line":704,"trace":"#0 C:\\laragon\\www\\samecrm_v1\\application\\vendor\\symfony\\console\\Application.php(260): Symfony\\Component\\Console\\Application->find('migarte')
+#1 C:\\laragon\\www\\samecrm_v1\\application\\vendor\\symfony\\console\\Application.php(169): Symfony\\Component\\Console\\Application->doRun(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#2 C:\\laragon\\www\\samecrm_v1\\application\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Console\\Kernel.php(196): Symfony\\Component\\Console\\Application->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#3 C:\\laragon\\www\\samecrm_v1\\application\\artisan(35): Illuminate\\Foundation\\Console\\Kernel->handle(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#4 {main}","context":{"request_data":[],"headers":{"host":["192.168.217.225"],"user-agent":["Symfony"],"accept":["text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"],"accept-language":["en-us,en;q=0.5"],"accept-charset":["ISO-8859-1,utf-8;q=0.7,*;q=0.7"]},"session_data":[]},"timestamp":"2025-12-05 09:40:28","url":"http://192.168.217.225","method":"GET","user_id":null} 
+[2025-12-05 09:40:30] local.ERROR: Command "migarte" is not defined.
+
+Did you mean one of these?
+    migrate
+    migrate:fresh
+    migrate:install
+    migrate:refresh
+    migrate:reset
+    migrate:rollback
+    migrate:status {"exception":"[object] (Symfony\\Component\\Console\\Exception\\CommandNotFoundException(code: 0): Command \"migarte\" is not defined.
+
+Did you mean one of these?
+    migrate
+    migrate:fresh
+    migrate:install
+    migrate:refresh
+    migrate:reset
+    migrate:rollback
+    migrate:status at C:\\laragon\\www\\samecrm_v1\\application\\vendor\\symfony\\console\\Application.php:704)
+[stacktrace]
+#0 C:\\laragon\\www\\samecrm_v1\\application\\vendor\\symfony\\console\\Application.php(260): Symfony\\Component\\Console\\Application->find('migarte')
+#1 C:\\laragon\\www\\samecrm_v1\\application\\vendor\\symfony\\console\\Application.php(169): Symfony\\Component\\Console\\Application->doRun(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#2 C:\\laragon\\www\\samecrm_v1\\application\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\Console\\Kernel.php(196): Symfony\\Component\\Console\\Application->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#3 C:\\laragon\\www\\samecrm_v1\\application\\artisan(35): Illuminate\\Foundation\\Console\\Kernel->handle(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#4 {main}
+"} 

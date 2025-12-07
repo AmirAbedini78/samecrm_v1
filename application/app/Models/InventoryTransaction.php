@@ -24,7 +24,8 @@ class InventoryTransaction extends Model
     // Fillable fields for mass assignment
     protected $fillable = [
         'inventory_id', 'transaction_type', 'quantity', 'sub_quantity', 'amount',
-        'transaction_date', 'document_number', 'warehouse', 'notes', 'user_id'
+        'transaction_date', 'document_number', 'base_document_number', 'warehouse', 'notes', 'user_id',
+        'unit_price'
     ];
 
     // Relationships

@@ -53,11 +53,22 @@ class InventoryTransactionRepository
             $query->where('user_id', $filters['user_id']);
         }
 
+        // Filter by document_number
+        if (isset($filters['document_number']) && $filters['document_number']) {
+            $query->where('document_number', 'LIKE', '%' . $filters['document_number'] . '%');
+        }
+
+        // Filter by base_document_number
+        if (isset($filters['base_document_number']) && $filters['base_document_number']) {
+            $query->where('base_document_number', 'LIKE', '%' . $filters['base_document_number'] . '%');
+        }
+
         // Search
         if (isset($filters['search']) && $filters['search']) {
             $search = $filters['search'];
             $query->where(function($q) use ($search) {
                 $q->where('document_number', 'LIKE', '%' . $search . '%')
+                  ->orWhere('base_document_number', 'LIKE', '%' . $search . '%')
                   ->orWhere('notes', 'LIKE', '%' . $search . '%')
                   ->orWhereHas('inventory', function($q2) use ($search) {
                       $q2->where('inventory_name', 'LIKE', '%' . $search . '%')

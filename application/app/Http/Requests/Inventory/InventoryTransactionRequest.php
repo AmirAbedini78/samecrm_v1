@@ -28,9 +28,11 @@ class InventoryTransactionRequest extends FormRequest
             'transaction_type' => 'required|in:input,output',
             'quantity' => 'required|numeric|min:0',
             'sub_quantity' => 'nullable|numeric|min:0',
+            'unit_price' => 'nullable|numeric|min:0',
             'amount' => 'nullable|numeric|min:0',
             'transaction_date' => 'required|date',
             'document_number' => 'nullable|string|max:255',
+            'base_document_number' => 'nullable|string|max:255',
             'warehouse' => 'nullable|string|max:255',
             'notes' => 'nullable|string',
         ];

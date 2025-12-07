@@ -1441,6 +1441,18 @@ Route::group(['prefix' => 'import/inventory', 'middleware' => ['auth']], functio
     Route::post("/", "Import\Inventory@store");
 });
 
+//INVENTORY TRANSACTIONS
+Route::group(['prefix' => 'inventory/transactions', 'middleware' => ['auth']], function () {
+    Route::get("/", "InventoryTransactionController@index")->name('inventory.transactions.index');
+    Route::get("/create", "InventoryTransactionController@create")->name('inventory.transactions.create');
+    Route::post("/", "InventoryTransactionController@store")->name('inventory.transactions.store');
+    Route::get("/{id}/edit", "InventoryTransactionController@edit")->name('inventory.transactions.edit');
+    Route::put("/{id}", "InventoryTransactionController@update")->name('inventory.transactions.update');
+    Route::delete("/{id}", "InventoryTransactionController@destroy")->name('inventory.transactions.destroy');
+    Route::get("/import", "InventoryTransactionController@showImport")->name('inventory.transactions.import');
+    Route::post("/import", "InventoryTransactionController@import")->name('inventory.transactions.import.store');
+});
+
 //INVENTORY CUSTOM CATEGORIES
 Route::group(['prefix' => 'inventory/custom-categories', 'middleware' => ['auth']], function () {
     Route::get("/", "InventoryCustomCategoryController@index");
