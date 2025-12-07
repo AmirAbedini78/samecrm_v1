@@ -34,6 +34,7 @@ function initCategoryFormEnhancements() {
     initDynamicSelect($('#custom-category-entities'), '#customCategoryModal');
     initDynamicSelect($('#item-inventory-id'), '#customCategoryItemModal');
     initDynamicSelect($('#item-client-id'), '#customCategoryItemModal');
+    initEntrySelect($('#item-inventory-entry-id'), '#item-inventory-id', { dropdownParent: '#customCategoryItemModal', namespace: '.categoryItem' });
     initWarehousePersianDatePickers($('#customCategoryModal'));
     initWarehousePersianDatePickers($('#customCategoryItemModal'));
     updateCategoryEntitySelector($('#custom-category-type').val() || 'item');
@@ -147,6 +148,137 @@ function initDynamicSelect($element, parentSelector) {
     });
 }
 
+function initEntrySelect($select, inventorySelector, options) {
+    if (!$select.length || !$.fn.select2) {
+        return;
+    }
+
+    if ($select.hasClass('select2-hidden-accessible')) {
+        $select.select2('destroy');
+    }
+
+    options = options || {};
+    var $parent = options.dropdownParent ? $(options.dropdownParent) : null;
+
+    $select.select2({
+        theme: 'bootstrap',
+        width: null,
+        containerCssClass: ':all:',
+        placeholder: $select.data('placeholder') || '',
+        dropdownParent: $parent && $parent.length ? $parent : undefined,
+        minimumResultsForSearch: 1,
+        ajax: createEntrySelectAjaxConfig(inventorySelector)
+    });
+
+    toggleEntrySelectAvailability(inventorySelector, $select);
+
+    $(inventorySelector).off('change.entrySelect' + (options.namespace || '')).on('change.entrySelect' + (options.namespace || ''), function () {
+        toggleEntrySelectAvailability(inventorySelector, $select);
+    });
+}
+
+function initInventoryAlertSelects() {
+    initDynamicSelect($('#alert-inventory-id'), '#inventoryAlertModal');
+    initEntrySelect($('#alert-inventory-entry-id'), '#alert-inventory-id', { dropdownParent: '#inventoryAlertModal', namespace: '.alertForm' });
+}
+
+function setWarehouseSelectValue($select, value, label) {
+    if (!$select.length) {
+        return;
+    }
+    if (!value) {
+        $select.val(null).trigger('change');
+        return;
+    }
+    var optionExists = $select.find('option[value="' + value + '"]').length > 0;
+    if (!optionExists) {
+        var option = new Option(label || value, value, true, true);
+        $select.append(option);
+    }
+    $select.val(value).trigger('change');
+}
+
+function buildInventoryLabel(data) {
+    if (!data || !data.inventory_id) {
+        return '';
+    }
+    var label = data.inventory_name || ('کالا #' + data.inventory_id);
+    if (data.inventory_code) {
+        label += ' (' + data.inventory_code + ')';
+    }
+    return label;
+}
+
+function buildEntryLabel(data, useFallback) {
+    if (!data || (!data.entry_code && !data.lot_number && !data.serial_number && !data.entry_id && !useFallback)) {
+        return '';
+    }
+    var parts = [];
+    if (data.entry_code) {
+        parts.push('سند ' + data.entry_code);
+    }
+    if (data.lot_number) {
+        parts.push('بچ ' + data.lot_number);
+    }
+    if (data.serial_number) {
+        parts.push('سریال ' + data.serial_number);
+    }
+    if (data.expiry_date) {
+        parts.push('انقضا ' + data.expiry_date);
+    }
+    if (data.remaining_quantity !== undefined) {
+        parts.push('باقیمانده ' + data.remaining_quantity);
+    }
+    if (!parts.length && useFallback && data.entry_id) {
+        parts.push('ورود #' + data.entry_id);
+    }
+    return parts.join(' | ');
+}
+
+function createEntrySelectAjaxConfig(inventorySelector) {
+    return {
+        url: '/report/warehouse/inventory-entries',
+        dataType: 'json',
+        delay: 300,
+        data: function (params) {
+            return {
+                inventory_id: $(inventorySelector).val(),
+                search: params.term || '',
+                status: 'available'
+            };
+        },
+        transport: function (params, success, failure) {
+            if (!$(inventorySelector).val()) {
+                return null;
+            }
+            var $request = $.ajax(params);
+            $request.then(success);
+            $request.fail(failure);
+            return $request;
+        },
+        processResults: function (response) {
+            var results = [];
+            if (response && response.data) {
+                results = response.data.map(function (entry) {
+                    return {
+                        id: entry.entry_id,
+                        text: buildEntryLabel(entry, true)
+                    };
+                });
+            }
+            return { results: results };
+        }
+    };
+}
+
+function toggleEntrySelectAvailability(inventorySelector, $select) {
+    var hasInventory = !!$(inventorySelector).val();
+    $select.prop('disabled', !hasInventory);
+    if (!hasInventory) {
+        $select.val(null).trigger('change');
+    }
+}
+
 function configureCustomCategoryEntityModal(type) {
     type = type || 'item';
     $('#item-entity-type').val(type);
@@ -156,6 +288,7 @@ function configureCustomCategoryEntityModal(type) {
     if (type === 'customer') {
         $inventoryField.addClass('d-none');
         $('#item-inventory-id').prop('disabled', true).val(null).trigger('change');
+        $('#item-inventory-entry-id').prop('disabled', true).val(null).trigger('change');
         $customerField.removeClass('d-none');
         $('#item-client-id').prop('disabled', false);
         initDynamicSelect($('#item-client-id'), '#customCategoryItemModal');
@@ -166,6 +299,7 @@ function configureCustomCategoryEntityModal(type) {
         $inventoryField.removeClass('d-none');
         $('#item-inventory-id').prop('disabled', false);
         initDynamicSelect($('#item-inventory-id'), '#customCategoryItemModal');
+        initEntrySelect($('#item-inventory-entry-id'), '#item-inventory-id', { dropdownParent: '#customCategoryItemModal', namespace: '.categoryItem' });
         $('#custom-category-item-modal-title').text('افزودن کالا به دسته');
     }
 
@@ -1080,6 +1214,7 @@ function initInventoryAlertPanel() {
     });
 
     $('#inventory-alert-form').off('submit').on('submit', submitInventoryAlertForm);
+    initInventoryAlertSelects();
 
     $(document).off('click', '.js-alert-edit').on('click', '.js-alert-edit', function () {
         var alertId = $(this).data('id');
@@ -1157,7 +1292,8 @@ function renderInventoryAlertList(alerts) {
 
     var html = alerts.map(function (alert) {
         var statusClass = alert.is_active ? 'active' : 'inactive';
-        var inventoryLabel = alert.inventory_id ? ('کالا #' + alert.inventory_id) : 'هشدار کلی';
+        var inventoryLabel = alert.inventory_id ? buildInventoryLabel(alert) : 'هشدار کلی';
+        var entryLabel = buildEntryLabel(alert);
         var typeMap = {
             expiry: 'انقضا',
             minimum: 'کمبود موجودی',
@@ -1181,7 +1317,7 @@ function renderInventoryAlertList(alerts) {
                             '<strong>' + (typeMap[alert.alert_type] || alert.alert_type) + '</strong>' +
                             '<span class="alert-status-pill ' + statusClass + '">' + (alert.is_active ? 'فعال' : 'غیرفعال') + '</span>' +
                         '</div>' +
-                        '<div class="text-muted small mb-1">' + inventoryLabel + '</div>' +
+                        '<div class="text-muted small mb-1">' + inventoryLabel + (entryLabel ? '<br><span class="text-info">' + entryLabel + '</span>' : '') + '</div>' +
                         '<div class="small mb-1">' +
                             (alert.threshold_days ? ('آستانه روز: ' + alert.threshold_days) : '') +
                             (alert.threshold_value ? (' | آستانه مقدار: ' + alert.threshold_value) : '') +
@@ -1221,11 +1357,15 @@ function resetInventoryAlertForm() {
     $('#alert-id').val('');
     $('#alert-email').prop('checked', true);
     $('#alert-status').prop('checked', true);
+    $('#alert-inventory-id').val(null).trigger('change');
+    $('#alert-inventory-entry-id').val(null).trigger('change').prop('disabled', true);
 }
 
 function populateInventoryAlertForm(alert) {
     $('#alert-id').val(alert.alert_id);
-    $('#alert-inventory-id').val(alert.inventory_id || '');
+    var inventoryLabel = buildInventoryLabel(alert);
+    setWarehouseSelectValue($('#alert-inventory-id'), alert.inventory_id || '', inventoryLabel);
+    setWarehouseSelectValue($('#alert-inventory-entry-id'), alert.inventory_entry_id || '', buildEntryLabel(alert));
     $('#alert-type').val(alert.alert_type);
     $('#alert-threshold-days').val(alert.threshold_days || '');
     $('#alert-threshold-value').val(alert.threshold_value || '');
@@ -1234,6 +1374,7 @@ function populateInventoryAlertForm(alert) {
     $('#alert-email-addresses').val(alert.alert_email_addresses || '');
     $('#alert-phone-numbers').val(alert.alert_phone_numbers || '');
     $('#alert-status').prop('checked', !!alert.is_active);
+    toggleEntrySelectAvailability('#alert-inventory-id', $('#alert-inventory-entry-id'));
 }
 
 function submitInventoryAlertForm(event) {

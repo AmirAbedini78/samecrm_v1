@@ -6,6 +6,7 @@ use App\Helpers\PersianCalendarHelper;
 use App\Models\InventoryCustomCategory;
 use App\Models\InventoryCustomCategoryClient;
 use App\Models\InventoryCustomCategoryItem;
+use App\Models\InventoryEntry;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
@@ -32,6 +33,7 @@ class InventoryCustomCategoryController extends Controller
         try {
             $categories = InventoryCustomCategory::with([
                     'items.inventory:inventory_id,inventory_name,inventory_code',
+                    'items.entry:entry_id,inventory_id,entry_code,lot_number,serial_number,entry_date,expiry_date',
                     'clients.client:client_id,client_company_name'
                 ])
                 ->where('user_id', Auth::id())
@@ -77,10 +79,14 @@ class InventoryCustomCategoryController extends Controller
                 'end_date' => 'nullable|string',
                 'entity_ids' => 'nullable|array',
                 'entity_ids.*' => 'numeric',
+                'entity_entries' => 'nullable|array',
+                'entity_entries.*.inventory_id' => 'required_with:entity_entries|numeric',
+                'entity_entries.*.inventory_entry_id' => 'nullable|numeric',
             ]);
 
-            $data = Arr::except($validated, ['entity_ids', 'category_image_upload', 'category_image_remove']);
+            $data = Arr::except($validated, ['entity_ids', 'entity_entries', 'category_image_upload', 'category_image_remove']);
             $entityIds = array_filter($validated['entity_ids'] ?? []);
+            $entityEntries = $this->normalizeEntityEntryPayloads($request->input('entity_entries', []));
 
             $data['start_date'] = $this->normalizeDateInput($request->input('start_date'), 'start_date');
             $data['end_date'] = $this->normalizeDateInput($request->input('end_date'), 'end_date');
@@ -94,7 +100,7 @@ class InventoryCustomCategoryController extends Controller
             $data['user_id'] = Auth::id();
 
             $category = InventoryCustomCategory::create($data);
-            $this->attachInitialEntities($category, $entityIds);
+            $this->attachInitialEntities($category, $entityIds, $entityEntries);
 
             return response()->json([
                 'success' => true,
@@ -137,10 +143,14 @@ class InventoryCustomCategoryController extends Controller
                 'end_date' => 'nullable|string',
                 'entity_ids' => 'nullable|array',
                 'entity_ids.*' => 'numeric',
+                'entity_entries' => 'nullable|array',
+                'entity_entries.*.inventory_id' => 'required_with:entity_entries|numeric',
+                'entity_entries.*.inventory_entry_id' => 'nullable|numeric',
             ]);
 
-            $data = Arr::except($validated, ['entity_ids', 'category_image_upload', 'category_image_remove']);
+            $data = Arr::except($validated, ['entity_ids', 'entity_entries', 'category_image_upload', 'category_image_remove']);
             $entityIds = array_filter($validated['entity_ids'] ?? []);
+            $entityEntries = $this->normalizeEntityEntryPayloads($request->input('entity_entries', []));
 
             if (array_key_exists('start_date', $data)) {
                 $data['start_date'] = $this->normalizeDateInput($request->input('start_date'), 'start_date');
@@ -161,8 +171,8 @@ class InventoryCustomCategoryController extends Controller
                 $category->update($data);
             }
 
-            if (!empty($entityIds)) {
-                $this->attachInitialEntities($category, $entityIds);
+            if (!empty($entityIds) || !empty($entityEntries)) {
+                $this->attachInitialEntities($category, $entityIds, $entityEntries);
             }
 
             return response()->json([
@@ -279,6 +289,7 @@ class InventoryCustomCategoryController extends Controller
 
             $data = $request->validate([
                 'inventory_id' => 'required|exists:inventory,inventory_id',
+                'inventory_entry_id' => 'nullable|exists:inventory_entries,entry_id',
                 'alias_name' => 'nullable|string|max:255',
                 'alias_color' => 'nullable|string|max:20',
                 'alias_image' => 'nullable|string|max:255',
@@ -290,13 +301,15 @@ class InventoryCustomCategoryController extends Controller
             $data['start_date'] = $this->normalizeDateInput($request->input('start_date'), 'start_date');
             $data['end_date'] = $this->normalizeDateInput($request->input('end_date'), 'end_date');
             $this->validateDateOrder($data['start_date'], $data['end_date']);
+            $this->assertEntryMatchesInventory($data['inventory_entry_id'] ?? null, $data['inventory_id']);
 
             $item = InventoryCustomCategoryItem::updateOrCreate(
                 [
                     'inventory_id' => $data['inventory_id'],
+                    'inventory_entry_id' => $data['inventory_entry_id'] ?? null,
                     'custom_category_id' => $category->category_id,
                 ],
-                Arr::except($data, ['inventory_id'])
+                Arr::except($data, ['inventory_id', 'inventory_entry_id'])
             );
 
             return response()->json([
@@ -350,11 +363,16 @@ class InventoryCustomCategoryController extends Controller
 
             $data = $request->validate([
                 'inventory_id' => 'required|exists:inventory,inventory_id',
+                'inventory_entry_id' => 'nullable|exists:inventory_entries,entry_id',
             ]);
 
-            InventoryCustomCategoryItem::where('inventory_id', $data['inventory_id'])
+            $itemsQuery = InventoryCustomCategoryItem::where('inventory_id', $data['inventory_id'])
                 ->where('custom_category_id', $category->category_id)
-                ->delete();
+                ->when($data['inventory_entry_id'] ?? null, function ($query, $entryId) {
+                    $query->where('inventory_entry_id', $entryId);
+                });
+
+            $itemsQuery->delete();
 
             return response()->json([
                 'success' => true,
@@ -375,6 +393,7 @@ class InventoryCustomCategoryController extends Controller
     {
         $category->loadMissing([
             'items.inventory:inventory_id,inventory_name,inventory_code',
+            'items.entry:entry_id,inventory_id,entry_code,lot_number,serial_number,entry_date,expiry_date',
             'clients.client:client_id,client_company_name'
         ]);
 
@@ -416,8 +435,20 @@ class InventoryCustomCategoryController extends Controller
         return [
             'id' => $item->id,
             'inventory_id' => $item->inventory_id,
+            'inventory_entry_id' => $item->inventory_entry_id,
             'inventory_name' => optional($item->inventory)->inventory_name,
             'inventory_code' => optional($item->inventory)->inventory_code,
+            'entry_code' => optional($item->entry)->entry_code,
+            'lot_number' => optional($item->entry)->lot_number,
+            'serial_number' => optional($item->entry)->serial_number,
+            'entry_date' => optional($item->entry?->entry_date)->format('Y-m-d'),
+            'entry_date_persian' => $item->entry && $item->entry->entry_date
+                ? PersianCalendarHelper::gregorianToPersian($item->entry->entry_date->format('Y-m-d'))
+                : null,
+            'expiry_date' => optional($item->entry?->expiry_date)->format('Y-m-d'),
+            'expiry_date_persian' => $item->entry && $item->entry->expiry_date
+                ? PersianCalendarHelper::gregorianToPersian($item->entry->expiry_date->format('Y-m-d'))
+                : null,
             'alias_name' => $item->alias_name,
             'alias_color' => $item->alias_color,
             'alias_image' => $item->alias_image,
@@ -550,9 +581,9 @@ class InventoryCustomCategoryController extends Controller
         Storage::disk('public')->delete($cleanPath);
     }
 
-    private function attachInitialEntities(InventoryCustomCategory $category, array $entityIds = []): void
+    private function attachInitialEntities(InventoryCustomCategory $category, array $entityIds = [], array $entityEntries = []): void
     {
-        if (empty($entityIds)) {
+        if (empty($entityIds) && empty($entityEntries)) {
             return;
         }
 
@@ -573,18 +604,57 @@ class InventoryCustomCategoryController extends Controller
             return;
         }
 
-        foreach ($entityIds as $inventoryId) {
+        $payloads = !empty($entityEntries) ? $entityEntries : array_map(function ($id) {
+            return ['inventory_id' => (int) $id, 'inventory_entry_id' => null];
+        }, $entityIds);
+
+        foreach ($payloads as $payload) {
+            $inventoryId = (int) Arr::get($payload, 'inventory_id');
+            $entryId = Arr::get($payload, 'inventory_entry_id');
+
             $inventoryId = (int) $inventoryId;
             if (!$inventoryId) {
                 continue;
             }
+            $this->assertEntryMatchesInventory($entryId ? (int) $entryId : null, $inventoryId);
             InventoryCustomCategoryItem::updateOrCreate(
                 [
                     'custom_category_id' => $category->category_id,
                     'inventory_id' => $inventoryId,
+                    'inventory_entry_id' => $entryId,
                 ],
                 []
             );
+        }
+    }
+
+    private function normalizeEntityEntryPayloads(array $rows): array
+    {
+        if (empty($rows)) {
+            return [];
+        }
+
+        return collect($rows)->map(function ($row) {
+            return [
+                'inventory_id' => isset($row['inventory_id']) ? (int) $row['inventory_id'] : null,
+                'inventory_entry_id' => isset($row['inventory_entry_id']) ? (int) $row['inventory_entry_id'] : null,
+            ];
+        })->filter(function ($row) {
+            return !empty($row['inventory_id']);
+        })->values()->toArray();
+    }
+
+    private function assertEntryMatchesInventory(?int $entryId, ?int $inventoryId): void
+    {
+        if (!$entryId || !$inventoryId) {
+            return;
+        }
+
+        $entry = InventoryEntry::find($entryId);
+        if (!$entry || $entry->inventory_id !== $inventoryId) {
+            throw ValidationException::withMessages([
+                'inventory_entry_id' => 'ورود انتخاب‌شده با کالا مطابقت ندارد.',
+            ]);
         }
     }
 }

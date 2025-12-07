@@ -92,6 +92,9 @@
                         <small class="text-muted">بدون جابجایی تب‌ها، نتیجه بلافاصله به‌روزرسانی می‌شود</small>
                     </div>
                     <div class="toolbar-actions">
+                        <a href="/import/inventory-entry" class="btn btn-outline-info btn-sm" title="ایمپورت ورودهای انبار">
+                            <i class="ti-upload"></i> ایمپورت ورودها
+                        </a>
                         <button class="btn btn-outline-secondary btn-sm" id="btn-open-custom-panel">
                             <i class="ti-layout"></i> دسته‌های دلخواه
                         </button>
@@ -380,6 +383,11 @@
                         <select class="form-control js-select2-basic-search-modal" id="item-inventory-id" name="inventory_id" data-ajax--url="{{ url('/feed/inventory-items') }}"></select>
                         <small class="text-muted">نام یا کد کالا را جستجو کنید.</small>
                     </div>
+                    <div class="form-group entity-field entity-field-item">
+                        <label>انتخاب ورود/بچ (اختیاری)</label>
+                        <select class="form-control js-select2-basic-search-modal" id="item-inventory-entry-id" name="inventory_entry_id" data-placeholder="ابتدا کالا را انتخاب کنید" disabled></select>
+                        <small class="text-muted">پس از انتخاب کالا، ورودهای مرتبط برای دسته‌بندی سطح بچ نمایش داده می‌شود.</small>
+                    </div>
                     <div class="form-group entity-field entity-field-customer d-none">
                         <label>انتخاب مشتری</label>
                         <select class="form-control js-select2-basic-search-modal" id="item-client-id" name="client_id" data-ajax--url="{{ url('/feed/company_names') }}"></select>
@@ -486,8 +494,14 @@
                 <div class="modal-body">
                     <input type="hidden" id="alert-id" name="alert_id">
                     <div class="form-group">
-                        <label>شناسه کالا (اختیاری برای هشدار کلی)</label>
-                        <input type="number" class="form-control" id="alert-inventory-id" name="inventory_id" placeholder="مثال: 1024">
+                        <label>انتخاب کالا (اختیاری برای هشدار کلی)</label>
+                        <select class="form-control js-select2-basic-search-modal" id="alert-inventory-id" name="inventory_id" data-ajax--url="{{ url('/feed/inventory-items') }}" data-placeholder="نام یا کد کالا"></select>
+                        <small class="text-muted">در صورت خالی گذاشتن، هشدار برای کل موجودی اعمال می‌شود.</small>
+                    </div>
+                    <div class="form-group">
+                        <label>ورود/بچ خاص (اختیاری)</label>
+                        <select class="form-control js-select2-basic-search-modal" id="alert-inventory-entry-id" name="inventory_entry_id" data-placeholder="ابتدا کالا را انتخاب کنید" disabled></select>
+                        <small class="text-muted">برای هشدار دقیق روی بچ یا سریال خاص، از این بخش استفاده کنید.</small>
                     </div>
                     <div class="form-group">
                         <label>نوع هشدار</label>

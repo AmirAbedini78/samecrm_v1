@@ -8,6 +8,7 @@ use App\Repositories\InventoryReportRepository;
 use App\Http\Responses\Reports\Warehouse\WarehouseReportsResponse;
 use App\Models\Category;
 use App\Models\InventoryCustomCategory;
+use App\Models\InventoryEntry;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -248,6 +249,153 @@ class WarehouseReportsController extends Controller
     }
 
     /**
+     * List all inventory entries with filters
+     */
+    public function listInventoryEntries(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'inventory_id' => 'nullable|exists:inventory,inventory_id',
+                'status' => 'nullable|in:all,expired,near_expiry,available',
+                'near_expiry_days' => 'nullable|integer|min:1|max:365',
+                'search' => 'nullable|string|max:120',
+                'warehouse' => 'nullable|string|max:255',
+                'from_date' => 'nullable|date',
+                'to_date' => 'nullable|date|after_or_equal:from_date',
+            ]);
+
+            $status = $validated['status'] ?? 'all';
+            $nearExpiryDays = $validated['near_expiry_days'] ?? 30;
+
+            $query = InventoryEntry::with('inventory:inventory_id,inventory_name,inventory_code');
+
+            if (!empty($validated['inventory_id'])) {
+                $query->where('inventory_id', $validated['inventory_id']);
+            }
+
+            if (!empty($validated['search'])) {
+                $query->where(function ($builder) use ($validated) {
+                    $builder->where('entry_code', 'like', '%' . $validated['search'] . '%')
+                        ->orWhere('document_number', 'like', '%' . $validated['search'] . '%')
+                        ->orWhereHas('inventory', function ($q) use ($validated) {
+                            $q->where('inventory_name', 'like', '%' . $validated['search'] . '%')
+                                ->orWhere('inventory_code', 'like', '%' . $validated['search'] . '%');
+                        });
+                });
+            }
+
+            if (!empty($validated['from_date'])) {
+                $query->where('entry_date', '>=', $validated['from_date']);
+            }
+
+            if (!empty($validated['to_date'])) {
+                $query->where('entry_date', '<=', $validated['to_date']);
+            }
+
+            if ($status === 'expired') {
+                $query->whereNotNull('expiry_date')
+                    ->where('expiry_date', '<', now()->format('Y-m-d'));
+            } elseif ($status === 'near_expiry') {
+                $query->whereNotNull('expiry_date')
+                    ->whereBetween('expiry_date', [
+                        now()->format('Y-m-d'),
+                        now()->addDays($nearExpiryDays)->format('Y-m-d'),
+                    ]);
+            } elseif ($status === 'available') {
+                $query->where(function ($builder) {
+                    $builder->whereNull('expiry_date')
+                        ->orWhere('expiry_date', '>=', now()->format('Y-m-d'));
+                });
+            }
+
+            $entries = $query->orderByDesc('entry_date')
+                ->orderByDesc('entry_id')
+                ->get()
+                ->map(function (InventoryEntry $entry) {
+                    return [
+                        'entry_id' => $entry->entry_id,
+                        'inventory_id' => $entry->inventory_id,
+                        'inventory_name' => optional($entry->inventory)->inventory_name,
+                        'inventory_code' => optional($entry->inventory)->inventory_code,
+                        'entry_date' => optional($entry->entry_date)->format('Y-m-d'),
+                        'entry_code' => $entry->entry_code,
+                        'entry_type' => $entry->entry_type,
+                        'document_number' => $entry->document_number,
+                        'quantity' => $entry->quantity,
+                        'unit_price' => $entry->unit_price,
+                        'total_amount' => $entry->total_amount,
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'data' => $entries,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('List Inventory Entries Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Get inventory entry batches for a given SKU.
+     */
+    public function getInventoryEntries(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'inventory_id' => 'required|exists:inventory,inventory_id',
+                'status' => 'nullable|in:all,expired,near_expiry,available',
+                'near_expiry_days' => 'nullable|integer|min:1|max:365',
+                'search' => 'nullable|string|max:120',
+            ]);
+
+            $status = $validated['status'] ?? 'all';
+            $nearExpiryDays = $validated['near_expiry_days'] ?? 30;
+
+            $query = InventoryEntry::where('inventory_id', $validated['inventory_id']);
+
+            if (!empty($validated['search'])) {
+                $query->where(function ($builder) use ($validated) {
+                    $builder->where('entry_code', 'like', '%' . $validated['search'] . '%')
+                        ->orWhere('document_number', 'like', '%' . $validated['search'] . '%');
+                });
+            }
+
+            $entries = $query->orderByDesc('entry_date')
+                ->orderByDesc('entry_id')
+                ->get()
+                ->map(function (InventoryEntry $entry) {
+                    return [
+                        'entry_id' => $entry->entry_id,
+                        'inventory_id' => $entry->inventory_id,
+                        'entry_date' => optional($entry->entry_date)->format('Y-m-d'),
+                        'entry_code' => $entry->entry_code,
+                        'entry_type' => $entry->entry_type,
+                        'document_number' => $entry->document_number,
+                        'quantity' => $entry->quantity,
+                        'unit_price' => $entry->unit_price,
+                        'total_amount' => $entry->total_amount,
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'data' => $entries,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Get Inventory Entries Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Get summary statistics
      *
      * @return \Illuminate\Http\JsonResponse
@@ -304,5 +452,6 @@ class WarehouseReportsController extends Controller
 
         return $filters;
     }
+
 }
 

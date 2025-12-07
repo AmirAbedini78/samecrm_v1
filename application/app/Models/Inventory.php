@@ -82,6 +82,25 @@ class Inventory extends Model {
         )->withPivot('alias_name')->withTimestamps();
     }
 
+    public function entries()
+    {
+        return $this->hasMany(InventoryEntry::class, 'inventory_id', 'inventory_id');
+    }
+
+    public function getTotalEntryCountAttribute()
+    {
+        return $this->entries()->count();
+    }
+
+    public function getRemainingQuantityAttribute($value)
+    {
+        if (!is_null($value)) {
+            return $value;
+        }
+
+        return $this->entries()->sum('remaining_quantity');
+    }
+
     /**
      * Alert settings relationship
      */

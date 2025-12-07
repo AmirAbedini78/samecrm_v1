@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\InventoryAlertSetting;
+use App\Models\InventoryEntry;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class InventoryAlertController extends Controller
 {
@@ -23,12 +25,19 @@ class InventoryAlertController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = InventoryAlertSetting::with('inventory:inventory_id,inventory_name,inventory_code');
+            $query = InventoryAlertSetting::with([
+                'inventory:inventory_id,inventory_name,inventory_code',
+                'entry:entry_id,inventory_id,entry_code,lot_number,serial_number,entry_date,expiry_date',
+            ]);
 
             if ($request->has('inventory_id')) {
                 $query->where('inventory_id', $request->inventory_id);
             } else {
                 $query->whereNull('inventory_id'); // Global settings
+            }
+
+            if ($request->filled('inventory_entry_id')) {
+                $query->where('inventory_entry_id', $request->inventory_entry_id);
             }
 
             $settings = $query->get()->map(function ($setting) {
@@ -59,6 +68,7 @@ class InventoryAlertController extends Controller
         try {
             $data = $request->validate([
                 'inventory_id' => 'nullable|exists:inventory,inventory_id',
+                'inventory_entry_id' => 'nullable|exists:inventory_entries,entry_id',
                 'alert_type' => 'required|in:expiry,quantity,minimum,maximum',
                 'threshold_value' => 'nullable|numeric|min:0',
                 'threshold_days' => 'nullable|integer|min:0',
@@ -69,6 +79,8 @@ class InventoryAlertController extends Controller
                 'is_active' => 'nullable|boolean',
             ]);
 
+            $this->assertEntryMatchesInventory($data['inventory_entry_id'] ?? null, $data['inventory_id'] ?? null);
+
             $data['alert_email'] = $request->boolean('alert_email', true);
             $data['alert_sms'] = $request->boolean('alert_sms', false);
             $data['is_active'] = $request->boolean('is_active', true);
@@ -77,7 +89,7 @@ class InventoryAlertController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data' => $this->formatAlertSetting($setting),
+                'data' => $this->formatAlertSetting($setting->fresh(['inventory', 'entry'])),
                 'message' => 'تنظیمات هشدار با موفقیت ایجاد شد'
             ]);
         } catch (\Exception $e) {
@@ -102,6 +114,7 @@ class InventoryAlertController extends Controller
             $setting = InventoryAlertSetting::findOrFail($id);
 
             $data = $request->validate([
+                'inventory_entry_id' => 'nullable|exists:inventory_entries,entry_id',
                 'alert_type' => 'sometimes|required|in:expiry,quantity,minimum,maximum',
                 'threshold_value' => 'nullable|numeric|min:0',
                 'threshold_days' => 'nullable|integer|min:0',
@@ -111,6 +124,10 @@ class InventoryAlertController extends Controller
                 'alert_phone_numbers' => 'nullable|string',
                 'is_active' => 'nullable|boolean',
             ]);
+
+            if (array_key_exists('inventory_entry_id', $data)) {
+                $this->assertEntryMatchesInventory($data['inventory_entry_id'], $setting->inventory_id);
+            }
 
             if ($request->has('alert_email')) {
                 $data['alert_email'] = $request->boolean('alert_email');
@@ -172,7 +189,10 @@ class InventoryAlertController extends Controller
     public function toggle($id)
     {
         try {
-            $setting = InventoryAlertSetting::with('inventory:inventory_id,inventory_name,inventory_code')->findOrFail($id);
+            $setting = InventoryAlertSetting::with([
+                'inventory:inventory_id,inventory_name,inventory_code',
+                'entry:entry_id,inventory_id,entry_code,lot_number,serial_number,entry_date,expiry_date',
+            ])->findOrFail($id);
             $setting->is_active = !$setting->is_active;
             $setting->save();
 
@@ -196,6 +216,13 @@ class InventoryAlertController extends Controller
             'inventory_id' => $setting->inventory_id,
             'inventory_name' => optional($setting->inventory)->inventory_name,
             'inventory_code' => optional($setting->inventory)->inventory_code,
+            'inventory_entry_id' => $setting->inventory_entry_id,
+            'entry_code' => optional($setting->entry)->entry_code,
+            'lot_number' => optional($setting->entry)->lot_number,
+            'serial_number' => optional($setting->entry)->serial_number,
+            'entry_date' => optional($setting->entry?->entry_date)->format('Y-m-d'),
+            'expiry_date' => optional($setting->entry?->expiry_date)->format('Y-m-d'),
+            'alert_scope' => $setting->inventory_entry_id ? 'entry' : ($setting->inventory_id ? 'inventory' : 'global'),
             'alert_type' => $setting->alert_type,
             'threshold_value' => $setting->threshold_value,
             'threshold_days' => $setting->threshold_days,
@@ -205,6 +232,24 @@ class InventoryAlertController extends Controller
             'alert_phone_numbers' => $setting->alert_phone_numbers,
             'is_active' => $setting->is_active,
         ];
+    }
+
+    private function assertEntryMatchesInventory(?int $entryId, ?int $inventoryId): void
+    {
+        if (!$entryId) {
+            return;
+        }
+
+        $entry = InventoryEntry::find($entryId);
+        if (!$entry) {
+            return;
+        }
+
+        if ($inventoryId && $entry->inventory_id !== $inventoryId) {
+            throw ValidationException::withMessages([
+                'inventory_entry_id' => 'ورود انتخاب‌شده با کالا مطابقت ندارد.',
+            ]);
+        }
     }
 }
 

@@ -23,7 +23,7 @@ class InventoryAlertSetting extends Model
 
     // Fillable fields for mass assignment
     protected $fillable = [
-        'inventory_id', 'alert_type', 'threshold_value', 'threshold_days',
+        'inventory_id', 'inventory_entry_id', 'alert_type', 'threshold_value', 'threshold_days',
         'alert_email', 'alert_sms', 'alert_email_addresses', 'alert_phone_numbers', 'is_active'
     ];
 
@@ -40,6 +40,11 @@ class InventoryAlertSetting extends Model
     public function inventory()
     {
         return $this->belongsTo('App\Models\Inventory', 'inventory_id', 'inventory_id');
+    }
+
+    public function entry()
+    {
+        return $this->belongsTo(InventoryEntry::class, 'inventory_entry_id', 'entry_id');
     }
 
     /**

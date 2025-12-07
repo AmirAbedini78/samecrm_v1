@@ -1332,6 +1332,8 @@ Route::group(['prefix' => 'report'], function () {
     Route::post("/warehouse/top-selling", "Reports\\WarehouseReportsController@getTopSelling");
     Route::post("/warehouse/analytics", "Reports\\WarehouseReportsController@getAnalytics");
     Route::post("/warehouse/transactions", "Reports\\WarehouseReportsController@getTransactions");
+    Route::get("/warehouse/inventory-entries", "Reports\\WarehouseReportsController@getInventoryEntries");
+    Route::post("/warehouse/list-entries", "Reports\\WarehouseReportsController@listInventoryEntries");
     Route::get("/warehouse/summary", "Reports\\WarehouseReportsController@getSummary");
 });
 
@@ -1439,6 +1441,12 @@ Route::resource('inventory', 'InventoryController');
 Route::group(['prefix' => 'import/inventory', 'middleware' => ['auth']], function () {
     Route::get("/", "Import\Inventory@index");
     Route::post("/", "Import\Inventory@store");
+});
+
+//INVENTORY ENTRIES IMPORT
+Route::group(['prefix' => 'import/inventory-entry', 'middleware' => ['auth']], function () {
+    Route::get("/", "Import\InventoryEntry@index");
+    Route::post("/", "Import\InventoryEntry@store");
 });
 
 //INVENTORY TRANSACTIONS

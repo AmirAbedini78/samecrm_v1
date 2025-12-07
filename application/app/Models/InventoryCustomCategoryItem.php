@@ -24,6 +24,7 @@ class InventoryCustomCategoryItem extends Model
     // Fillable fields for mass assignment
     protected $fillable = [
         'inventory_id',
+        'inventory_entry_id',
         'custom_category_id',
         'alias_name',
         'alias_color',
@@ -47,6 +48,11 @@ class InventoryCustomCategoryItem extends Model
     public function customCategory()
     {
         return $this->belongsTo('App\Models\InventoryCustomCategory', 'custom_category_id', 'category_id');
+    }
+
+    public function entry()
+    {
+        return $this->belongsTo(InventoryEntry::class, 'inventory_entry_id', 'entry_id');
     }
 }
 
