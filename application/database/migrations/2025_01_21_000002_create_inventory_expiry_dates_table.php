@@ -54,3 +54,5 @@ class CreateInventoryExpiryDatesTable extends Migration
 
 
 
+
+

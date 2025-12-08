@@ -209,3 +209,5 @@ php artisan inventory:import-entries "path/to/قالب گردش كالا.xlsx"
 
 این دستور برای ایمپورت دسته‌ای یا از طریق cron job استفاده می‌شود.
 
+
+

@@ -216,6 +216,11 @@
                             <i class="ti-list"></i> لاگ تراکنش‌ها
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="entries-tab" data-toggle="tab" href="#entries" role="tab">
+                            <i class="ti-layers"></i> ورودهای انبار
+                        </a>
+                    </li>
                 </ul>
 
                 <!-- Tab Content -->
@@ -248,6 +253,11 @@
                     <!-- Transactions Tab -->
                     <div class="tab-pane fade" id="transactions" role="tabpanel">
                         @include('pages.reports.warehouse.components.transactions-log')
+                    </div>
+
+                    <!-- Inventory Entries Tab -->
+                    <div class="tab-pane fade" id="entries" role="tabpanel">
+                        @include('pages.reports.warehouse.components.inventory-entries')
                     </div>
                 </div>
             </div>

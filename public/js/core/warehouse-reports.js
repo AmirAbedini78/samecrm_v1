@@ -555,6 +555,27 @@ function initWarehouseReports() {
             $('#transactions-table').DataTable().search($(this).val()).draw();
         }
     });
+
+    // View entries for specific inventory
+    $(document).off('click', '.js-view-entries').on('click', '.js-view-entries', function () {
+        var inventoryId = $(this).data('inventory-id');
+        var inventoryCode = $(this).data('inventory-code');
+        var inventoryName = $(this).data('inventory-name');
+        showInventoryEntriesModal(inventoryId, inventoryCode, inventoryName);
+    });
+
+    // Entries tab filters
+    $(document).off('change', '#entries-type-filter').on('change', '#entries-type-filter', function () {
+        if ($('#inventory-entries-table').hasClass('dataTable')) {
+            $('#inventory-entries-table').DataTable().ajax.reload();
+        }
+    });
+
+    $(document).off('keyup', '#entries-search').on('keyup', '#entries-search', function () {
+        if ($('#inventory-entries-table').hasClass('dataTable')) {
+            $('#inventory-entries-table').DataTable().search($(this).val()).draw();
+        }
+    });
 }
 
 function bindQuickFilters() {
@@ -752,6 +773,9 @@ function loadTabData(target) {
             break;
         case '#transactions':
             if (typeof loadTransactions === 'function') loadTransactions();
+            break;
+        case '#entries':
+            if (typeof loadInventoryEntries === 'function') loadInventoryEntries();
             break;
     }
 }
@@ -1681,7 +1705,9 @@ function loadCurrentStock() {
                 title: 'عملیات',
                 orderable: false,
                 render: function(data, type, row) {
-                    return '<a href="/inventory/' + row.inventory_id + '" class="btn btn-sm btn-outline-primary">مشاهده</a>';
+                    return '<button type="button" class="btn btn-sm btn-outline-info js-view-entries" data-inventory-id="' + row.inventory_id + '" data-inventory-code="' + (row.inventory_code || '') + '" data-inventory-name="' + (row.inventory_name || '') + '">' +
+                        '<i class="ti-layers"></i> ورودها</button> ' +
+                        '<a href="/inventory/' + row.inventory_id + '" class="btn btn-sm btn-outline-primary">جزئیات</a>';
                 }
             }
         ],
@@ -2227,5 +2253,171 @@ function formatCurrency(value) {
 function formatNumber(value) {
     if (!value) return '0';
     return new Intl.NumberFormat('fa-IR').format(value);
+}
+
+/**
+ * Load inventory entries table
+ */
+var inventoryEntriesTableInstance = null;
+function loadInventoryEntries() {
+    var $table = $('#inventory-entries-table');
+    if ($table.length === 0) {
+        return;
+    }
+
+    if (inventoryEntriesTableInstance) {
+        inventoryEntriesTableInstance.ajax.reload(null, false);
+        return;
+    }
+
+    $table.find('tbody').html('<tr><td colspan="10" class="text-center">در حال بارگذاری...</td></tr>');
+
+    inventoryEntriesTableInstance = $table.DataTable({
+        processing: true,
+        serverSide: false,
+        ajax: {
+            url: '/report/warehouse/list-entries',
+            type: 'POST',
+            data: function(d) {
+                var payload = getFilterPayload();
+                var entryType = $('#entries-type-filter').val();
+                if (entryType) {
+                    payload.entry_type = entryType;
+                }
+                return payload;
+            },
+            dataSrc: function(json) {
+                if (!json.success) {
+                    console.error('Failed to load entries:', json.error || 'Unknown error');
+                    $table.find('tbody').html('<tr><td colspan="10" class="text-center text-danger">خطا در بارگذاری داده‌ها</td></tr>');
+                    return [];
+                }
+                return json.data || [];
+            },
+            error: function(xhr, error, thrown) {
+                console.error('AJAX error loading entries:', error, thrown);
+                $table.find('tbody').html('<tr><td colspan="10" class="text-center text-danger">خطا در ارتباط با سرور</td></tr>');
+            }
+        },
+        columns: [
+            { data: 'inventory_code', title: 'کد کالا' },
+            { data: 'inventory_name', title: 'نام کالا' },
+            { 
+                data: 'entry_date', 
+                title: 'تاریخ',
+                render: function(data) {
+                    return data || '-';
+                }
+            },
+            { data: 'entry_code', title: 'سند' },
+            { 
+                data: 'entry_type', 
+                title: 'نوع',
+                render: function(data) {
+                    if (data === 'ورودی' || data === 'input' || data === 'IN') {
+                        return '<span class="badge badge-success">ورودی</span>';
+                    } else if (data === 'خروجی' || data === 'output' || data === 'OUT') {
+                        return '<span class="badge badge-danger">خروجی</span>';
+                    }
+                    return data || '-';
+                }
+            },
+            { data: 'document_number', title: 'شماره سند مبنا' },
+            { 
+                data: 'quantity', 
+                title: 'مقدار',
+                render: function(data) {
+                    return formatNumber(data);
+                }
+            },
+            { 
+                data: 'unit_price', 
+                title: 'فی',
+                render: function(data) {
+                    return formatCurrency(data);
+                }
+            },
+            { 
+                data: 'total_amount', 
+                title: 'مبلغ تمام شده',
+                render: function(data) {
+                    return formatCurrency(data);
+                }
+            },
+            {
+                data: null,
+                title: 'عملیات',
+                orderable: false,
+                render: function(data, type, row) {
+                    return '<button type="button" class="btn btn-sm btn-outline-info js-view-item-entries" data-inventory-id="' + row.inventory_id + '" data-inventory-code="' + (row.inventory_code || '') + '" data-inventory-name="' + (row.inventory_name || '') + '">' +
+                        '<i class="ti-eye"></i> جزئیات</button>';
+                }
+            }
+        ],
+        language: {
+            url: '/public/js/datatables-persian.json'
+        },
+        order: [[2, 'desc']]
+    });
+
+    // Handle view item entries button
+    $(document).off('click', '.js-view-item-entries').on('click', '.js-view-item-entries', function () {
+        var inventoryId = $(this).data('inventory-id');
+        var inventoryCode = $(this).data('inventory-code');
+        var inventoryName = $(this).data('inventory-name');
+        showInventoryEntriesModal(inventoryId, inventoryCode, inventoryName);
+    });
+}
+
+/**
+ * Show inventory entries modal for a specific item
+ */
+function showInventoryEntriesModal(inventoryId, inventoryCode, inventoryName) {
+    $('#entries-modal-code').text(inventoryCode || '-');
+    $('#entries-modal-name').text(inventoryName || '-');
+    $('#entries-modal-title').text('ورودهای کالا: ' + (inventoryName || inventoryCode || ''));
+    
+    var $modalTable = $('#inventory-item-entries-table');
+    $modalTable.find('tbody').html('<tr><td colspan="7" class="text-center">در حال بارگذاری...</td></tr>');
+
+    $.ajax({
+        url: '/report/warehouse/inventory-entries',
+        type: 'GET',
+        data: { inventory_id: inventoryId },
+        success: function(response) {
+            if (response.success && response.data) {
+                var entries = response.data;
+                if (entries.length === 0) {
+                    $modalTable.find('tbody').html('<tr><td colspan="7" class="text-center text-muted">هیچ ورودی ثبت نشده است</td></tr>');
+                    return;
+                }
+
+                var rows = entries.map(function(entry) {
+                    var typeBadge = (entry.entry_type === 'ورودی' || entry.entry_type === 'input' || entry.entry_type === 'IN') 
+                        ? '<span class="badge badge-success">ورودی</span>' 
+                        : '<span class="badge badge-danger">خروجی</span>';
+                    
+                    return '<tr>' +
+                        '<td>' + (entry.entry_date || '-') + '</td>' +
+                        '<td>' + (entry.entry_code || '-') + '</td>' +
+                        '<td>' + typeBadge + '</td>' +
+                        '<td>' + (entry.document_number || '-') + '</td>' +
+                        '<td>' + formatNumber(entry.quantity) + '</td>' +
+                        '<td>' + formatCurrency(entry.unit_price) + '</td>' +
+                        '<td>' + formatCurrency(entry.total_amount) + '</td>' +
+                        '</tr>';
+                }).join('');
+
+                $modalTable.find('tbody').html(rows);
+            } else {
+                $modalTable.find('tbody').html('<tr><td colspan="7" class="text-center text-danger">خطا در بارگذاری داده‌ها</td></tr>');
+            }
+        },
+        error: function() {
+            $modalTable.find('tbody').html('<tr><td colspan="7" class="text-center text-danger">خطا در ارتباط با سرور</td></tr>');
+        }
+    });
+
+    showModal('#inventoryEntriesModal');
 }
 

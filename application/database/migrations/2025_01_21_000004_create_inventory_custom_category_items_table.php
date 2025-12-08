@@ -51,3 +51,5 @@ class CreateInventoryCustomCategoryItemsTable extends Migration
 
 
 
+
+

@@ -45,3 +45,5 @@ class UpdateInventoryCustomCategoriesTable extends Migration
 
 
 
+
+
