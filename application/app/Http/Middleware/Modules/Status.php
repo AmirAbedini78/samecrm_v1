@@ -49,6 +49,7 @@ class Status {
             'calendar' => 'settings_modules_calendar',
             'inventory' => 'settings_modules_inventory',
             'sales' => 'settings_modules_sales',
+            'guarantee_letters' => 'settings_modules_guarantee_letters',
         ];
 
         //set theglobal visibility of each module
@@ -71,7 +72,15 @@ class Status {
      * -------------------------------------------------------------------------*/
     public function moduleStatus($module) {
 
-        //module is globallu disabled
+        //module is globally disabled
+        //if field doesn't exist or is null, default to enabled for guarantee_letters
+        if ($module == 'settings_modules_guarantee_letters') {
+            $moduleValue = config("system.$module");
+            if ($moduleValue === null || $moduleValue === '') {
+                return true; // default enabled
+            }
+        }
+        
         if (!config("system.$module") || config("system.$module") == 'disabled') {
             return false;
         }

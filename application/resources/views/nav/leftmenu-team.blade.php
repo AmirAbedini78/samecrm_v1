@@ -431,6 +431,15 @@
                                 {{ cleanLang(__('lang.invoice_settlements')) }}
                             </a>
                         </li>
+                        @if(config('visibility.modules.guarantee_letters'))
+                        <li class="sidenav-submenu {{ $page['submenu_guarantee_letters'] ?? '' }}" id="submenu_guarantee_letters">
+                            <a href="{{ _url('/guarantee-letters') }}"
+                                class="{{ $page['submenu_guarantee_letters'] ?? '' }}">
+                                <i class="ti-receipt"></i>
+                                {{ cleanLang(__('lang.guarantee_letters')) }}
+                            </a>
+                        </li>
+                        @endif
                     </ul>
                 </li>
                 <!--accounting-->

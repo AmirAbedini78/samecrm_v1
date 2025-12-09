@@ -114,6 +114,8 @@ class RoleRepository {
         $role->role_reports = (request('role_reports') == 'yes') ? 'yes' : 'no';
         $role->role_inventory = (in_array(request('role_inventory'), $valid)) ? request('role_inventory') : 0;
         $role->role_sales = (in_array(request('role_sales'), $valid)) ? request('role_sales') : 0;
+        $role->role_guarantee_letters = (in_array(request('role_guarantee_letters'), $valid)) ? request('role_guarantee_letters') : 0;
+        $role->role_guarantee_letters_scope = (request('role_guarantee_letters_scope') == 'on') ? 'global' : 'own';
         $role->role_canned = (request('role_canned') == 'yes') ? 'yes' : 'no';
         $role->role_canned_scope = (request('role_canned_scope') == 'on') ? 'global' : 'own';
         $role->modules = null;
@@ -180,6 +182,8 @@ class RoleRepository {
         $role->role_reports = (request('role_reports') == 'yes') ? 'yes' : 'no';
         $role->role_inventory = (in_array(request('role_inventory'), $valid)) ? request('role_inventory') : 0;
         $role->role_sales = (in_array(request('role_sales'), $valid)) ? request('role_sales') : 0;
+        $role->role_guarantee_letters = (in_array(request('role_guarantee_letters'), $valid)) ? request('role_guarantee_letters') : 0;
+        $role->role_guarantee_letters_scope = (request('role_guarantee_letters_scope') == 'on') ? 'global' : 'own';
         $role->role_canned = (request('role_canned') == 'yes') ? 'yes' : 'no';
         $role->role_canned_scope = (request('role_canned_scope') == 'on') ? 'global' : 'own';
 

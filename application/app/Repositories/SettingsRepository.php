@@ -727,6 +727,7 @@ class SettingsRepository {
         $settings->settings_modules_calendar = (request('settings_modules_calendar') == 'on') ? 'enabled' : 'disabled';
         $settings->settings_modules_inventory = (request('settings_modules_inventory') == 'on') ? 'enabled' : 'disabled';
         $settings->settings_modules_sales = (request('settings_modules_sales') == 'on') ? 'enabled' : 'disabled';
+        $settings->settings_modules_guarantee_letters = (request('settings_modules_guarantee_letters') == 'on') ? 'enabled' : 'disabled';
 
         //$settings->settings_modules_spaces = (request('settings_modules_spaces') == 'on') ? 'enabled' : 'disabled';
 

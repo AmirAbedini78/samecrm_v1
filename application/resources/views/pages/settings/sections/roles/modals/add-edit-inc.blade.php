@@ -897,6 +897,41 @@
                         </td>
                     </tr>
 
+                    <!--guarantee_letters-->
+                    <tr>
+                        <td>{{ cleanLang(__('lang.guarantee_letters')) }}</td>
+                        <td>
+                            <div class="form-group row m-0">
+                                <div class="col-12 text-center">
+                                    <select class="select2-basic form-control form-control-sm" name="role_guarantee_letters"
+                                        data-allow-clear="false">
+                                        <option value="0" {{ runtimePreselected($role->role_guarantee_letters ?? '', 0) }}>
+                                            {{ cleanLang(__('lang.none')) }}</option>
+                                        <option value="1" {{ runtimePreselected($role->role_guarantee_letters ?? '', 1) }}>
+                                            {{ cleanLang(__('lang.view')) }}</option>
+                                        <option value="2" {{ runtimePreselected($role->role_guarantee_letters ?? '', 2) }}>
+                                            {{ cleanLang(__('lang.view')) }} + {{ cleanLang(__('lang.add')) }} +
+                                            {{ cleanLang(__('lang.edit')) }}</option>
+                                        <option value="3" {{ runtimePreselected($role->role_guarantee_letters ?? '', 3) }}>
+                                            {{ cleanLang(__('lang.view')) }} + {{ cleanLang(__('lang.add')) }} +
+                                            {{ cleanLang(__('lang.edit')) }} +
+                                            {{ cleanLang(__('lang.delete')) }}</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="form-group form-group-checkbox row m-0 w-98">
+                                <div class="col-12 text-center p-t-5">
+                                    <input type="checkbox" id="role_guarantee_letters_scope" name="role_guarantee_letters_scope"
+                                        class="filled-in chk-col-light-blue"
+                                        {{ runtimePrechecked($role->role_guarantee_letters_scope ?? '') }}>
+                                    <label for="role_guarantee_letters_scope"></label>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+
                     <!--assigned projects-->
                     <tr>
                         <td>{{ cleanLang(__('lang.assign_projects')) }}</td>

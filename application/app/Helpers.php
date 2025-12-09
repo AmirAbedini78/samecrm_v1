@@ -2575,6 +2575,22 @@ function runtimeSalesIdFormat($sales_id = '') {
 }
 
 /**
+ * return formatted guarantee letter id  (e.g. GL000024)
+ * @param numeric guarantee_id
+ * @return string checked | null
+ */
+function runtimeGuaranteeLetterIdFormat($guarantee_id = '') {
+    //add the zero's
+    $prefix = config('system.settings_guarantee_letters_prefix', 'GL');
+    //return
+    if (is_numeric($guarantee_id)) {
+        return $prefix . str_pad($guarantee_id, 6, '0', STR_PAD_LEFT);
+    } else {
+        return '---';
+    }
+}
+
+/**
  * bootstrap class, based on value
  * @param string value the status of the task
  * @param string type lable|background

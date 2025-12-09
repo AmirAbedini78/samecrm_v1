@@ -118,6 +118,9 @@ class Kernel extends ConsoleKernel {
         //[sms] - process SMS queue
         $schedule->call(new \App\Cronjobs\SmsQueueCron)->everyMinute();
 
+        //[guarantee-letters] - check guarantee letter alerts
+        $schedule->call(new \App\Cronjobs\GuaranteeLetterAlertCron)->everyFiveMinutes();
+
     }
 
     /**

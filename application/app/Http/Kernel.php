@@ -367,5 +367,12 @@ class Kernel extends HttpKernel {
 
         //[growcrm] - [sales]
         'sales.index' => \App\Http\Middleware\Sales\Index::class,
+
+        //[growcrm] - [guarantee letters]
+        'guaranteeLettersMiddlewareIndex' => \App\Http\Middleware\GuaranteeLetters\Index::class,
+        'guaranteeLettersMiddlewareCreate' => \App\Http\Middleware\GuaranteeLetters\Create::class,
+        'guaranteeLettersMiddlewareEdit' => \App\Http\Middleware\GuaranteeLetters\Edit::class,
+        'guaranteeLettersMiddlewareShow' => \App\Http\Middleware\GuaranteeLetters\Show::class,
+        'guaranteeLettersMiddlewareDestroy' => \App\Http\Middleware\GuaranteeLetters\Destroy::class,
     ];
 }

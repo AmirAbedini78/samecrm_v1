@@ -1425,6 +1425,19 @@ Route::group(['prefix' => 'accounting'], function () {
 });
 Route::resource('accounting', 'Accounting');
 
+//GUARANTEE LETTERS
+Route::group(['prefix' => 'guarantee-letters'], function () {
+    Route::any("/search", "GuaranteeLetters@index");
+    Route::post("/delete", "GuaranteeLetters@destroy")->middleware(['demoModeCheck']);
+});
+Route::resource('guarantee-letters', 'GuaranteeLetters');
+
+//GUARANTEE LETTERS IMPORT
+Route::group(['prefix' => 'import/guarantee-letters', 'middleware' => ['auth']], function () {
+    Route::get("/", "Import\GuaranteeLetters@index");
+    Route::post("/", "Import\GuaranteeLetters@store");
+});
+
 //INVENTORY
 Route::group(['prefix' => 'inventory'], function () {
     Route::any("/search", "InventoryController@index");

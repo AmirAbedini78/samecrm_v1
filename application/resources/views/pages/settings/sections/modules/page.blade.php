@@ -290,6 +290,51 @@
                     </td>
                 </tr>
 
+                <!--inventory-->
+                <tr>
+                    <td>@lang('lang.inventory')</td>
+                    <td>
+                        <div class="form-group form-group-checkbox m-0 p-0">
+                            <div class="col-2 text-right m-0 p-0">
+                                <input type="checkbox" id="settings_modules_inventory" name="settings_modules_inventory"
+                                    {{ runtimePrechecked($settings->settings_modules_inventory ?? 'enabled') }}
+                                    class="filled-in chk-col-light-blue">
+                                <label class="m-0 p-0" for="settings_modules_inventory"></label>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+
+                <!--sales-->
+                <tr>
+                    <td>@lang('lang.sales')</td>
+                    <td>
+                        <div class="form-group form-group-checkbox m-0 p-0">
+                            <div class="col-2 text-right m-0 p-0">
+                                <input type="checkbox" id="settings_modules_sales" name="settings_modules_sales"
+                                    {{ runtimePrechecked($settings->settings_modules_sales ?? 'enabled') }}
+                                    class="filled-in chk-col-light-blue">
+                                <label class="m-0 p-0" for="settings_modules_sales"></label>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+
+                <!--guarantee_letters-->
+                <tr>
+                    <td>@lang('lang.guarantee_letters')</td>
+                    <td>
+                        <div class="form-group form-group-checkbox m-0 p-0">
+                            <div class="col-2 text-right m-0 p-0">
+                                <input type="checkbox" id="settings_modules_guarantee_letters" name="settings_modules_guarantee_letters"
+                                    {{ runtimePrechecked($settings->settings_modules_guarantee_letters ?? 'enabled') }}
+                                    class="filled-in chk-col-light-blue">
+                                <label class="m-0 p-0" for="settings_modules_guarantee_letters"></label>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+
             </tbody>
         </table>
 

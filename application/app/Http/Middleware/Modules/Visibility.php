@@ -54,6 +54,7 @@ class Visibility {
         $this->viewCalendar();
         $this->viewInventory();
         $this->viewSales();
+        $this->viewGuaranteeLetters();
 
         //done
         return $next($request);
@@ -500,6 +501,29 @@ class Visibility {
             if (auth()->user()->role->role_sales >= 1) {
                 if (config('modules.sales')) {
                     config(['visibility.modules.sales' => true]);
+                }
+            }
+        }
+    }
+
+    /**
+     * visibility of the guarantee letters feature [team]
+     */
+    public function viewGuaranteeLetters() {
+        if (auth()->user()->is_team) {
+            //check if module is enabled
+            $moduleEnabled = config('modules.guarantee_letters');
+            //if module status is null/empty, default to enabled
+            if ($moduleEnabled === null || $moduleEnabled === '') {
+                $moduleEnabled = true;
+            }
+            
+            if ($moduleEnabled) {
+                //admin always has access
+                if (auth()->user()->role_id == 1) {
+                    config(['visibility.modules.guarantee_letters' => true]);
+                } elseif (isset(auth()->user()->role->role_guarantee_letters) && auth()->user()->role->role_guarantee_letters >= 1) {
+                    config(['visibility.modules.guarantee_letters' => true]);
                 }
             }
         }
