@@ -1,0 +1,59 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Documentation
+*.md
+Documentation.pdf
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Laravel
+application/vendor
+application/.env
+application/.env.backup
+application/.env.production
+application/storage/*.key
+application/storage/logs/*.log
+application/storage/framework/cache/*
+application/storage/framework/sessions/*
+application/storage/framework/views/*
+
+# Build artifacts
+application/public/hot
+application/public/storage
+application/public/mix-manifest.json
+
+# Testing
+application/phpunit.xml
+application/.phpunit.result.cache
+application/tests
+
+# Temporary files
+*.tmp
+*.temp
+storage/temp/*
+storage/storage/temp/*
+
+# Logs
+*.log

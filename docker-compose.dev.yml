@@ -1,0 +1,93 @@
+# Docker Compose برای محیط Development
+# استفاده: docker compose -f docker-compose.dev.yml up
+
+version: '3.8'
+
+services:
+  # MySQL Database Service
+  mysql:
+    image: mysql:8.0
+    container_name: samecrm_mysql_dev
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-samecrm}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_USER: ${DB_USERNAME:-samecrm_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-samecrm_password}
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - mysql_data_dev:/var/lib/mysql
+    networks:
+      - samecrm_network_dev
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-rootpassword}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # PHP-FPM Application Service
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: samecrm_app_dev
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+      - ./application/storage:/var/www/html/application/storage
+      - ./storage:/var/www/html/storage
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - samecrm_network_dev
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=${DB_DATABASE:-samecrm}
+      - DB_USERNAME=${DB_USERNAME:-samecrm_user}
+      - DB_PASSWORD=${DB_PASSWORD:-samecrm_password}
+      - APP_DEBUG=true
+      - APP_ENV=local
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # Nginx Web Server
+  nginx:
+    image: nginx:alpine
+    container_name: samecrm_nginx_dev
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8080}:80"
+    volumes:
+      - ./:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+    networks:
+      - samecrm_network_dev
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: samecrm_redis_dev
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data_dev:/data
+    networks:
+      - samecrm_network_dev
+    command: redis-server --appendonly yes
+
+volumes:
+  mysql_data_dev:
+    driver: local
+  redis_data_dev:
+    driver: local
+
+networks:
+  samecrm_network_dev:
+    driver: bridge
