@@ -56,6 +56,13 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Throwable $exception)
     {
+        // Handle custom inventory exceptions
+        if ($exception instanceof \App\Exceptions\Inventory\InsufficientStockException ||
+            $exception instanceof \App\Exceptions\Inventory\InventoryCalculationException ||
+            $exception instanceof \App\Exceptions\Inventory\InventoryNotFoundException) {
+            return $exception->render($request);
+        }
+
         // Create debug report on critical errors
         if ($this->isCriticalError($exception)) {
             $reportFile = DebugHelper::createDebugReport();

@@ -9,7 +9,11 @@ use App\Models\InventoryTransaction;
 use App\Repositories\InventoryTransactionRepository;
 use App\Services\InventoryCalculationService;
 use App\Imports\InventoryTransactionImport;
+use App\Exceptions\Inventory\InsufficientStockException;
+use App\Exceptions\Inventory\InventoryCalculationException;
+use App\Exceptions\Inventory\InventoryNotFoundException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class InventoryTransactionController extends Controller
@@ -119,37 +123,49 @@ class InventoryTransactionController extends Controller
     public function store(InventoryTransactionRequest $request)
     {
         try {
-            // Calculate amount if not provided
-            $amount = $request->input('amount');
-            if (empty($amount) && $request->input('quantity') > 0 && $request->input('unit_price') > 0) {
-                $amount = $request->input('quantity') * $request->input('unit_price');
-            }
+            return DB::transaction(function () use ($request) {
+                // Calculate amount if not provided
+                $amount = $request->input('amount');
+                if (empty($amount) && $request->input('quantity') > 0 && $request->input('unit_price') > 0) {
+                    $amount = $request->input('quantity') * $request->input('unit_price');
+                }
 
-            // Prepare data
-            $data = $request->only([
-                'inventory_id', 'transaction_type', 'quantity', 'sub_quantity',
-                'unit_price', 'transaction_date', 'document_number',
-                'base_document_number', 'warehouse', 'notes'
-            ]);
-            $data['amount'] = $amount;
-            $data['user_id'] = auth()->id();
+                // Prepare data
+                $data = $request->only([
+                    'inventory_id', 'transaction_type', 'quantity', 'sub_quantity',
+                    'unit_price', 'transaction_date', 'document_number',
+                    'base_document_number', 'warehouse', 'notes'
+                ]);
+                $data['amount'] = $amount;
+                $data['user_id'] = auth()->id();
 
-            // Create transaction
-            $transaction = $this->transactionRepo->create($data);
+                // Create transaction
+                $transaction = $this->transactionRepo->create($data);
 
-            // Recalculate inventory
-            $this->calculationService->recalculateInventory($transaction->inventory_id);
+                // Recalculate inventory
+                if (!$this->calculationService->recalculateInventory($transaction->inventory_id)) {
+                    throw new InventoryCalculationException('خطا در محاسبه موجودی');
+                }
 
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'تراکنش با موفقیت ایجاد شد',
+                        'transaction' => $transaction->load(['inventory', 'user'])
+                    ]);
+                }
+
+                return redirect()->route('inventory.transactions.index')
+                    ->with('success', 'تراکنش با موفقیت ایجاد شد');
+            });
+        } catch (InsufficientStockException | InventoryCalculationException $e) {
             if ($request->ajax()) {
                 return response()->json([
-                    'success' => true,
-                    'message' => 'تراکنش با موفقیت ایجاد شد',
-                    'transaction' => $transaction->load(['inventory', 'user'])
-                ]);
+                    'success' => false,
+                    'message' => $e->getMessage()
+                ], $e->getCode());
             }
-
-            return redirect()->route('inventory.transactions.index')
-                ->with('success', 'تراکنش با موفقیت ایجاد شد');
+            return back()->withInput()->withErrors(['error' => $e->getMessage()]);
         } catch (\Exception $e) {
             Log::error('Transaction creation failed: ' . $e->getMessage(), [
                 'request' => $request->all(),
@@ -200,44 +216,60 @@ class InventoryTransactionController extends Controller
     public function update(InventoryTransactionRequest $request, $id)
     {
         try {
-            $transaction = InventoryTransaction::findOrFail($id);
-            $oldInventoryId = $transaction->inventory_id;
+            return DB::transaction(function () use ($request, $id) {
+                $transaction = InventoryTransaction::findOrFail($id);
+                $oldInventoryId = $transaction->inventory_id;
+                $oldType = $transaction->transaction_type;
+                $oldQuantity = $transaction->quantity;
 
-            // Calculate amount if not provided
-            $amount = $request->input('amount');
-            if (empty($amount) && $request->input('quantity') > 0 && $request->input('unit_price') > 0) {
-                $amount = $request->input('quantity') * $request->input('unit_price');
-            }
+                // Calculate amount if not provided
+                $amount = $request->input('amount');
+                if (empty($amount) && $request->input('quantity') > 0 && $request->input('unit_price') > 0) {
+                    $amount = $request->input('quantity') * $request->input('unit_price');
+                }
 
-            // Prepare data
-            $data = $request->only([
-                'inventory_id', 'transaction_type', 'quantity', 'sub_quantity',
-                'unit_price', 'transaction_date', 'document_number',
-                'base_document_number', 'warehouse', 'notes'
-            ]);
-            $data['amount'] = $amount;
+                // Prepare data
+                $data = $request->only([
+                    'inventory_id', 'transaction_type', 'quantity', 'sub_quantity',
+                    'unit_price', 'transaction_date', 'document_number',
+                    'base_document_number', 'warehouse', 'notes'
+                ]);
+                $data['amount'] = $amount;
 
-            // Update transaction
-            $this->transactionRepo->update($id, $data);
+                // Update transaction
+                $this->transactionRepo->update($id, $data);
 
-            // Recalculate old inventory if inventory_id changed
-            if ($oldInventoryId != $request->input('inventory_id')) {
-                $this->calculationService->recalculateInventory($oldInventoryId);
-            }
+                // Recalculate old inventory if inventory_id changed
+                if ($oldInventoryId != $request->input('inventory_id')) {
+                    if (!$this->calculationService->recalculateInventory($oldInventoryId)) {
+                        throw new InventoryCalculationException('خطا در محاسبه موجودی قدیمی');
+                    }
+                }
 
-            // Recalculate new inventory
-            $this->calculationService->recalculateInventory($request->input('inventory_id'));
+                // Recalculate new inventory
+                if (!$this->calculationService->recalculateInventory($request->input('inventory_id'))) {
+                    throw new InventoryCalculationException('خطا در محاسبه موجودی جدید');
+                }
 
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'تراکنش با موفقیت به‌روزرسانی شد',
+                        'transaction' => $transaction->fresh(['inventory', 'user'])
+                    ]);
+                }
+
+                return redirect()->route('inventory.transactions.index')
+                    ->with('success', 'تراکنش با موفقیت به‌روزرسانی شد');
+            });
+        } catch (InsufficientStockException | InventoryCalculationException $e) {
             if ($request->ajax()) {
                 return response()->json([
-                    'success' => true,
-                    'message' => 'تراکنش با موفقیت به‌روزرسانی شد',
-                    'transaction' => $transaction->fresh(['inventory', 'user'])
-                ]);
+                    'success' => false,
+                    'message' => $e->getMessage()
+                ], $e->getCode());
             }
-
-            return redirect()->route('inventory.transactions.index')
-                ->with('success', 'تراکنش با موفقیت به‌روزرسانی شد');
+            return back()->withInput()->withErrors(['error' => $e->getMessage()]);
         } catch (\Exception $e) {
             Log::error('Transaction update failed: ' . $e->getMessage(), [
                 'id' => $id,
@@ -262,24 +294,36 @@ class InventoryTransactionController extends Controller
     public function destroy($id)
     {
         try {
-            $transaction = InventoryTransaction::findOrFail($id);
-            $inventoryId = $transaction->inventory_id;
+            return DB::transaction(function () use ($id) {
+                $transaction = InventoryTransaction::findOrFail($id);
+                $inventoryId = $transaction->inventory_id;
 
-            // Delete transaction
-            $this->transactionRepo->delete($id);
+                // Delete transaction
+                $this->transactionRepo->delete($id);
 
-            // Recalculate inventory
-            $this->calculationService->recalculateInventory($inventoryId);
+                // Recalculate inventory
+                if (!$this->calculationService->recalculateInventory($inventoryId)) {
+                    throw new InventoryCalculationException('خطا در محاسبه موجودی پس از حذف');
+                }
 
+                if (request()->ajax()) {
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'تراکنش با موفقیت حذف شد'
+                    ]);
+                }
+
+                return redirect()->route('inventory.transactions.index')
+                    ->with('success', 'تراکنش با موفقیت حذف شد');
+            });
+        } catch (InventoryCalculationException $e) {
             if (request()->ajax()) {
                 return response()->json([
-                    'success' => true,
-                    'message' => 'تراکنش با موفقیت حذف شد'
-                ]);
+                    'success' => false,
+                    'message' => $e->getMessage()
+                ], $e->getCode());
             }
-
-            return redirect()->route('inventory.transactions.index')
-                ->with('success', 'تراکنش با موفقیت حذف شد');
+            return back()->withErrors(['error' => $e->getMessage()]);
         } catch (\Exception $e) {
             Log::error('Transaction deletion failed: ' . $e->getMessage(), [
                 'id' => $id,

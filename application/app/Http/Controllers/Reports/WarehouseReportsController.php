@@ -440,6 +440,44 @@ class WarehouseReportsController extends Controller
 
         $filters = $request->only(array_unique(array_merge($base, $additional)));
 
+        // Validate and sanitize filters
+        if (isset($filters['from_date']) && $filters['from_date']) {
+            try {
+                $fromDate = \Carbon\Carbon::parse($filters['from_date']);
+                if ($fromDate->isFuture()) {
+                    $filters['from_date'] = now()->format('Y-m-d');
+                }
+            } catch (\Exception $e) {
+                unset($filters['from_date']);
+            }
+        }
+
+        if (isset($filters['to_date']) && $filters['to_date']) {
+            try {
+                $toDate = \Carbon\Carbon::parse($filters['to_date']);
+                if ($toDate->isFuture()) {
+                    $filters['to_date'] = now()->format('Y-m-d');
+                }
+            } catch (\Exception $e) {
+                unset($filters['to_date']);
+            }
+        }
+
+        if (isset($filters['search'])) {
+            $filters['search'] = trim(strip_tags($filters['search']));
+            if (strlen($filters['search']) > 120) {
+                $filters['search'] = substr($filters['search'], 0, 120);
+            }
+        }
+
+        if (isset($filters['status']) && !in_array($filters['status'], ['all', 'expired', 'near_expiry', 'available', 'approaching', 'normal'])) {
+            unset($filters['status']);
+        }
+
+        if (isset($filters['year']) && (!is_numeric($filters['year']) || $filters['year'] < 2000 || $filters['year'] > 2100)) {
+            unset($filters['year']);
+        }
+
         $filters['flags'] = $request->input('flags', []);
 
         if ($request->filled('status')) {

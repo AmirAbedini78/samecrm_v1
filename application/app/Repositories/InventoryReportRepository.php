@@ -6,11 +6,13 @@ use App\Models\Inventory;
 use App\Models\Sales;
 use App\Models\InventoryExpiryDate;
 use App\Models\InventoryTransaction;
+use App\Traits\InventoryFilterTrait;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class InventoryReportRepository
 {
+    use InventoryFilterTrait;
     /**
      * Get inventory summary statistics
      *
@@ -191,79 +193,5 @@ class InventoryReportRepository
         return $aging;
     }
 
-    private function applyInventoryFilters($query, $filters = [])
-    {
-        if (!empty($filters['category_id'])) {
-            $query->where('inventory_categoryid', $filters['category_id']);
-        }
-
-        if (!empty($filters['custom_category_id'])) {
-            $query->whereHas('customCategories', function ($q) use ($filters) {
-                $q->where('category_id', $filters['custom_category_id']);
-            });
-        }
-
-        if (!empty($filters['search'])) {
-            $search = $filters['search'];
-            $query->where(function ($q) use ($search) {
-                $q->where('inventory_name', 'LIKE', '%' . $search . '%')
-                    ->orWhere('inventory_code', 'LIKE', '%' . $search . '%');
-            });
-        }
-
-        [$from, $to] = $this->resolveDateBounds($filters);
-        if ($from) {
-            $query->whereDate(DB::raw('COALESCE(entry_date, created_at)'), '>=', $from);
-        }
-        if ($to) {
-            $query->whereDate(DB::raw('COALESCE(entry_date, created_at)'), '<=', $to);
-        }
-    }
-
-    private function resolveDateBounds($filters = [])
-    {
-        $from = $this->parseDateValue($filters['from_date'] ?? null);
-        $to = $this->parseDateValue($filters['to_date'] ?? null);
-
-        if (!$from && !$to && !empty($filters['quick_range'])) {
-            $range = $filters['quick_range'];
-            $now = Carbon::today();
-            switch ($range) {
-                case 'today':
-                    $from = $now->copy();
-                    $to = $now->copy();
-                    break;
-                case 'week':
-                    $from = $now->copy()->subDays(6);
-                    $to = $now->copy();
-                    break;
-                case 'month':
-                    $from = $now->copy()->subDays(29);
-                    $to = $now->copy();
-                    break;
-                case 'quarter':
-                    $from = $now->copy()->subDays(89);
-                    $to = $now->copy();
-                    break;
-            }
-            $from = $from ? $from->format('Y-m-d') : null;
-            $to = $to ? $to->format('Y-m-d') : null;
-        }
-
-        return [$from, $to];
-    }
-
-    private function parseDateValue($value)
-    {
-        if (!$value) {
-            return null;
-        }
-
-        try {
-            return Carbon::parse($value)->format('Y-m-d');
-        } catch (\Exception $e) {
-            return null;
-        }
-    }
 }
 

@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Inventory;
 use App\Models\InventoryTransaction;
+use App\Exceptions\Inventory\InventoryCalculationException;
+use App\Exceptions\Inventory\InventoryNotFoundException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -14,46 +16,42 @@ class InventoryCalculationService
      *
      * @param int $inventory_id
      * @return bool
+     * @throws InventoryCalculationException
+     * @throws InventoryNotFoundException
      */
     public function recalculateInventory($inventory_id)
     {
         try {
-            $inventory = Inventory::find($inventory_id);
+            // Lock inventory row to prevent race conditions
+            $inventory = Inventory::lockForUpdate()->find($inventory_id);
             if (!$inventory) {
-                return false;
+                throw new InventoryNotFoundException("کالا با شناسه {$inventory_id} یافت نشد");
             }
 
-            // Get all transactions for this inventory
-            $transactions = InventoryTransaction::where('inventory_id', $inventory_id)
-                ->orderBy('transaction_date', 'asc')
-                ->orderBy('created_at', 'asc')
-                ->get();
+            // Use aggregation for better performance
+            $aggregates = InventoryTransaction::where('inventory_id', $inventory_id)
+                ->selectRaw('
+                    SUM(CASE WHEN transaction_type = "input" THEN quantity ELSE 0 END) as input_quantity,
+                    SUM(CASE WHEN transaction_type = "input" THEN sub_quantity ELSE 0 END) as input_sub_quantity,
+                    SUM(CASE WHEN transaction_type = "input" THEN amount ELSE 0 END) as input_amount,
+                    SUM(CASE WHEN transaction_type = "output" THEN quantity ELSE 0 END) as output_quantity,
+                    SUM(CASE WHEN transaction_type = "output" THEN sub_quantity ELSE 0 END) as output_sub_quantity,
+                    SUM(CASE WHEN transaction_type = "output" THEN amount ELSE 0 END) as output_amount
+                ')
+                ->first();
 
             // Initialize totals
-            $inputQuantity = 0;
-            $inputSubQuantity = 0;
-            $inputAmount = 0;
-            $outputQuantity = 0;
-            $outputSubQuantity = 0;
-            $outputAmount = 0;
-
-            // Calculate totals from transactions
-            foreach ($transactions as $transaction) {
-                if ($transaction->transaction_type === 'input') {
-                    $inputQuantity += $transaction->quantity ?? 0;
-                    $inputSubQuantity += $transaction->sub_quantity ?? 0;
-                    $inputAmount += $transaction->amount ?? 0;
-                } else {
-                    $outputQuantity += $transaction->quantity ?? 0;
-                    $outputSubQuantity += $transaction->sub_quantity ?? 0;
-                    $outputAmount += $transaction->amount ?? 0;
-                }
-            }
+            $inputQuantity = (float) ($aggregates->input_quantity ?? 0);
+            $inputSubQuantity = (float) ($aggregates->input_sub_quantity ?? 0);
+            $inputAmount = (float) ($aggregates->input_amount ?? 0);
+            $outputQuantity = (float) ($aggregates->output_quantity ?? 0);
+            $outputSubQuantity = (float) ($aggregates->output_sub_quantity ?? 0);
+            $outputAmount = (float) ($aggregates->output_amount ?? 0);
 
             // Calculate current quantities
-            $currentQuantity = ($inventory->first_period_quantity ?? 0) + $inputQuantity - $outputQuantity;
-            $currentSubQuantity = ($inventory->first_period_sub_quantity ?? 0) + $inputSubQuantity - $outputSubQuantity;
-            $currentAmount = ($inventory->first_period_amount ?? 0) + $inputAmount - $outputAmount;
+            $currentQuantity = (float) (($inventory->first_period_quantity ?? 0) + $inputQuantity - $outputQuantity);
+            $currentSubQuantity = (float) (($inventory->first_period_sub_quantity ?? 0) + $inputSubQuantity - $outputSubQuantity);
+            $currentAmount = (float) (($inventory->first_period_amount ?? 0) + $inputAmount - $outputAmount);
 
             // Calculate average price
             $currentAvgPrice = 0;
@@ -89,15 +87,19 @@ class InventoryCalculationService
             $inventory->current_amount = $currentAmount;
             $inventory->current_avg_price = $currentAvgPrice;
 
-            $inventory->save();
+            if (!$inventory->save()) {
+                throw new InventoryCalculationException('خطا در ذخیره اطلاعات موجودی');
+            }
 
             return true;
+        } catch (InventoryNotFoundException | InventoryCalculationException $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('Inventory calculation failed: ' . $e->getMessage(), [
                 'inventory_id' => $inventory_id,
                 'trace' => $e->getTraceAsString()
             ]);
-            return false;
+            throw new InventoryCalculationException('خطا در محاسبه موجودی: ' . $e->getMessage());
         }
     }
 

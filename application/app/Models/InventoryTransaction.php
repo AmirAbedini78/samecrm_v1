@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\TransactionType;
 use Illuminate\Database\Eloquent\Model;
 
 class InventoryTransaction extends Model
@@ -49,12 +50,42 @@ class InventoryTransaction extends Model
     }
 
     /**
+     * Get transaction type as enum
+     * @return TransactionType|null
+     */
+    public function getTransactionTypeEnumAttribute()
+    {
+        try {
+            return TransactionType::from($this->transaction_type);
+        } catch (\ValueError $e) {
+            return null;
+        }
+    }
+
+    /**
      * Get transaction type label
      * @return string
      */
     public function getTransactionTypeLabelAttribute()
     {
-        return $this->transaction_type === 'input' ? 'ورود' : 'خروج';
+        $enum = $this->transaction_type_enum;
+        return $enum ? $enum->label() : ($this->transaction_type === 'input' ? 'ورود' : 'خروج');
+    }
+
+    /**
+     * Scope for input transactions
+     */
+    public function scopeInput($query)
+    {
+        return $query->where('transaction_type', TransactionType::INPUT->value);
+    }
+
+    /**
+     * Scope for output transactions
+     */
+    public function scopeOutput($query)
+    {
+        return $query->where('transaction_type', TransactionType::OUTPUT->value);
     }
 }
 
