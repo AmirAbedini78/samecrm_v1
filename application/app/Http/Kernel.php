@@ -361,6 +361,7 @@ class Kernel extends HttpKernel {
 
         //[growcrm] - [inventory]
         'inventory.index' => \App\Http\Middleware\Inventory\Index::class,
+        'belzona-inventory.index' => \App\Http\Middleware\BelzonaInventory\Index::class,
 
         //[growcrm] - [invoice settlements]
         'invoice-settlements.index' => \App\Http\Middleware\InvoiceSettlements\Index::class,

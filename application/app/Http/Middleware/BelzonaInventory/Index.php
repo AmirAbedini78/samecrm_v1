@@ -39,28 +39,29 @@ class Index {
     private function setTableConfig() {
 
         //get current settings or create for user
-        if (!$table = \App\Models\TableConfig::Where('tableconfig_userid', auth()->id())->Where('tableconfig_table_name', 'inventory')->first()) {
+        if (!$table = \App\Models\TableConfig::Where('tableconfig_userid', auth()->id())->Where('tableconfig_table_name', 'belzona_inventory')->first()) {
 
             //create for this user and set the visible columns (by setting them to `null`)
             $table = new \App\Models\TableConfig();
             $table->tableconfig_userid = auth()->id();
-            $table->tableconfig_table_name = 'inventory';
+            $table->tableconfig_table_name = 'belzona_inventory';
+            // minimal defaults (used by some UI components)
             $table->tableconfig_column_1 = 'displayed'; //id
-            $table->tableconfig_column_2 = 'displayed'; //inventory name
-            $table->tableconfig_column_3 = 'displayed'; //inventory code
-            $table->tableconfig_column_4 = 'displayed'; //current quantity
-            $table->tableconfig_column_5 = 'displayed'; //current avg price
-            $table->tableconfig_column_6 = 'displayed'; //current amount
-            $table->tableconfig_column_7 = 'displayed'; //minimum stock
-            $table->tableconfig_column_8 = 'hidden'; //category
-            $table->tableconfig_column_9 = 'hidden'; //created by
-            $table->tableconfig_column_10 = 'hidden'; //date created
-            $table->tableconfig_column_11 = 'displayed'; //status
+            $table->tableconfig_column_2 = 'displayed'; //product
+            $table->tableconfig_column_3 = 'displayed'; //weight
+            $table->tableconfig_column_4 = 'displayed'; //date
+            $table->tableconfig_column_5 = 'displayed'; //input
+            $table->tableconfig_column_6 = 'displayed'; //output
+            $table->tableconfig_column_7 = 'displayed'; //balance
+            $table->tableconfig_column_8 = 'displayed'; //invoice
+            $table->tableconfig_column_9 = 'displayed'; //customer
+            $table->tableconfig_column_10 = 'hidden'; //notes
+            $table->tableconfig_column_11 = 'hidden'; //sheet
             $table->save();
         }
 
         //get row
-        $table = \App\Models\TableConfig::Where('tableconfig_userid', auth()->id())->Where('tableconfig_table_name', 'inventory')->first();
+        $table = \App\Models\TableConfig::Where('tableconfig_userid', auth()->id())->Where('tableconfig_table_name', 'belzona_inventory')->first();
 
         //default show some table columns
         config(['table' => $table]);
@@ -74,9 +75,7 @@ class Index {
 
         //default show some table columns
         config([
-            'visibility.inventory_col_client' => true,
-            'visibility.inventory_col_category' => true,
-            'visibility.filter_panel_client_project' => true,
+            'visibility.belzona_inventory_col_notes' => true,
         ]);
 
         //permissions -viewing
@@ -92,7 +91,6 @@ class Index {
             config([
                 //visibility
                 'visibility.list_page_actions_search' => true,
-                'visibility.inventory_col_client' => false,
             ]);
         }
 

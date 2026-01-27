@@ -10,44 +10,18 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Inventory\InventoryStoreValidation;
-use App\Http\Responses\Inventory\CommonResponse;
-use App\Http\Responses\Inventory\CreateResponse;
-use App\Models\Inventory;
-use App\Http\Responses\Inventory\DestroyResponse;
-use App\Http\Responses\Inventory\DetailsResponse;
-use App\Http\Responses\Inventory\EditResponse;
-use App\Http\Responses\Inventory\IndexResponse;
-use App\Http\Responses\Inventory\PinningResponse;
-use App\Http\Responses\Inventory\ShowResponse;
-use App\Http\Responses\Inventory\StoreResponse;
-use App\Http\Responses\Inventory\UpdateResponse;
+use App\Models\BelzonaInventory;
 use App\Repositories\BelzonaInventoryRepository;
-use App\Repositories\InventoryRepository;
-use App\Repositories\CategoryRepository;
-use App\Repositories\TagRepository;
-use App\Repositories\UserRepository;
 use Illuminate\Http\Request;
-use Validator;
 
 class BelzonaInventoryController extends Controller {
 
     /**
-     * The users repository instance.
-     */
-    protected $userrepo;
-
-    /**
      * The inventory repository instance.
      */
-    protected $belzona_inventoryrepo;
+    protected $belzonaInventoryRepo;
 
-    /**
-     * The tags repository instance.
-     */
-    protected $tagrepo;
-
-    public function __construct(UserRepository $userrepo, BelzonaInventoryRepository $belzona_inventoryrepo, TagRepository $tagrepo) {
+    public function __construct(BelzonaInventoryRepository $belzonaInventoryRepo) {
 
         //parent
         parent::__construct();
@@ -59,9 +33,7 @@ class BelzonaInventoryController extends Controller {
         $this->middleware('belzona-inventory.index')->only(['index']);
 
         //dependencies
-        $this->userrepo = $userrepo;
-        $this->inventoryrepo = $belzona_inventoryrepo;
-        $this->tagrepo = $tagrepo;
+        $this->belzonaInventoryRepo = $belzonaInventoryRepo;
 
     }
 
@@ -70,12 +42,12 @@ class BelzonaInventoryController extends Controller {
      * @param object CategoryRepository category repository
      * @return blade view | ajax view
      */
-    public function index(CategoryRepository $categoryrepo) {
+    public function index() {
 
         // Check if requesting unique values for a column
         if (request()->get('action') === 'unique_values' && request()->has('column')) {
             $column = request()->get('column');
-            $uniqueValues = $this->inventoryrepo->getUniqueValues($column);
+            $uniqueValues = $this->belzonaInventoryRepo->getUniqueValues($column);
             
             return response()->json([
                 'success' => true,
@@ -88,66 +60,250 @@ class BelzonaInventoryController extends Controller {
             return $this->getDataTablesData();
         }
 
+        // Product summary (used by index quick lookup)
+        if (request()->get('action') === 'product_summary') {
+            return $this->getProductSummary();
+        }
+
+        // Recent transactions for a product (used by index quick lookup)
+        if (request()->get('action') === 'product_transactions') {
+            return $this->getProductTransactions();
+        }
+
         //basic page settings
-        $page = $this->pageSettings('inventory');
+        $page = $this->pageSettings('index');
 
         //get inventory records
-        $inventory = $this->inventoryrepo->search();
-
-        //inventory categories
-        $categories = $categoryrepo->get('inventory');
-
-        //get tags
-        $tags = $this->tagrepo->getByType('inventory');
+        $belzonaInventory = $this->belzonaInventoryRepo->search();
 
         //calculate stats
         $stats = [
-            'total_items' => $inventory->total(),
-            'active_items' => Inventory::where('inventory_status', 'active')->count(),
-            'low_stock' => Inventory::whereRaw('current_quantity <= minimum_stock')->count(),
-            'total_value' => Inventory::sum('current_amount') ?? 0,
+            'total_items' => $belzonaInventory->total(),
+            'total_input' => BelzonaInventory::sum('input') ?? 0,
+            'total_output' => BelzonaInventory::sum('output') ?? 0,
+            'total_balance' => BelzonaInventory::sum('balance') ?? 0,
+            'distinct_products' => BelzonaInventory::distinct('sheet_name')->count('sheet_name'),
+            'distinct_customers' => BelzonaInventory::whereNotNull('customer_name')->distinct('customer_name')->count('customer_name'),
+            'last_import_at' => optional(BelzonaInventory::orderBy('created_at', 'desc')->first())->created_at,
         ];
 
         //reponse payload
         $payload = [
             'page' => $page,
-            'inventory' => $inventory,
-            'categories' => $categories,
-            'tags' => $tags,
+            'belzonaInventory' => $belzonaInventory,
             'stats' => $stats,
         ];
 
         //show the view
-        return new IndexResponse($payload);
+        return response()->view('pages.belzona-inventory.index', $payload);
     }
     
     /**
      * Get DataTables data for inventory
      */
     private function getDataTablesData() {
-        $inventory = $this->inventoryrepo->search();
-        
+        $baseQuery = BelzonaInventory::query();
+        $recordsTotal = (clone $baseQuery)->count();
+
+        // global search
+        $searchValue = request('search.value');
+        if (!empty($searchValue)) {
+            $baseQuery->where(function ($q) use ($searchValue) {
+                $q->where('sheet_name', 'LIKE', "%{$searchValue}%")
+                    ->orWhere('product_name', 'LIKE', "%{$searchValue}%")
+                    ->orWhere('product_weight_raw', 'LIKE', "%{$searchValue}%")
+                    ->orWhere('date_raw', 'LIKE', "%{$searchValue}%")
+                    ->orWhere('invoice_number', 'LIKE', "%{$searchValue}%")
+                    ->orWhere('customer_name', 'LIKE', "%{$searchValue}%")
+                    ->orWhere('notes', 'LIKE', "%{$searchValue}%");
+            });
+        }
+
+        // column filters (sent by our js)
+        $columnSearch = request('column_search', []);
+        if (is_array($columnSearch)) {
+            foreach ($columnSearch as $col => $val) {
+                $val = trim((string) $val);
+                if ($val === '') {
+                    continue;
+                }
+
+                switch ($col) {
+                    case 'input_min':
+                        $baseQuery->where('input', '>=', (float) $val);
+                        break;
+                    case 'input_max':
+                        $baseQuery->where('input', '<=', (float) $val);
+                        break;
+                    case 'output_min':
+                        $baseQuery->where('output', '>=', (float) $val);
+                        break;
+                    case 'output_max':
+                        $baseQuery->where('output', '<=', (float) $val);
+                        break;
+                    case 'balance_min':
+                        $baseQuery->where('balance', '>=', (float) $val);
+                        break;
+                    case 'balance_max':
+                        $baseQuery->where('balance', '<=', (float) $val);
+                        break;
+                    default:
+                        if (in_array($col, ['sheet_name', 'product_name', 'product_weight_raw', 'date_raw', 'invoice_number', 'customer_name', 'notes'], true)) {
+                            $baseQuery->where($col, 'LIKE', "%{$val}%");
+                        }
+                        break;
+                }
+            }
+        }
+
+        // optional date range based on parsed date column
+        if (request()->filled('filter_date_from')) {
+            $baseQuery->whereDate('date', '>=', request('filter_date_from'));
+        }
+        if (request()->filled('filter_date_to')) {
+            $baseQuery->whereDate('date', '<=', request('filter_date_to'));
+        }
+
+        $recordsFiltered = (clone $baseQuery)->count();
+
+        // ordering (DataTables)
+        $columns = [
+            0 => 'belzona_inventory_id',
+            1 => 'sheet_name',
+            2 => 'product_weight_raw',
+            3 => 'date_raw',
+            4 => 'input',
+            5 => 'output',
+            6 => 'balance',
+            7 => 'invoice_number',
+            8 => 'customer_name',
+            9 => 'notes',
+        ];
+
+        $orderColIndex = (int) request('order.0.column', 0);
+        $orderDir = request('order.0.dir', 'desc');
+        $orderDir = in_array($orderDir, ['asc', 'desc']) ? $orderDir : 'desc';
+        $orderBy = $columns[$orderColIndex] ?? 'belzona_inventory_id';
+        $baseQuery->orderBy($orderBy, $orderDir);
+
+        $start = (int) request('start', 0);
+        $length = (int) request('length', 25);
+        if ($length <= 0) {
+            $length = 25;
+        }
+
+        $rows = $baseQuery->skip($start)->take($length)->get();
+
         $data = [];
-        foreach ($inventory->items() as $item) {
+        foreach ($rows as $item) {
             $data[] = [
-                'inventory_id' => $item->inventory_id,
-                'product_name' => $item->product_name,
-                'category' => $item->category->category_name ?? '',
-                'warehouse' => $item->warehouse,
-                'quantity' => $item->quantity,
-                'unit_price' => $item->unit_price,
-                'total_value' => $item->quantity * $item->unit_price,
-                'supplier' => $item->supplier,
-                'created_at' => $item->created_at,
-                'actions' => ''
+                'belzona_inventory_id' => $item->belzona_inventory_id,
+                'sheet_name' => $item->sheet_name,
+                'product_weight_raw' => $item->product_weight_raw,
+                'date_raw' => $item->date_raw,
+                'input' => $item->input,
+                'output' => $item->output,
+                'balance' => $item->balance,
+                'invoice_number' => $item->invoice_number,
+                'customer_name' => $item->customer_name,
+                'notes' => $item->notes,
+                'actions' => '',
             ];
         }
-        
+
         return response()->json([
-            'draw' => request('draw'),
-            'recordsTotal' => $inventory->total(),
-            'recordsFiltered' => $inventory->total(),
-            'data' => $data
+            'draw' => (int) request('draw'),
+            'recordsTotal' => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered,
+            'data' => $data,
+        ]);
+    }
+
+    private function getProductSummary()
+    {
+        $sheetName = trim((string) request('sheet_name'));
+        if ($sheetName === '') {
+            return response()->json(['success' => false, 'message' => 'missing sheet_name'], 422);
+        }
+
+        $query = BelzonaInventory::query()->where('sheet_name', $sheetName);
+
+        if (request()->filled('filter_date_from')) {
+            $query->whereDate('date', '>=', request('filter_date_from'));
+        }
+        if (request()->filled('filter_date_to')) {
+            $query->whereDate('date', '<=', request('filter_date_to'));
+        }
+
+        $totalInput = (clone $query)->sum('input') ?? 0;
+        $totalOutput = (clone $query)->sum('output') ?? 0;
+
+        // latest balance by parsed date, fallback to row number
+        $latest = (clone $query)
+            ->orderByRaw('CASE WHEN date IS NULL THEN 1 ELSE 0 END asc')
+            ->orderBy('date', 'desc')
+            ->orderBy('sheet_row_number', 'desc')
+            ->first();
+
+        $first = (clone $query)
+            ->orderByRaw('CASE WHEN date IS NULL THEN 1 ELSE 0 END asc')
+            ->orderBy('date', 'asc')
+            ->orderBy('sheet_row_number', 'asc')
+            ->first();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'sheet_name' => $sheetName,
+                'product_name' => optional($latest)->product_name,
+                'product_weight_raw' => optional($latest)->product_weight_raw,
+                'total_input' => $totalInput,
+                'total_output' => $totalOutput,
+                'net' => $totalInput - $totalOutput,
+                'latest_balance' => optional($latest)->balance,
+                'first_date_raw' => optional($first)->date_raw,
+                'last_date_raw' => optional($latest)->date_raw,
+                'rows' => (clone $query)->count(),
+            ],
+        ]);
+    }
+
+    private function getProductTransactions()
+    {
+        $sheetName = trim((string) request('sheet_name'));
+        if ($sheetName === '') {
+            return response()->json(['success' => false, 'message' => 'missing sheet_name'], 422);
+        }
+
+        $query = BelzonaInventory::query()->where('sheet_name', $sheetName);
+
+        if (request()->filled('filter_date_from')) {
+            $query->whereDate('date', '>=', request('filter_date_from'));
+        }
+        if (request()->filled('filter_date_to')) {
+            $query->whereDate('date', '<=', request('filter_date_to'));
+        }
+
+        $rows = $query
+            ->orderByRaw('CASE WHEN date IS NULL THEN 1 ELSE 0 END asc')
+            ->orderBy('date', 'desc')
+            ->orderBy('sheet_row_number', 'desc')
+            ->limit(10)
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $rows->map(function ($r) {
+                return [
+                    'date_raw' => $r->date_raw,
+                    'input' => $r->input,
+                    'output' => $r->output,
+                    'balance' => $r->balance,
+                    'invoice_number' => $r->invoice_number,
+                    'customer_name' => $r->customer_name,
+                    'notes' => $r->notes,
+                ];
+            })->values(),
         ]);
     }
 
@@ -156,26 +312,11 @@ class BelzonaInventoryController extends Controller {
      * @param object CategoryRepository category repository
      * @return \Illuminate\Http\Response
      */
-    public function create(CategoryRepository $categoryrepo) {
+    public function create() {
 
         //basic page settings
         $page = $this->pageSettings('create');
-
-        //inventory categories
-        $categories = $categoryrepo->get('inventory');
-
-        //get tags
-        $tags = $this->tagrepo->getByType('inventory');
-
-        //reponse payload
-        $payload = [
-            'page' => $page,
-            'categories' => $categories,
-            'tags' => $tags,
-        ];
-
-        //show the view
-        return new CreateResponse($payload);
+        return response()->view('pages.belzona-inventory.create', compact('page'));
     }
 
     /**
@@ -183,23 +324,24 @@ class BelzonaInventoryController extends Controller {
      * @param object InventoryStoreValidation validation
      * @return \Illuminate\Http\Response
      */
-    public function store(InventoryStoreValidation $request) {
+    public function store(Request $request) {
+        $request->validate([
+            'product_name' => 'nullable|string|max:255',
+            'date' => 'nullable|date',
+            'input' => 'nullable',
+            'output' => 'nullable',
+            'balance' => 'nullable',
+            'invoice_number' => 'nullable|string|max:255',
+            'customer_name' => 'nullable|string|max:255',
+        ]);
 
         //create the inventory record
-        if (!$inventory_id = $this->inventoryrepo->create()) {
+        if (!$id = $this->belzonaInventoryRepo->create()) {
             abort(409, __('lang.error_request_could_not_be_completed'));
         }
 
         //get the inventory record object (friendly for dispatching events)
-        $inventory = $this->inventoryrepo->search($inventory_id);
-
-        //reponse payload
-        $payload = [
-            'inventory' => $inventory,
-        ];
-
-        //show the view
-        return new StoreResponse($payload);
+        return redirect('/belzona-inventory/' . $id);
     }
 
     /**
@@ -210,24 +352,18 @@ class BelzonaInventoryController extends Controller {
     public function show($id) {
 
         //get the inventory record
-        $inventory = $this->inventoryrepo->search($id);
+        $query = $this->belzonaInventoryRepo->search($id);
 
         //not found
-        if (!$inventory = $inventory->first()) {
+        if (!$belzonaInventory = $query->first()) {
             abort(404);
         }
 
         //basic page settings
-        $page = $this->pageSettings('inventory');
+        $page = $this->pageSettings('show');
 
         //reponse payload
-        $payload = [
-            'page' => $page,
-            'inventory' => $inventory,
-        ];
-
-        //show the view
-        return new ShowResponse($payload);
+        return response()->view('pages.belzona-inventory.show', compact('page', 'belzonaInventory'));
     }
 
     /**
@@ -238,24 +374,17 @@ class BelzonaInventoryController extends Controller {
     public function edit($id) {
 
         //get the inventory record
-        $inventory = $this->inventoryrepo->search($id);
+        $query = $this->belzonaInventoryRepo->search($id);
 
         //not found
-        if (!$inventory = $inventory->first()) {
+        if (!$belzonaInventory = $query->first()) {
             abort(404);
         }
 
         //basic page settings
         $page = $this->pageSettings('edit');
 
-        //reponse payload
-        $payload = [
-            'page' => $page,
-            'inventory' => $inventory,
-        ];
-
-        //show the view
-        return new EditResponse($payload);
+        return response()->view('pages.belzona-inventory.edit', compact('page', 'belzonaInventory'));
     }
 
     /**
@@ -264,23 +393,23 @@ class BelzonaInventoryController extends Controller {
      * @param int $id inventory id
      * @return \Illuminate\Http\Response
      */
-    public function update(InventoryStoreValidation $request, $id) {
+    public function update(Request $request, $id) {
+        $request->validate([
+            'product_name' => 'nullable|string|max:255',
+            'date' => 'nullable|date',
+            'input' => 'nullable',
+            'output' => 'nullable',
+            'balance' => 'nullable',
+            'invoice_number' => 'nullable|string|max:255',
+            'customer_name' => 'nullable|string|max:255',
+        ]);
 
         //update the inventory record
-        if (!$this->inventoryrepo->update($id)) {
+        if (!$this->belzonaInventoryRepo->update($id)) {
             abort(409);
         }
 
-        //get the inventory record object (friendly for dispatching events)
-        $inventory = $this->inventoryrepo->search($id);
-
-        //reponse payload
-        $payload = [
-            'inventory' => $inventory,
-        ];
-
-        //show the view
-        return new UpdateResponse($payload);
+        return redirect('/belzona-inventory/' . $id);
     }
 
     /**
@@ -291,23 +420,17 @@ class BelzonaInventoryController extends Controller {
     public function destroy($id) {
 
         //get the inventory record
-        $inventory = $this->inventoryrepo->search($id);
+        $query = $this->belzonaInventoryRepo->search($id);
 
         //not found
-        if (!$inventory = $inventory->first()) {
+        if (!$belzonaInventory = $query->first()) {
             abort(404);
         }
 
         //remove the inventory record
-        $inventory->delete();
+        $belzonaInventory->delete();
 
-        //reponse payload
-        $payload = [
-            'inventory' => $inventory,
-        ];
-
-        //show the view
-        return new DestroyResponse($payload);
+        return redirect('/belzona-inventory');
     }
 
     /**
@@ -315,29 +438,6 @@ class BelzonaInventoryController extends Controller {
      * @param int $id inventory id
      * @return \Illuminate\Http\Response
      */
-    public function details($id) {
-
-        //get the inventory record
-        $inventory = $this->inventoryrepo->search($id);
-
-        //not found
-        if (!$inventory = $inventory->first()) {
-            abort(404);
-        }
-
-        //basic page settings
-        $page = $this->pageSettings('inventory');
-
-        //reponse payload
-        $payload = [
-            'page' => $page,
-            'inventory' => $inventory,
-        ];
-
-        //show the view
-        return new DetailsResponse($payload);
-    }
-
     /**
      * basic page settings for this section of the app
      * @param string $section name
@@ -350,12 +450,13 @@ class BelzonaInventoryController extends Controller {
             'page' => $section,
             'crumbs' => [
                 __('lang.accounting'),
-                __('lang.inventory'),
+                'انبار بلزونا',
             ],
             'crumbs_special_class' => 'main-pages-crumbs',
-            'page_title' => __('lang.inventory'),
-            'heading' => __('lang.inventory'),
+            'page_title' => 'انبار بلزونا',
+            'heading' => 'انبار بلزونا',
             'mainmenu_accounting' => 'active',
+            'submenu_belzona_inventory' => 'active',
         ];
 
         return $page;

@@ -1450,10 +1450,23 @@ Route::group(['prefix' => 'inventory'], function () {
 });
 Route::resource('inventory', 'InventoryController');
 
+//BELZONA INVENTORY
+Route::group(['prefix' => 'belzona-inventory'], function () {
+    Route::any("/search", "BelzonaInventoryController@index");
+    Route::post("/delete", "BelzonaInventoryController@destroy")->middleware(['demoModeCheck']);
+});
+Route::resource('belzona-inventory', 'BelzonaInventoryController');
+
 //INVENTORY IMPORT
 Route::group(['prefix' => 'import/inventory', 'middleware' => ['auth']], function () {
     Route::get("/", "Import\Inventory@index");
     Route::post("/", "Import\Inventory@store");
+});
+
+//BELZONA INVENTORY IMPORT
+Route::group(['prefix' => 'import/belzona-inventory', 'middleware' => ['auth']], function () {
+    Route::get("/", "Import\BelzonaInventory@index");
+    Route::post("/", "Import\BelzonaInventory@store");
 });
 
 //INVENTORY ENTRIES IMPORT

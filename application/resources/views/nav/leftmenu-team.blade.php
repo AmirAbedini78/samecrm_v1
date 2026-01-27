@@ -417,6 +417,13 @@
                                 {{ cleanLang(__('lang.inventory')) }}
                             </a>
                         </li>
+                        <li class="sidenav-submenu {{ $page['submenu_belzona_inventory'] ?? '' }}" id="submenu_belzona_inventory">
+                            <a href="{{ _url('/belzona-inventory') }}"
+                                class="{{ $page['submenu_belzona_inventory'] ?? '' }}">
+                                <i class="ti-package"></i>
+                                انبار بلزونا
+                            </a>
+                        </li>
                         <li class="sidenav-submenu {{ $page['submenu_sales'] ?? '' }}" id="submenu_sales">
                             <a href="{{ _url('/sales') }}"
                                 class="{{ $page['submenu_sales'] ?? '' }}">

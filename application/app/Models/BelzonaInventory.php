@@ -26,13 +26,20 @@ class BelzonaInventory extends Model
     // Fillable fields for mass assignment
 
 protected $fillable = [
-    'product_name',  
-    'date',  
-    'input',  
-    'output',  
-    'balance',  
-    'invoice_number',  
-    'customer_name',  
+    'product_name',
+    'product_weight_value',
+    'product_weight_unit',
+    'product_weight_raw',
+    'sheet_name',
+    'sheet_row_number',
+    'date',
+    'date_raw',
+    'input',
+    'output',
+    'balance',
+    'invoice_number',
+    'customer_name',
+    'notes',
 ];
 
 
