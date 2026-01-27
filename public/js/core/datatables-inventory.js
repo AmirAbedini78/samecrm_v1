@@ -119,7 +119,8 @@ $(document).ready(function() {
             
             // Language configuration
             language: {
-                url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/fa.json'
+                // local i18n (avoid CDN load errors)
+                url: '/public/js/datatables-persian.json'
             },
             
             // Advanced features

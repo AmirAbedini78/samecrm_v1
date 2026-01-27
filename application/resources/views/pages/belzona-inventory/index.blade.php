@@ -113,7 +113,7 @@
                         <div class="col-md-3">
                             <div class="card border">
                                 <div class="card-body">
-                                    <div class="text-muted">جمع ورودی</div>
+                                    <div class="text-muted">جمع ورودی (همه پارت‌ها)</div>
                                     <div class="h4 mb-0" id="belzona-summary-input">-</div>
                                 </div>
                             </div>
@@ -121,7 +121,7 @@
                         <div class="col-md-3">
                             <div class="card border">
                                 <div class="card-body">
-                                    <div class="text-muted">جمع خروجی</div>
+                                    <div class="text-muted">جمع خروجی (همه پارت‌ها)</div>
                                     <div class="h4 mb-0" id="belzona-summary-output">-</div>
                                 </div>
                             </div>
@@ -129,7 +129,7 @@
                         <div class="col-md-3">
                             <div class="card border">
                                 <div class="card-body">
-                                    <div class="text-muted">خالص (ورودی-خروجی)</div>
+                                    <div class="text-muted">مانده کل (ورودی-خروجی)</div>
                                     <div class="h4 mb-0" id="belzona-summary-net">-</div>
                                 </div>
                             </div>
@@ -137,7 +137,7 @@
                         <div class="col-md-3">
                             <div class="card border">
                                 <div class="card-body">
-                                    <div class="text-muted">آخرین مانده / آخرین تاریخ</div>
+                                    <div class="text-muted">آخرین پارت ورود</div>
                                     <div class="h5 mb-0" id="belzona-summary-balance">-</div>
                                     <small class="text-muted" id="belzona-summary-lastdate">-</small>
                                 </div>
@@ -145,14 +145,53 @@
                         </div>
                     </div>
 
+                    <!-- Inbound batches list -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <strong>پارت‌های ورود</strong>
+                                    <small class="text-muted ms-2" id="belzona-batches-count"></small>
+                                </div>
+                                <div class="text-muted small">
+                                    راهنما: روی هر پارت کلیک کنید تا خروجی‌های همان پارت نمایش داده شود.
+                                </div>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover table-bordered mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width: 55px;">#</th>
+                                            <th>عنوان/توضیح پارت</th>
+                                            <th style="width: 140px;">تاریخ ورود</th>
+                                            <th style="width: 120px;">تعداد ورود</th>
+                                            <th style="width: 120px;">جمع خروجی</th>
+                                            <th style="width: 120px;">مانده پارت</th>
+                                            <th style="width: 110px;">تعداد خروجی‌ها</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="belzona-inbound-batches">
+                                        <tr><td colspan="7" class="text-muted">یک محصول انتخاب کنید.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="row mt-3">
                         <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <strong>خروجی‌های پارت انتخاب‌شده</strong>
+                                    <small class="text-muted ms-2" id="belzona-selected-batch-label"></small>
+                                </div>
+                                <div class="text-muted small" id="belzona-selected-batch-meta"></div>
+                            </div>
                             <div class="table-responsive">
                                 <table class="table table-sm table-striped mb-0">
                                     <thead>
                                         <tr>
                                             <th>تاریخ</th>
-                                            <th>ورودی</th>
                                             <th>خروجی</th>
                                             <th>مانده</th>
                                             <th>فاکتور</th>
@@ -161,7 +200,7 @@
                                         </tr>
                                     </thead>
                                     <tbody id="belzona-summary-transactions">
-                                        <tr><td colspan="7" class="text-muted">یک محصول انتخاب کنید.</td></tr>
+                                        <tr><td colspan="6" class="text-muted">یک پارت انتخاب کنید.</td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -296,9 +335,15 @@
 <script src="{{ url('public/js/core/datatables-belzona-inventory.js') }}"></script>
 <script>
 $(document).ready(function() {
+    var baseUrl = (window.NX && NX.site_url) ? String(NX.site_url).replace(/\/$/, '') : '';
+    function nxUrl(path) {
+        path = String(path || '').replace(/^\//, '');
+        return baseUrl ? (baseUrl + '/' + path) : ('/' + path);
+    }
+
     // fill product dropdown from distinct sheet_name values
     function loadProducts() {
-        $.get('/belzona-inventory', { action: 'unique_values', column: 'sheet_name' }, function(res) {
+        $.get(nxUrl('belzona-inventory'), { action: 'unique_values', column: 'sheet_name' }, function(res) {
             if (!res || !res.success) return;
             var $sel = $('#belzona-product-select');
             $sel.empty();
@@ -311,25 +356,94 @@ $(document).ready(function() {
         });
     }
 
-    function renderTransactions(rows) {
+    function fmtNumber(v) {
+        try {
+            return new Intl.NumberFormat('fa-IR').format(parseFloat(v || 0));
+        } catch (e) {
+            return v;
+        }
+    }
+
+    function renderOutbounds(rows) {
         var $tbody = $('#belzona-summary-transactions');
         $tbody.empty();
         if (!rows || rows.length === 0) {
-            $tbody.append('<tr><td colspan=\"7\" class=\"text-muted\">تراکنشی یافت نشد.</td></tr>');
+            $tbody.append('<tr><td colspan=\"6\" class=\"text-muted\">خروجی‌ای یافت نشد.</td></tr>');
             return;
         }
         rows.forEach(function(r) {
             $tbody.append(
                 '<tr>' +
                 '<td>' + (r.date_raw || '') + '</td>' +
-                '<td>' + (r.input || 0) + '</td>' +
-                '<td>' + (r.output || 0) + '</td>' +
-                '<td>' + (r.balance || 0) + '</td>' +
+                '<td>' + fmtNumber(r.output || 0) + '</td>' +
+                '<td>' + fmtNumber(r.balance || 0) + '</td>' +
                 '<td>' + (r.invoice_number || '') + '</td>' +
                 '<td>' + (r.customer_name || '') + '</td>' +
                 '<td>' + (r.notes || '') + '</td>' +
                 '</tr>'
             );
+        });
+    }
+
+    function renderBatches(batches, totals) {
+        var $tbody = $('#belzona-inbound-batches');
+        $tbody.empty();
+
+        var count = (batches && batches.length) ? batches.length : 0;
+        $('#belzona-batches-count').text(count ? ('(' + count + ' پارت)') : '(0 پارت)');
+
+        if (!batches || batches.length === 0) {
+            $tbody.append('<tr><td colspan="7" class="text-muted">پارتی یافت نشد.</td></tr>');
+            return;
+        }
+
+        batches.forEach(function(b, idx) {
+            var label = b.label || 'ورود';
+            var dateRaw = b.date_raw || '';
+            var input = fmtNumber(b.input || 0);
+            var outTotal = fmtNumber(b.out_total || 0);
+            var remaining = fmtNumber(b.remaining || 0);
+            var outCount = fmtNumber(b.out_count || 0);
+            var rowNum = b.inbound_row_number || '';
+
+            $tbody.append(
+                '<tr class="belzona-batch-row" data-row-number="' + rowNum + '">' +
+                '<td>' + (idx + 1) + '</td>' +
+                '<td>' + label + '</td>' +
+                '<td>' + dateRaw + '</td>' +
+                '<td>' + input + '</td>' +
+                '<td>' + outTotal + '</td>' +
+                '<td>' + remaining + '</td>' +
+                '<td>' + outCount + '</td>' +
+                '</tr>'
+            );
+        });
+    }
+
+    function loadBatchOutbounds(sheetName, inboundRowNumber) {
+        var dateFrom = $('#belzona-date-from').val();
+        var dateTo = $('#belzona-date-to').val();
+
+        $.get(nxUrl('belzona-inventory'), {
+            action: 'batch_outbounds',
+            sheet_name: sheetName,
+            inbound_row_number: inboundRowNumber,
+            filter_date_from: dateFrom,
+            filter_date_to: dateTo
+        }, function(res) {
+            if (!res || !res.success) return;
+            var d = res.data || {};
+            var inbound = d.inbound || {};
+
+            $('#belzona-selected-batch-label').text(inbound.label ? ('- ' + inbound.label) : '');
+            $('#belzona-selected-batch-meta').text(
+                'ورود: ' + fmtNumber(inbound.input || 0) +
+                ' | خروجی: ' + fmtNumber(inbound.out_total || 0) +
+                ' | مانده: ' + fmtNumber(inbound.remaining || 0) +
+                (inbound.date_raw ? (' | تاریخ ورود: ' + inbound.date_raw) : '')
+            );
+
+            renderOutbounds(d.outbounds || []);
         });
     }
 
@@ -340,34 +454,59 @@ $(document).ready(function() {
         var dateFrom = $('#belzona-date-from').val();
         var dateTo = $('#belzona-date-to').val();
 
-        $.get('/belzona-inventory', {
-            action: 'product_summary',
+        // Load batches (inbounds) and aggregate totals
+        $.get(nxUrl('belzona-inventory'), {
+            action: 'product_batches',
             sheet_name: sheetName,
             filter_date_from: dateFrom,
             filter_date_to: dateTo
         }, function(res) {
             if (!res || !res.success) return;
             var d = res.data || {};
-            $('#belzona-summary-input').text(d.total_input || 0);
-            $('#belzona-summary-output').text(d.total_output || 0);
-            $('#belzona-summary-net').text(d.net || 0);
-            $('#belzona-summary-balance').text((d.latest_balance !== null && d.latest_balance !== undefined) ? d.latest_balance : '-');
-            $('#belzona-summary-lastdate').text(d.last_date_raw || '-');
-        });
+            var totals = (d.totals || {});
+            var batches = (d.batches || []);
 
-        $.get('/belzona-inventory', {
-            action: 'product_transactions',
-            sheet_name: sheetName,
-            filter_date_from: dateFrom,
-            filter_date_to: dateTo
-        }, function(res) {
-            if (!res || !res.success) return;
-            renderTransactions(res.data || []);
+            $('#belzona-summary-input').text(fmtNumber(totals.input_total || 0));
+            $('#belzona-summary-output').text(fmtNumber(totals.out_total || 0));
+            $('#belzona-summary-net').text(fmtNumber((totals.input_total || 0) - (totals.out_total || 0)));
+
+            if (batches.length) {
+                var last = batches[batches.length - 1];
+                $('#belzona-summary-balance').text(fmtNumber(last.input || 0));
+                $('#belzona-summary-lastdate').text(last.date_raw || '-');
+            } else {
+                $('#belzona-summary-balance').text('-');
+                $('#belzona-summary-lastdate').text('-');
+            }
+
+            renderBatches(batches, totals);
+
+            // auto-select first batch
+            if (batches.length) {
+                var firstRowNum = batches[0].inbound_row_number;
+                $('.belzona-batch-row').removeClass('table-primary');
+                $('.belzona-batch-row[data-row-number="' + firstRowNum + '"]').addClass('table-primary');
+                loadBatchOutbounds(sheetName, firstRowNum);
+            } else {
+                $('#belzona-selected-batch-label').text('');
+                $('#belzona-selected-batch-meta').text('');
+                renderOutbounds([]);
+            }
         });
     }
 
     loadProducts();
     $('#belzona-refresh-summary').on('click', loadSummary);
+
+    // clicking on a batch shows its outbounds
+    $(document).on('click', '.belzona-batch-row', function() {
+        var sheetName = $('#belzona-product-select').val();
+        var rowNumber = $(this).data('row-number');
+        if (!sheetName || !rowNumber) return;
+        $('.belzona-batch-row').removeClass('table-primary');
+        $(this).addClass('table-primary');
+        loadBatchOutbounds(sheetName, rowNumber);
+    });
 });
 </script>
 @endsection

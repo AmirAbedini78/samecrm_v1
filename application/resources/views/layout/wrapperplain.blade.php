@@ -27,6 +27,10 @@
 </body>
 
 @include('layout.footerjs')
+
+<!--per-page footer js-->
+@yield('footerjs')
+
 <!--js automations-->
 @include('layout.automationjs')
 <!--[note: no sanitizing required] for this trusted content, which is added by the admin-->

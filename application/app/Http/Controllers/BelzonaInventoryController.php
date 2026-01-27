@@ -65,6 +65,16 @@ class BelzonaInventoryController extends Controller {
             return $this->getProductSummary();
         }
 
+        // Inbound batches (parts) for a product (used by index quick lookup)
+        if (request()->get('action') === 'product_batches') {
+            return $this->getProductBatches();
+        }
+
+        // Outbound details for a selected inbound batch
+        if (request()->get('action') === 'batch_outbounds') {
+            return $this->getBatchOutbounds();
+        }
+
         // Recent transactions for a product (used by index quick lookup)
         if (request()->get('action') === 'product_transactions') {
             return $this->getProductTransactions();
@@ -305,6 +315,231 @@ class BelzonaInventoryController extends Controller {
                 ];
             })->values(),
         ]);
+    }
+
+    /**
+     * Return inbound "parts/batches" for a product (sheet).
+     * A batch is defined as one inbound row (input > 0), and its outbounds are rows after it
+     * until the next inbound row (or end of sheet), where output > 0.
+     */
+    private function getProductBatches()
+    {
+        $sheetName = trim((string) request('sheet_name'));
+        if ($sheetName === '') {
+            return response()->json(['success' => false, 'message' => 'missing sheet_name'], 422);
+        }
+
+        $query = BelzonaInventory::query()
+            ->where('sheet_name', $sheetName)
+            ->orderBy('sheet_row_number', 'asc');
+
+        if (request()->filled('filter_date_from')) {
+            $query->whereDate('date', '>=', request('filter_date_from'));
+        }
+        if (request()->filled('filter_date_to')) {
+            $query->whereDate('date', '<=', request('filter_date_to'));
+        }
+
+        $rows = $query->get([
+            'belzona_inventory_id',
+            'sheet_name',
+            'sheet_row_number',
+            'date',
+            'date_raw',
+            'input',
+            'output',
+            'balance',
+            'invoice_number',
+            'customer_name',
+            'notes',
+            'product_name',
+            'product_weight_raw',
+        ]);
+
+        $batches = [];
+        $current = null;
+
+        foreach ($rows as $r) {
+            $isInbound = ((float) $r->input) > 0;
+
+            if ($isInbound) {
+                // close previous batch
+                if ($current !== null) {
+                    $current['remaining'] = (float) $current['input'] - (float) $current['out_total'];
+                    $batches[] = $current;
+                }
+
+                $label = $this->extractInboundLabel($r);
+
+                $current = [
+                    'inbound_id' => $r->belzona_inventory_id,
+                    'inbound_row_number' => (int) $r->sheet_row_number,
+                    'sheet_name' => $r->sheet_name,
+                    'product_name' => $r->product_name,
+                    'product_weight_raw' => $r->product_weight_raw,
+                    'label' => $label,
+                    'date' => $this->formatDateYmd($r->date),
+                    'date_raw' => $r->date_raw,
+                    'invoice_number' => $r->invoice_number,
+                    'input' => (float) $r->input,
+                    'out_total' => 0.0,
+                    'out_count' => 0,
+                    'remaining' => null,
+                ];
+                continue;
+            }
+
+            // outbound rows belong to current batch (until next inbound)
+            if ($current !== null && ((float) $r->output) > 0) {
+                $current['out_total'] += (float) $r->output;
+                $current['out_count'] += 1;
+            }
+        }
+
+        if ($current !== null) {
+            $current['remaining'] = (float) $current['input'] - (float) $current['out_total'];
+            $batches[] = $current;
+        }
+
+        $totals = [
+            'batches_count' => count($batches),
+            'input_total' => array_sum(array_map(fn ($b) => (float) ($b['input'] ?? 0), $batches)),
+            'out_total' => array_sum(array_map(fn ($b) => (float) ($b['out_total'] ?? 0), $batches)),
+        ];
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'sheet_name' => $sheetName,
+                'totals' => $totals,
+                'batches' => $batches,
+            ],
+        ]);
+    }
+
+    /**
+     * Return outbound rows for a given inbound batch (identified by inbound_row_number).
+     */
+    private function getBatchOutbounds()
+    {
+        $sheetName = trim((string) request('sheet_name'));
+        $inboundRowNumber = (int) request('inbound_row_number', 0);
+
+        if ($sheetName === '' || $inboundRowNumber <= 0) {
+            return response()->json(['success' => false, 'message' => 'missing sheet_name or inbound_row_number'], 422);
+        }
+
+        // find inbound row
+        $inbound = BelzonaInventory::query()
+            ->where('sheet_name', $sheetName)
+            ->where('sheet_row_number', $inboundRowNumber)
+            ->first();
+
+        if (!$inbound) {
+            return response()->json(['success' => false, 'message' => 'inbound row not found'], 404);
+        }
+
+        // find next inbound row number
+        $nextInboundRowNumber = (int) BelzonaInventory::query()
+            ->where('sheet_name', $sheetName)
+            ->where('sheet_row_number', '>', $inboundRowNumber)
+            ->where('input', '>', 0)
+            ->min('sheet_row_number');
+
+        // outbound window: (inboundRowNumber, nextInboundRowNumber)
+        $outQuery = BelzonaInventory::query()
+            ->where('sheet_name', $sheetName)
+            ->where('sheet_row_number', '>', $inboundRowNumber);
+
+        if ($nextInboundRowNumber > 0) {
+            $outQuery->where('sheet_row_number', '<', $nextInboundRowNumber);
+        }
+
+        // optional date filters (apply to outbounds)
+        if (request()->filled('filter_date_from')) {
+            $outQuery->whereDate('date', '>=', request('filter_date_from'));
+        }
+        if (request()->filled('filter_date_to')) {
+            $outQuery->whereDate('date', '<=', request('filter_date_to'));
+        }
+
+        $outbounds = $outQuery
+            ->where('output', '>', 0)
+            ->orderBy('sheet_row_number', 'asc')
+            ->limit(500)
+            ->get();
+
+        $label = $this->extractInboundLabel($inbound);
+
+        $outTotal = (float) $outbounds->sum('output');
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'sheet_name' => $sheetName,
+                'inbound' => [
+                    'inbound_id' => $inbound->belzona_inventory_id,
+                    'inbound_row_number' => (int) $inbound->sheet_row_number,
+                    'date' => $this->formatDateYmd($inbound->date),
+                    'date_raw' => $inbound->date_raw,
+                    'invoice_number' => $inbound->invoice_number,
+                    'label' => $label,
+                    'input' => (float) $inbound->input,
+                    'out_total' => $outTotal,
+                    'remaining' => (float) $inbound->input - $outTotal,
+                ],
+                'outbounds' => $outbounds->map(function ($r) {
+                    return [
+                        'row_number' => (int) $r->sheet_row_number,
+                        'date_raw' => $r->date_raw,
+                        'date' => $this->formatDateYmd($r->date),
+                        'output' => (float) $r->output,
+                        'invoice_number' => $r->invoice_number,
+                        'customer_name' => $r->customer_name,
+                        'notes' => $r->notes,
+                        'balance' => (float) $r->balance,
+                    ];
+                })->values(),
+            ],
+        ]);
+    }
+
+    /**
+     * Try to extract a human-readable inbound label ("واردات پرونده ... پارت ...")
+     * from customer_name/notes/invoice_number.
+     */
+    private function extractInboundLabel($row): string
+    {
+        $candidates = [
+            (string) ($row->notes ?? ''),
+            (string) ($row->customer_name ?? ''),
+            (string) ($row->invoice_number ?? ''),
+        ];
+
+        foreach ($candidates as $t) {
+            $t = trim($t);
+            if ($t === '') continue;
+            if (mb_strpos($t, 'واردات') !== false || mb_strpos($t, 'پرونده') !== false || mb_strpos($t, 'پارت') !== false) {
+                return $t;
+            }
+        }
+
+        return 'ورود';
+    }
+
+    /**
+     * Date column may be stored as string; return YYYY-mm-dd safely.
+     */
+    private function formatDateYmd($value): ?string
+    {
+        if ($value instanceof \DateTimeInterface) {
+            return $value->format('Y-m-d');
+        }
+        if (is_string($value) && $value !== '') {
+            // expected formats: "YYYY-mm-dd" or "YYYY-mm-dd HH:ii:ss"
+            return substr($value, 0, 10);
+        }
+        return null;
     }
 
     /**

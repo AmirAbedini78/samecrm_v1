@@ -75,6 +75,9 @@
     <!--js footer-->
     @include('layout.footerjs')
 
+    <!--per-page footer js-->
+    @yield('footerjs')
+
     <!--js automations-->
     @include('layout.automationjs')
 

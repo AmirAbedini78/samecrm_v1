@@ -5,6 +5,11 @@
 $(document).ready(function() {
     if ($('#belzona-inventory-table').length) {
         var $table = $('#belzona-inventory-table');
+        var baseUrl = (window.NX && NX.site_url) ? String(NX.site_url).replace(/\/$/, '') : '';
+        function nxUrl(path) {
+            path = String(path || '').replace(/^\//, '');
+            return baseUrl ? (baseUrl + '/' + path) : ('/' + path);
+        }
 
         function getColumnSearchPayload() {
             var payload = {};
@@ -22,7 +27,7 @@ $(document).ready(function() {
             processing: true,
             serverSide: true,
             ajax: {
-                url: '/belzona-inventory',
+                url: nxUrl('belzona-inventory'),
                 type: 'GET',
                 // keep default DataTables request params (draw/start/length/columns/order/search)
                 // and just append our custom filters
@@ -57,14 +62,15 @@ $(document).ready(function() {
                     render: function(data, type, row) {
                         var id = row.belzona_inventory_id;
                         var buttons = '';
-                        buttons += '<a href="/belzona-inventory/' + id + '" class="btn btn-sm btn-primary" title="مشاهده"><i class="ti-eye"></i></a> ';
-                        buttons += '<a href="/belzona-inventory/' + id + '/edit" class="btn btn-sm btn-warning" title="ویرایش"><i class="ti-pencil"></i></a> ';
+                        buttons += '<a href="' + nxUrl('belzona-inventory/' + id) + '" class="btn btn-sm btn-primary" title="مشاهده"><i class="ti-eye"></i></a> ';
+                        buttons += '<a href="' + nxUrl('belzona-inventory/' + id + '/edit') + '" class="btn btn-sm btn-warning" title="ویرایش"><i class="ti-pencil"></i></a> ';
                         return buttons;
                     }
                 }
             ],
             language: {
-                url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/fa.json'
+                // local i18n (avoid CDN load errors)
+                url: nxUrl('public/js/datatables-persian.json')
             },
             responsive: true,
             pageLength: 25,
