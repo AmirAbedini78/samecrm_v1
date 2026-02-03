@@ -10,6 +10,10 @@
 namespace App\Http\Controllers;
 use App\Http\Responses\Home\HomeResponse;
 use App\Http\Responses\Home\UpdateStatsResponse;
+use App\Models\BelzonaInventory;
+use App\Models\Inventory;
+use App\Models\InvoiceSettlement;
+use App\Models\Sales;
 use App\Repositories\EventRepository;
 use App\Repositories\EventTrackingRepository;
 use App\Repositories\LeadRepository;
@@ -364,6 +368,140 @@ class Home extends Controller {
         $payload['tickets_key_colors'] = json_encode($ticket_data['tickets_key_colors']);
         $payload['tickets_chart_center_title'] = $ticket_data['tickets_chart_center_title'] . ' - ' . $ticket_data['count_all_tickets'];
         $payload['ticket_statuses'] = $ticket_data['ticket_statuses'];
+
+        /**
+         * -------------------------------------------------------------------------
+         * ACCOUNTING DASHBOARD (Inventory / Belzona / Sales / Invoices / Settlements)
+         * -------------------------------------------------------------------------
+         * Note: View is rendered from `pages.home.admin.widgets.accounting.wrapper`.
+         */
+        try {
+            //inventory stats
+            $inventory_items_count = Inventory::count();
+            $inventory_current_amount_total = (float) (Inventory::sum('current_amount') ?? 0);
+            $inventory_low_stock_count = Inventory::query()
+                ->whereNotNull('minimum_stock')
+                ->where('minimum_stock', '>', 0)
+                ->whereRaw('current_quantity <= minimum_stock')
+                ->count();
+
+            $low_stock_items = Inventory::query()
+                ->select([
+                    'inventory_id',
+                    'inventory_code',
+                    'inventory_name',
+                    'current_quantity',
+                    'minimum_stock',
+                    'main_unit',
+                ])
+                ->whereNotNull('minimum_stock')
+                ->where('minimum_stock', '>', 0)
+                ->whereRaw('current_quantity <= minimum_stock')
+                ->orderByRaw('(minimum_stock - current_quantity) DESC')
+                ->limit(10)
+                ->get();
+
+            //belzona stats
+            $belzona_last = BelzonaInventory::orderBy('created_at', 'desc')->first();
+            $belzona_stats = [
+                'rows_count' => BelzonaInventory::count(),
+                'total_input' => (float) (BelzonaInventory::sum('input') ?? 0),
+                'total_output' => (float) (BelzonaInventory::sum('output') ?? 0),
+                'total_balance' => (float) (BelzonaInventory::sum('balance') ?? 0),
+                'distinct_products' => BelzonaInventory::distinct('sheet_name')->count('sheet_name'),
+                'distinct_customers' => BelzonaInventory::whereNotNull('customer_name')->distinct('customer_name')->count('customer_name'),
+                'last_import_at' => $belzona_last ? runtimeDate($belzona_last->created_at) : '-',
+            ];
+
+            //sales stats
+            $sales_rows_count = Sales::count();
+            $sales_all_time_net = (float) (Sales::sum('base_net_amount') ?? 0);
+            $sales_this_month_net = (float) Sales::where('created_at', '>=', \Carbon\Carbon::now()->startOfMonth())
+                ->where('created_at', '<=', \Carbon\Carbon::now()->endOfMonth())
+                ->sum('base_net_amount');
+
+            $latest_sales = Sales::query()
+                ->select([
+                    'sales_id',
+                    'document_number',
+                    'document_date',
+                    'customer_name',
+                    'product_name',
+                    'base_net_amount',
+                    'currency',
+                ])
+                ->orderBy('sales_id', 'desc')
+                ->limit(10)
+                ->get();
+
+            //sales monthly trend chart (by document_date YYYY/MM)
+            $sales_monthly = Sales::query()
+                ->selectRaw("SUBSTRING(document_date, 1, 7) as ym, SUM(base_net_amount) as total")
+                ->whereNotNull('document_date')
+                ->where('document_date', '!=', '')
+                ->groupBy('ym')
+                ->orderBy('ym', 'desc')
+                ->limit(12)
+                ->get()
+                ->reverse()
+                ->values();
+
+            $sales_monthly_labels = $sales_monthly->pluck('ym')->map(function ($ym) {
+                return str_replace('/', '-', $ym);
+            })->toArray();
+
+            $sales_monthly_series = $sales_monthly->pluck('total')->map(function ($v) {
+                return (float) $v;
+            })->toArray();
+
+            //invoice settlements stats
+            $settlements_total_balance = (float) (InvoiceSettlement::sum('balance_amount') ?? 0);
+            $latest_settlements = InvoiceSettlement::query()
+                ->select([
+                    'invoice_settlement_id',
+                    'document_number',
+                    'document_date',
+                    'customer_name',
+                    'balance_amount',
+                    'currency',
+                ])
+                ->orderBy('invoice_settlement_id', 'desc')
+                ->limit(10)
+                ->get();
+
+            $payload['accounting'] = [
+                'inventory' => [
+                    'items_count' => $inventory_items_count,
+                    'current_amount_total' => $inventory_current_amount_total,
+                    'low_stock_count' => $inventory_low_stock_count,
+                ],
+                'belzona' => $belzona_stats,
+                'sales' => [
+                    'rows_count' => $sales_rows_count,
+                    'all_time_net' => $sales_all_time_net,
+                    'this_month_net' => $sales_this_month_net,
+                ],
+                'settlements' => [
+                    'total_balance' => $settlements_total_balance,
+                ],
+                'charts' => [
+                    'sales_monthly' => [
+                        'labels' => $sales_monthly_labels,
+                        'series' => $sales_monthly_series,
+                    ],
+                ],
+                'tables' => [
+                    'low_stock_items' => $low_stock_items,
+                    'latest_sales' => $latest_sales,
+                    'latest_settlements' => $latest_settlements,
+                ],
+            ];
+        } catch (\Throwable $e) {
+            //fail gracefully - do not break homepage
+            Log::error('Accounting dashboard payload error', [
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         //filter payments-today
         $payload['filter_payment_today'] = \Carbon\Carbon::now()->format('Y-m-d');
