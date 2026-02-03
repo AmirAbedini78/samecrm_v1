@@ -12,6 +12,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\BelzonaInventory;
 use App\Repositories\BelzonaInventoryRepository;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
 class BelzonaInventoryController extends Controller {
@@ -73,6 +74,16 @@ class BelzonaInventoryController extends Controller {
         // Outbound details for a selected inbound batch
         if (request()->get('action') === 'batch_outbounds') {
             return $this->getBatchOutbounds();
+        }
+
+        // Inbound list (all products) for the sales manager view
+        if (request()->get('action') === 'inbound_datatables') {
+            return $this->getInboundDataTables();
+        }
+
+        // Inbound summary (totals + latest inbound)
+        if (request()->get('action') === 'inbound_summary') {
+            return $this->getInboundSummary();
         }
 
         // Recent transactions for a product (used by index quick lookup)
@@ -500,6 +511,195 @@ class BelzonaInventoryController extends Controller {
                         'balance' => (float) $r->balance,
                     ];
                 })->values(),
+            ],
+        ]);
+    }
+
+    /**
+     * DataTables JSON for "inbound batches" across all products.
+     * An inbound batch is any row where input > 0.
+     * Outbounds are summed from rows after inbound until next inbound within same sheet.
+     */
+    private function getInboundDataTables()
+    {
+        $nextInboundSub = "(SELECT MIN(n.sheet_row_number)
+            FROM belzona_inventories n
+            WHERE n.sheet_name = i.sheet_name
+              AND n.sheet_row_number > i.sheet_row_number
+              AND n.input > 0)";
+
+        $windowUpper = "COALESCE($nextInboundSub, 2147483647)";
+
+        $outTotalSub = "(SELECT COALESCE(SUM(o.output), 0)
+            FROM belzona_inventories o
+            WHERE o.sheet_name = i.sheet_name
+              AND o.sheet_row_number > i.sheet_row_number
+              AND o.sheet_row_number < $windowUpper
+              AND o.output > 0)";
+
+        $outCountSub = "(SELECT COUNT(*)
+            FROM belzona_inventories o
+            WHERE o.sheet_name = i.sheet_name
+              AND o.sheet_row_number > i.sheet_row_number
+              AND o.sheet_row_number < $windowUpper
+              AND o.output > 0)";
+
+        // crude label extraction in SQL (best-effort)
+        $labelSql = "CASE
+            WHEN i.notes IS NOT NULL AND (i.notes LIKE '%واردات%' OR i.notes LIKE '%پرونده%' OR i.notes LIKE '%پارت%') THEN i.notes
+            WHEN i.customer_name IS NOT NULL AND (i.customer_name LIKE '%واردات%' OR i.customer_name LIKE '%پرونده%' OR i.customer_name LIKE '%پارت%') THEN i.customer_name
+            WHEN i.invoice_number IS NOT NULL AND (i.invoice_number LIKE '%واردات%' OR i.invoice_number LIKE '%پرونده%' OR i.invoice_number LIKE '%پارت%') THEN i.invoice_number
+            WHEN i.notes IS NOT NULL AND i.notes != '' THEN i.notes
+            ELSE 'ورود'
+        END";
+
+        $baseQuery = DB::table('belzona_inventories as i')
+            ->where('i.input', '>', 0)
+            ->select([
+                'i.belzona_inventory_id',
+                'i.sheet_name',
+                'i.product_name',
+                'i.product_weight_raw',
+                'i.sheet_row_number',
+                'i.date_raw',
+                'i.date',
+                'i.input',
+                DB::raw("$labelSql as inbound_label"),
+                DB::raw("$outTotalSub as out_total"),
+                DB::raw("$outCountSub as out_count"),
+                DB::raw("(i.input - $outTotalSub) as remaining"),
+            ]);
+
+        // optional product filter
+        if (request()->filled('sheet_name')) {
+            $baseQuery->where('i.sheet_name', 'LIKE', '%' . request('sheet_name') . '%');
+        }
+
+        // optional date range on parsed date
+        if (request()->filled('filter_date_from')) {
+            $baseQuery->whereDate('i.date', '>=', request('filter_date_from'));
+        }
+        if (request()->filled('filter_date_to')) {
+            $baseQuery->whereDate('i.date', '<=', request('filter_date_to'));
+        }
+
+        $recordsTotal = (clone $baseQuery)->count();
+
+        // global search
+        $searchValue = request('search.value');
+        if (!empty($searchValue)) {
+            $sv = trim((string) $searchValue);
+            $baseQuery->where(function ($q) use ($sv) {
+                $q->where('i.sheet_name', 'LIKE', "%{$sv}%")
+                    ->orWhere('i.product_name', 'LIKE', "%{$sv}%")
+                    ->orWhere('i.product_weight_raw', 'LIKE', "%{$sv}%")
+                    ->orWhere('i.date_raw', 'LIKE', "%{$sv}%")
+                    ->orWhere('i.invoice_number', 'LIKE', "%{$sv}%")
+                    ->orWhere('i.customer_name', 'LIKE', "%{$sv}%")
+                    ->orWhere('i.notes', 'LIKE', "%{$sv}%");
+            });
+        }
+
+        $recordsFiltered = (clone $baseQuery)->count();
+
+        // ordering
+        $orderColIndex = (int) request('order.0.column', 0);
+        $orderDir = request('order.0.dir', 'desc');
+        $orderDir = in_array($orderDir, ['asc', 'desc'], true) ? $orderDir : 'desc';
+
+        // map datatable columns to DB fields
+        // 0 date_raw, 1 sheet_name, 2 inbound_label, 3 input, 4 out_total, 5 remaining, 6 out_count
+        switch ($orderColIndex) {
+            case 0:
+                // best-effort: order by parsed date then row number
+                $baseQuery->orderByRaw('CASE WHEN i.date IS NULL THEN 1 ELSE 0 END asc')
+                    ->orderBy('i.date', $orderDir)
+                    ->orderBy('i.belzona_inventory_id', $orderDir);
+                break;
+            case 1:
+                $baseQuery->orderBy('i.sheet_name', $orderDir);
+                break;
+            case 3:
+                $baseQuery->orderBy('i.input', $orderDir);
+                break;
+            default:
+                $baseQuery->orderByRaw('CASE WHEN i.date IS NULL THEN 1 ELSE 0 END asc')
+                    ->orderBy('i.date', 'desc')
+                    ->orderBy('i.belzona_inventory_id', 'desc');
+                break;
+        }
+
+        $start = (int) request('start', 0);
+        $length = (int) request('length', 25);
+        if ($length <= 0) {
+            $length = 25;
+        }
+
+        $rows = $baseQuery->skip($start)->take($length)->get();
+
+        $data = [];
+        foreach ($rows as $r) {
+            $data[] = [
+                'inbound_id' => $r->belzona_inventory_id,
+                'sheet_name' => $r->sheet_name,
+                'product_weight_raw' => $r->product_weight_raw,
+                'date_raw' => $r->date_raw,
+                'inbound_label' => $r->inbound_label,
+                'input' => (float) $r->input,
+                'out_total' => (float) $r->out_total,
+                'remaining' => (float) $r->remaining,
+                'out_count' => (int) $r->out_count,
+                'inbound_row_number' => (int) $r->sheet_row_number,
+            ];
+        }
+
+        return response()->json([
+            'draw' => (int) request('draw'),
+            'recordsTotal' => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered,
+            'data' => $data,
+        ]);
+    }
+
+    /**
+     * Summary for inbound list: total inbound count/sum + latest inbound.
+     */
+    private function getInboundSummary()
+    {
+        $query = BelzonaInventory::query()->where('input', '>', 0);
+
+        if (request()->filled('filter_date_from')) {
+            $query->whereDate('date', '>=', request('filter_date_from'));
+        }
+        if (request()->filled('filter_date_to')) {
+            $query->whereDate('date', '<=', request('filter_date_to'));
+        }
+        if (request()->filled('sheet_name')) {
+            $query->where('sheet_name', 'LIKE', '%' . request('sheet_name') . '%');
+        }
+
+        $count = (clone $query)->count();
+        $sumInput = (float) ((clone $query)->sum('input') ?? 0);
+
+        $latest = (clone $query)
+            ->orderByRaw('CASE WHEN date IS NULL THEN 1 ELSE 0 END asc')
+            ->orderBy('date', 'desc')
+            ->orderBy('sheet_row_number', 'desc')
+            ->first();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'inbound_count' => $count,
+                'inbound_sum' => $sumInput,
+                'latest' => $latest ? [
+                    'sheet_name' => $latest->sheet_name,
+                    'product_weight_raw' => $latest->product_weight_raw,
+                    'date_raw' => $latest->date_raw,
+                    'input' => (float) $latest->input,
+                    'label' => $this->extractInboundLabel($latest),
+                    'inbound_row_number' => (int) $latest->sheet_row_number,
+                ] : null,
             ],
         ]);
     }

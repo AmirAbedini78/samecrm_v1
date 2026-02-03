@@ -75,6 +75,97 @@
         </div>
     </div>
 
+    <!-- Sales Manager - Inbound Batches (All Products) -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title mb-0">
+                            <i class="ti-import me-2"></i>
+                            لیست ورودی‌ها (پارت‌ها)
+                        </h5>
+                        <small class="text-muted">نمایش پیش‌فرض بر اساس تاریخ ورود (جدیدترین)</small>
+                    </div>
+                    <div class="text-muted small">
+                        روی «مشاهده خروجی‌ها» کلیک کنید.
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-lg-4">
+                            <label class="form-label mb-1">فیلتر محصول (نام شیت)</label>
+                            <input type="text" id="belzona-inbounds-filter-sheet" class="form-control"
+                                   placeholder="مثلاً 1111 (1Kg)">
+                        </div>
+                        <div class="col-lg-2">
+                            <label class="form-label mb-1">از تاریخ</label>
+                            <input type="date" id="belzona-inbounds-date-from" class="form-control">
+                        </div>
+                        <div class="col-lg-2">
+                            <label class="form-label mb-1">تا تاریخ</label>
+                            <input type="date" id="belzona-inbounds-date-to" class="form-control">
+                        </div>
+                        <div class="col-lg-4 text-end">
+                            <button type="button" id="belzona-inbounds-refresh" class="btn btn-primary">
+                                <i class="ti-reload"></i> بروزرسانی
+                            </button>
+                            <button type="button" id="belzona-inbounds-clear" class="btn btn-outline-secondary ms-2">
+                                <i class="ti-eraser"></i> پاک کردن
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3 g-3">
+                        <div class="col-md-4">
+                            <div class="card border mb-0">
+                                <div class="card-body">
+                                    <div class="text-muted">جمع ورودی‌ها (بازه انتخابی)</div>
+                                    <div class="h4 mb-0" id="belzona-inbounds-sum">-</div>
+                                    <small class="text-muted" id="belzona-inbounds-count">-</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card border mb-0">
+                                <div class="card-body d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="text-muted">آخرین پارت ورود</div>
+                                        <div class="h5 mb-0" id="belzona-latest-inbound-title">-</div>
+                                        <small class="text-muted" id="belzona-latest-inbound-meta">-</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <button type="button" class="btn btn-success" id="belzona-latest-inbound-open" disabled>
+                                            <i class="ti-eye"></i> مشاهده خروجی‌ها
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive mt-3">
+                        <table id="belzona-inbounds-table" class="table table-striped table-hover table-bordered w-100">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>تاریخ ورود</th>
+                                    <th>محصول (شیت)</th>
+                                    <th>عنوان/توضیح پارت</th>
+                                    <th>تعداد ورود</th>
+                                    <th>جمع خروجی</th>
+                                    <th>مانده پارت</th>
+                                    <th>تعداد خروجی‌ها</th>
+                                    <th>عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Quick Product Lookup -->
     <div class="row">
         <div class="col-12">
@@ -341,6 +432,168 @@ $(document).ready(function() {
         return baseUrl ? (baseUrl + '/' + path) : ('/' + path);
     }
 
+    function fmtNumber(v) {
+        try {
+            return new Intl.NumberFormat('fa-IR').format(parseFloat(v || 0));
+        } catch (e) {
+            return v;
+        }
+    }
+
+    // Modal helpers (outbounds of a specific inbound)
+    function openOutboundsModal(sheetName, inboundRowNumber) {
+        if (!sheetName || !inboundRowNumber) return;
+
+        $('#belzona-modal-sheet').text(sheetName);
+        $('#belzona-modal-inbound-row').text(inboundRowNumber);
+        $('#belzona-modal-title').text('خروجی‌های پارت');
+        $('#belzona-modal-meta').text('در حال بارگذاری...');
+        $('#belzona-modal-tbody').html('<tr><td colspan="6" class="text-muted">در حال بارگذاری...</td></tr>');
+
+        $('#belzona-outbounds-modal').modal('show');
+
+        $.get(nxUrl('belzona-inventory'), {
+            action: 'batch_outbounds',
+            sheet_name: sheetName,
+            inbound_row_number: inboundRowNumber,
+            filter_date_from: $('#belzona-inbounds-date-from').val(),
+            filter_date_to: $('#belzona-inbounds-date-to').val()
+        }, function(res) {
+            if (!res || !res.success) return;
+            var d = res.data || {};
+            var inbound = d.inbound || {};
+
+            $('#belzona-modal-title').text((inbound.label ? inbound.label : 'پارت ورود'));
+            $('#belzona-modal-meta').text(
+                'ورود: ' + fmtNumber(inbound.input || 0) +
+                ' | خروجی: ' + fmtNumber(inbound.out_total || 0) +
+                ' | مانده: ' + fmtNumber(inbound.remaining || 0) +
+                (inbound.date_raw ? (' | تاریخ ورود: ' + inbound.date_raw) : '')
+            );
+
+            var rows = d.outbounds || [];
+            if (!rows.length) {
+                $('#belzona-modal-tbody').html('<tr><td colspan="6" class="text-muted">خروجی‌ای یافت نشد.</td></tr>');
+                return;
+            }
+
+            var html = '';
+            rows.forEach(function(r) {
+                html += '<tr>' +
+                    '<td>' + (r.date_raw || '') + '</td>' +
+                    '<td>' + fmtNumber(r.output || 0) + '</td>' +
+                    '<td>' + fmtNumber(r.balance || 0) + '</td>' +
+                    '<td>' + (r.invoice_number || '') + '</td>' +
+                    '<td>' + (r.customer_name || '') + '</td>' +
+                    '<td>' + (r.notes || '') + '</td>' +
+                    '</tr>';
+            });
+            $('#belzona-modal-tbody').html(html);
+        });
+    }
+
+    // Inbounds table (all products)
+    var inboundsTable = null;
+    function initInboundsTable() {
+        if (!$('#belzona-inbounds-table').length) return;
+
+        if (inboundsTable) {
+            inboundsTable.destroy();
+            $('#belzona-inbounds-table tbody').empty();
+        }
+
+        inboundsTable = $('#belzona-inbounds-table').DataTable({
+            processing: true,
+            serverSide: true,
+            pageLength: 25,
+            order: [[0, 'desc']],
+            ajax: {
+                url: nxUrl('belzona-inventory'),
+                type: 'GET',
+                data: function(d) {
+                    d.action = 'inbound_datatables';
+                    d.sheet_name = $('#belzona-inbounds-filter-sheet').val();
+                    d.filter_date_from = $('#belzona-inbounds-date-from').val();
+                    d.filter_date_to = $('#belzona-inbounds-date-to').val();
+                }
+            },
+            columns: [
+                { data: 'date_raw', name: 'date_raw' },
+                { data: 'sheet_name', name: 'sheet_name' },
+                { data: 'inbound_label', name: 'inbound_label' },
+                { data: 'input', name: 'input', render: function(d){ return fmtNumber(d); } },
+                { data: 'out_total', name: 'out_total', orderable: false, render: function(d){ return fmtNumber(d); } },
+                { data: 'remaining', name: 'remaining', orderable: false, render: function(d){ return fmtNumber(d); } },
+                { data: 'out_count', name: 'out_count', orderable: false, render: function(d){ return fmtNumber(d); } },
+                { data: null, orderable: false, searchable: false, render: function(_, __, row){
+                    return '<button type="button" class="btn btn-sm btn-outline-primary belzona-open-outbounds" ' +
+                        'data-sheet="' + (row.sheet_name || '') + '" data-row="' + (row.inbound_row_number || '') + '">' +
+                        '<i class="ti-eye"></i> مشاهده خروجی‌ها</button>';
+                }}
+            ],
+            language: { url: nxUrl('public/js/datatables-persian.json') },
+            responsive: true
+        });
+    }
+
+    function refreshInboundSummary() {
+        $.get(nxUrl('belzona-inventory'), {
+            action: 'inbound_summary',
+            sheet_name: $('#belzona-inbounds-filter-sheet').val(),
+            filter_date_from: $('#belzona-inbounds-date-from').val(),
+            filter_date_to: $('#belzona-inbounds-date-to').val()
+        }, function(res){
+            if (!res || !res.success) return;
+            var d = res.data || {};
+            $('#belzona-inbounds-sum').text(fmtNumber(d.inbound_sum || 0));
+            $('#belzona-inbounds-count').text((d.inbound_count || 0) + ' پارت');
+
+            var latest = d.latest;
+            if (latest) {
+                $('#belzona-latest-inbound-title').text(latest.sheet_name + ' - ' + (latest.label || 'پارت ورود'));
+                $('#belzona-latest-inbound-meta').text('تاریخ: ' + (latest.date_raw || '-') + ' | ورود: ' + fmtNumber(latest.input || 0));
+                $('#belzona-latest-inbound-open')
+                    .prop('disabled', false)
+                    .data('sheet', latest.sheet_name)
+                    .data('row', latest.inbound_row_number);
+            } else {
+                $('#belzona-latest-inbound-title').text('-');
+                $('#belzona-latest-inbound-meta').text('-');
+                $('#belzona-latest-inbound-open').prop('disabled', true);
+            }
+        });
+    }
+
+    // init on load
+    initInboundsTable();
+    refreshInboundSummary();
+
+    // actions
+    $('#belzona-inbounds-refresh').on('click', function(){
+        refreshInboundSummary();
+        if (inboundsTable) inboundsTable.ajax.reload();
+    });
+    $('#belzona-inbounds-clear').on('click', function(){
+        $('#belzona-inbounds-filter-sheet').val('');
+        $('#belzona-inbounds-date-from').val('');
+        $('#belzona-inbounds-date-to').val('');
+        refreshInboundSummary();
+        if (inboundsTable) inboundsTable.ajax.reload();
+    });
+    $('#belzona-inbounds-filter-sheet, #belzona-inbounds-date-from, #belzona-inbounds-date-to').on('change keyup', function(){
+        // light debounce behavior (DataTables itself debounces server calls)
+        refreshInboundSummary();
+        if (inboundsTable) inboundsTable.ajax.reload();
+    });
+
+    $(document).on('click', '.belzona-open-outbounds', function(){
+        openOutboundsModal($(this).data('sheet'), $(this).data('row'));
+    });
+
+    $('#belzona-latest-inbound-open').on('click', function(){
+        openOutboundsModal($(this).data('sheet'), $(this).data('row'));
+    });
+
     // fill product dropdown from distinct sheet_name values
     function loadProducts() {
         $.get(nxUrl('belzona-inventory'), { action: 'unique_values', column: 'sheet_name' }, function(res) {
@@ -354,14 +607,6 @@ $(document).ready(function() {
                 $sel.append('<option value=\"' + safe + '\">' + safe + '</option>');
             });
         });
-    }
-
-    function fmtNumber(v) {
-        try {
-            return new Intl.NumberFormat('fa-IR').format(parseFloat(v || 0));
-        } catch (e) {
-            return v;
-        }
     }
 
     function renderOutbounds(rows) {
@@ -509,5 +754,49 @@ $(document).ready(function() {
     });
 });
 </script>
+
+<!-- Outbounds Modal -->
+<div class="modal fade" id="belzona-outbounds-modal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <span id="belzona-modal-title">خروجی‌های پارت</span>
+                    <small class="text-muted d-block" style="font-size: 12px;">
+                        محصول: <span id="belzona-modal-sheet">-</span> | ردیف ورود: <span id="belzona-modal-inbound-row">-</span>
+                    </small>
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-light border mb-3">
+                    <span id="belzona-modal-meta" class="text-muted">-</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped table-bordered mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>تاریخ</th>
+                                <th>خروجی</th>
+                                <th>مانده</th>
+                                <th>فاکتور</th>
+                                <th>مشتری</th>
+                                <th>توضیحات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="belzona-modal-tbody">
+                            <tr><td colspan="6" class="text-muted">-</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">بستن</button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
