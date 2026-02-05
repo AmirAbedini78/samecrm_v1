@@ -95,16 +95,27 @@
                     <div class="row g-2 align-items-end">
                         <div class="col-lg-4">
                             <label class="form-label mb-1">فیلتر محصول (نام شیت)</label>
-                            <input type="text" id="belzona-inbounds-filter-sheet" class="form-control"
-                                   placeholder="مثلاً 1111 (1Kg)">
+                            <select id="belzona-inbounds-filter-sheet" class="form-control">
+                                <option value="">همه محصولات</option>
+                            </select>
                         </div>
                         <div class="col-lg-2">
                             <label class="form-label mb-1">از تاریخ</label>
-                            <input type="date" id="belzona-inbounds-date-from" class="form-control">
+                            <div class="input-group">
+                                <input type="text" id="belzona-inbounds-date-from" class="form-control persian-datepicker" autocomplete="off" placeholder="مثلاً 1403/1/1">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="showPersianDatePicker('belzona-inbounds-date-from')">
+                                    <i class="ti-calendar"></i>
+                                </button>
+                            </div>
                         </div>
                         <div class="col-lg-2">
                             <label class="form-label mb-1">تا تاریخ</label>
-                            <input type="date" id="belzona-inbounds-date-to" class="form-control">
+                            <div class="input-group">
+                                <input type="text" id="belzona-inbounds-date-to" class="form-control persian-datepicker" autocomplete="off" placeholder="مثلاً 1403/12/29">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="showPersianDatePicker('belzona-inbounds-date-to')">
+                                    <i class="ti-calendar"></i>
+                                </button>
+                            </div>
                         </div>
                         <div class="col-lg-4 text-end">
                             <button type="button" id="belzona-inbounds-refresh" class="btn btn-primary">
@@ -187,11 +198,21 @@
                         </div>
                         <div class="col-lg-2">
                             <label class="form-label">از تاریخ</label>
-                            <input type="date" id="belzona-date-from" class="form-control">
+                            <div class="input-group">
+                                <input type="text" id="belzona-date-from" class="form-control persian-datepicker" autocomplete="off" placeholder="مثلاً 1403/1/1">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="showPersianDatePicker('belzona-date-from')">
+                                    <i class="ti-calendar"></i>
+                                </button>
+                            </div>
                         </div>
                         <div class="col-lg-2">
                             <label class="form-label">تا تاریخ</label>
-                            <input type="date" id="belzona-date-to" class="form-control">
+                            <div class="input-group">
+                                <input type="text" id="belzona-date-to" class="form-control persian-datepicker" autocomplete="off" placeholder="مثلاً 1403/12/29">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="showPersianDatePicker('belzona-date-to')">
+                                    <i class="ti-calendar"></i>
+                                </button>
+                            </div>
                         </div>
                         <div class="col-lg-3 text-end">
                             <button type="button" id="belzona-refresh-summary" class="btn btn-primary">
@@ -425,6 +446,105 @@
 @section('footerjs')
 <script src="{{ url('public/js/core/datatables-belzona-inventory.js') }}"></script>
 <script>
+// Persian date picker (copied from sales comparison filter style)
+function showPersianDatePicker(inputId) {
+    var currentValue = $('#' + inputId).val();
+    var year = 1403, month = 1, day = 1;
+
+    if (currentValue && /^\d{4}\/\d{1,2}\/\d{1,2}$/.test(currentValue)) {
+        var parts = currentValue.split('/');
+        year = parseInt(parts[0]);
+        month = parseInt(parts[1]);
+        day = parseInt(parts[2]);
+    }
+
+    var persianMonths = [
+        'فروردین', 'اردیبهشت', 'خرداد', 'تیر',
+        'مرداد', 'شهریور', 'مهر', 'آبان',
+        'آذر', 'دی', 'بهمن', 'اسفند'
+    ];
+
+    var yearOptions = '';
+    for (var i = 1398; i <= 1410; i++) {
+        yearOptions += '<option value="' + i + '"' + (i === year ? ' selected' : '') + '>' + i + '</option>';
+    }
+
+    var monthOptions = '';
+    for (var m = 1; m <= 12; m++) {
+        monthOptions += '<option value="' + m + '"' + (m === month ? ' selected' : '') + '>' + persianMonths[m-1] + '</option>';
+    }
+
+    var dayOptions = '';
+    var daysInMonth = month <= 6 ? 31 : 30;
+    for (var d = 1; d <= daysInMonth; d++) {
+        dayOptions += '<option value="' + d + '"' + (d === day ? ' selected' : '') + '>' + d + '</option>';
+    }
+
+    var dialog = `
+        <div id="datePickerDialog" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+             background: white; border: 2px solid #ccc; border-radius: 8px; padding: 20px; z-index: 9999;
+             box-shadow: 0 4px 8px rgba(0,0,0,0.3); min-width: 320px;">
+            <h5 style="margin-bottom: 15px;">انتخاب تاریخ شمسی</h5>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <div>
+                    <label style="display: block; margin-bottom: 5px;">سال:</label>
+                    <select id="picker-year" style="padding: 5px; border: 1px solid #ccc; border-radius: 4px;">
+                        ${yearOptions}
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 5px;">ماه:</label>
+                    <select id="picker-month" style="padding: 5px; border: 1px solid #ccc; border-radius: 4px;">
+                        ${monthOptions}
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 5px;">روز:</label>
+                    <select id="picker-day" style="padding: 5px; border: 1px solid #ccc; border-radius: 4px;">
+                        ${dayOptions}
+                    </select>
+                </div>
+            </div>
+            <div style="text-align: center;">
+                <button onclick="confirmDate('${inputId}')" style="background: #007bff; color: white; border: none;
+                        padding: 8px 16px; border-radius: 4px; margin-right: 10px; cursor: pointer;">تأیید</button>
+                <button onclick="cancelDate()" style="background: #6c757d; color: white; border: none;
+                        padding: 8px 16px; border-radius: 4px; cursor: pointer;">لغو</button>
+            </div>
+        </div>
+        <div id="datePickerOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+             background: rgba(0,0,0,0.5); z-index: 9998;"></div>
+    `;
+
+    $('#datePickerDialog, #datePickerOverlay').remove();
+    $('body').append(dialog);
+
+    $('#picker-month').on('change', function() {
+        var selectedMonth = parseInt($(this).val());
+        var dim = selectedMonth <= 6 ? 31 : 30;
+        var daySelect = $('#picker-day');
+        var currentDay = parseInt(daySelect.val());
+
+        daySelect.empty();
+        for (var i = 1; i <= dim; i++) {
+            daySelect.append('<option value="' + i + '"' + (i === Math.min(currentDay, dim) ? ' selected' : '') + '>' + i + '</option>');
+        }
+    });
+}
+
+function confirmDate(inputId) {
+    var year = $('#picker-year').val();
+    var month = $('#picker-month').val();
+    var day = $('#picker-day').val();
+    var formattedDate = year + '/' + month + '/' + day;
+    $('#' + inputId).val(formattedDate).trigger('change');
+    $('#datePickerDialog, #datePickerOverlay').remove();
+}
+
+function cancelDate() {
+    $('#datePickerDialog, #datePickerOverlay').remove();
+}
+
 $(document).ready(function() {
     var baseUrl = (window.NX && NX.site_url) ? String(NX.site_url).replace(/\/$/, '') : '';
     function nxUrl(path) {
@@ -450,7 +570,8 @@ $(document).ready(function() {
         $('#belzona-modal-meta').text('در حال بارگذاری...');
         $('#belzona-modal-tbody').html('<tr><td colspan="6" class="text-muted">در حال بارگذاری...</td></tr>');
 
-        $('#belzona-outbounds-modal').modal('show');
+        // ensure modal is not trapped inside transformed containers
+        $('#belzona-outbounds-modal').appendTo('body').modal('show');
 
         $.get(nxUrl('belzona-inventory'), {
             action: 'batch_outbounds',
@@ -515,6 +636,9 @@ $(document).ready(function() {
                     d.sheet_name = $('#belzona-inbounds-filter-sheet').val();
                     d.filter_date_from = $('#belzona-inbounds-date-from').val();
                     d.filter_date_to = $('#belzona-inbounds-date-to').val();
+                },
+                error: function(xhr) {
+                    console.error('Belzona inbounds datatable ajax error', xhr.status, xhr.responseText);
                 }
             },
             columns: [
@@ -568,13 +692,41 @@ $(document).ready(function() {
     initInboundsTable();
     refreshInboundSummary();
 
+    // populate inbound product combo (select2)
+    function loadInboundProductsCombo() {
+        $.get(nxUrl('belzona-inventory'), { action: 'unique_values', column: 'sheet_name' }, function(res) {
+            if (!res || !res.success) return;
+            var $sel = $('#belzona-inbounds-filter-sheet');
+            var prev = $sel.val() || '';
+            $sel.empty();
+            $sel.append('<option value="">همه محصولات</option>');
+            (res.data || []).forEach(function(v) {
+                if (!v) return;
+                var safe = String(v).replace(/\"/g, '&quot;');
+                $sel.append('<option value="' + safe + '">' + safe + '</option>');
+            });
+            if (prev) $sel.val(prev);
+
+            // init select2 once
+            if ($.fn.select2 && !$sel.hasClass('select2-hidden-accessible')) {
+                $sel.select2({
+                    width: '100%',
+                    dir: 'rtl',
+                    placeholder: 'انتخاب محصول...',
+                    allowClear: true
+                });
+            }
+        });
+    }
+    loadInboundProductsCombo();
+
     // actions
     $('#belzona-inbounds-refresh').on('click', function(){
         refreshInboundSummary();
         if (inboundsTable) inboundsTable.ajax.reload();
     });
     $('#belzona-inbounds-clear').on('click', function(){
-        $('#belzona-inbounds-filter-sheet').val('');
+        $('#belzona-inbounds-filter-sheet').val('').trigger('change');
         $('#belzona-inbounds-date-from').val('');
         $('#belzona-inbounds-date-to').val('');
         refreshInboundSummary();
@@ -606,6 +758,16 @@ $(document).ready(function() {
                 var safe = String(v).replace(/\"/g, '&quot;');
                 $sel.append('<option value=\"' + safe + '\">' + safe + '</option>');
             });
+
+            // make it searchable too
+            if ($.fn.select2 && !$sel.hasClass('select2-hidden-accessible')) {
+                $sel.select2({
+                    width: '100%',
+                    dir: 'rtl',
+                    placeholder: 'انتخاب محصول...',
+                    allowClear: true
+                });
+            }
         });
     }
 

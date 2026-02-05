@@ -13,6 +13,7 @@ use App\Http\Controllers\Controller;
 use App\Models\BelzonaInventory;
 use App\Repositories\BelzonaInventoryRepository;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Http\Request;
 
 class BelzonaInventoryController extends Controller {
@@ -178,11 +179,13 @@ class BelzonaInventoryController extends Controller {
         }
 
         // optional date range based on parsed date column
-        if (request()->filled('filter_date_from')) {
-            $baseQuery->whereDate('date', '>=', request('filter_date_from'));
+        $fromDate = $this->normalizeFilterDate(request('filter_date_from'));
+        $toDate = $this->normalizeFilterDate(request('filter_date_to'));
+        if ($fromDate) {
+            $baseQuery->whereDate('date', '>=', $fromDate);
         }
-        if (request()->filled('filter_date_to')) {
-            $baseQuery->whereDate('date', '<=', request('filter_date_to'));
+        if ($toDate) {
+            $baseQuery->whereDate('date', '<=', $toDate);
         }
 
         $recordsFiltered = (clone $baseQuery)->count();
@@ -249,11 +252,13 @@ class BelzonaInventoryController extends Controller {
 
         $query = BelzonaInventory::query()->where('sheet_name', $sheetName);
 
-        if (request()->filled('filter_date_from')) {
-            $query->whereDate('date', '>=', request('filter_date_from'));
+        $fromDate = $this->normalizeFilterDate(request('filter_date_from'));
+        $toDate = $this->normalizeFilterDate(request('filter_date_to'));
+        if ($fromDate) {
+            $query->whereDate('date', '>=', $fromDate);
         }
-        if (request()->filled('filter_date_to')) {
-            $query->whereDate('date', '<=', request('filter_date_to'));
+        if ($toDate) {
+            $query->whereDate('date', '<=', $toDate);
         }
 
         $totalInput = (clone $query)->sum('input') ?? 0;
@@ -298,11 +303,13 @@ class BelzonaInventoryController extends Controller {
 
         $query = BelzonaInventory::query()->where('sheet_name', $sheetName);
 
-        if (request()->filled('filter_date_from')) {
-            $query->whereDate('date', '>=', request('filter_date_from'));
+        $fromDate = $this->normalizeFilterDate(request('filter_date_from'));
+        $toDate = $this->normalizeFilterDate(request('filter_date_to'));
+        if ($fromDate) {
+            $query->whereDate('date', '>=', $fromDate);
         }
-        if (request()->filled('filter_date_to')) {
-            $query->whereDate('date', '<=', request('filter_date_to'));
+        if ($toDate) {
+            $query->whereDate('date', '<=', $toDate);
         }
 
         $rows = $query
@@ -344,11 +351,13 @@ class BelzonaInventoryController extends Controller {
             ->where('sheet_name', $sheetName)
             ->orderBy('sheet_row_number', 'asc');
 
-        if (request()->filled('filter_date_from')) {
-            $query->whereDate('date', '>=', request('filter_date_from'));
+        $fromDate = $this->normalizeFilterDate(request('filter_date_from'));
+        $toDate = $this->normalizeFilterDate(request('filter_date_to'));
+        if ($fromDate) {
+            $query->whereDate('date', '>=', $fromDate);
         }
-        if (request()->filled('filter_date_to')) {
-            $query->whereDate('date', '<=', request('filter_date_to'));
+        if ($toDate) {
+            $query->whereDate('date', '<=', $toDate);
         }
 
         $rows = $query->get([
@@ -467,11 +476,13 @@ class BelzonaInventoryController extends Controller {
         }
 
         // optional date filters (apply to outbounds)
-        if (request()->filled('filter_date_from')) {
-            $outQuery->whereDate('date', '>=', request('filter_date_from'));
+        $fromDate = $this->normalizeFilterDate(request('filter_date_from'));
+        $toDate = $this->normalizeFilterDate(request('filter_date_to'));
+        if ($fromDate) {
+            $outQuery->whereDate('date', '>=', $fromDate);
         }
-        if (request()->filled('filter_date_to')) {
-            $outQuery->whereDate('date', '<=', request('filter_date_to'));
+        if ($toDate) {
+            $outQuery->whereDate('date', '<=', $toDate);
         }
 
         $outbounds = $outQuery
@@ -522,6 +533,23 @@ class BelzonaInventoryController extends Controller {
      */
     private function getInboundDataTables()
     {
+        // If required columns are missing (migration not run yet), return safe empty dataset
+        if (
+            !Schema::hasTable('belzona_inventories') ||
+            !Schema::hasColumn('belzona_inventories', 'sheet_name') ||
+            !Schema::hasColumn('belzona_inventories', 'sheet_row_number') ||
+            !Schema::hasColumn('belzona_inventories', 'input') ||
+            !Schema::hasColumn('belzona_inventories', 'output')
+        ) {
+            return response()->json([
+                'draw' => (int) request('draw'),
+                'recordsTotal' => 0,
+                'recordsFiltered' => 0,
+                'data' => [],
+            ]);
+        }
+
+        try {
         $nextInboundSub = "(SELECT MIN(n.sheet_row_number)
             FROM belzona_inventories n
             WHERE n.sheet_name = i.sheet_name
@@ -576,11 +604,13 @@ class BelzonaInventoryController extends Controller {
         }
 
         // optional date range on parsed date
-        if (request()->filled('filter_date_from')) {
-            $baseQuery->whereDate('i.date', '>=', request('filter_date_from'));
+        $fromDate = $this->normalizeFilterDate(request('filter_date_from'));
+        $toDate = $this->normalizeFilterDate(request('filter_date_to'));
+        if ($fromDate) {
+            $baseQuery->whereDate('i.date', '>=', $fromDate);
         }
-        if (request()->filled('filter_date_to')) {
-            $baseQuery->whereDate('i.date', '<=', request('filter_date_to'));
+        if ($toDate) {
+            $baseQuery->whereDate('i.date', '<=', $toDate);
         }
 
         $recordsTotal = (clone $baseQuery)->count();
@@ -659,6 +689,16 @@ class BelzonaInventoryController extends Controller {
             'recordsFiltered' => $recordsFiltered,
             'data' => $data,
         ]);
+        } catch (\Throwable $e) {
+            // Always return a valid JSON structure for DataTables to avoid generic "Ajax error"
+            return response()->json([
+                'draw' => (int) request('draw'),
+                'recordsTotal' => 0,
+                'recordsFiltered' => 0,
+                'data' => [],
+                'error' => 'Inbound DataTables failed (check DB columns/migrations).',
+            ]);
+        }
     }
 
     /**
@@ -666,13 +706,16 @@ class BelzonaInventoryController extends Controller {
      */
     private function getInboundSummary()
     {
+        try {
         $query = BelzonaInventory::query()->where('input', '>', 0);
 
-        if (request()->filled('filter_date_from')) {
-            $query->whereDate('date', '>=', request('filter_date_from'));
+        $fromDate = $this->normalizeFilterDate(request('filter_date_from'));
+        $toDate = $this->normalizeFilterDate(request('filter_date_to'));
+        if ($fromDate) {
+            $query->whereDate('date', '>=', $fromDate);
         }
-        if (request()->filled('filter_date_to')) {
-            $query->whereDate('date', '<=', request('filter_date_to'));
+        if ($toDate) {
+            $query->whereDate('date', '<=', $toDate);
         }
         if (request()->filled('sheet_name')) {
             $query->where('sheet_name', 'LIKE', '%' . request('sheet_name') . '%');
@@ -702,6 +745,16 @@ class BelzonaInventoryController extends Controller {
                 ] : null,
             ],
         ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'inbound_count' => 0,
+                    'inbound_sum' => 0,
+                    'latest' => null,
+                ],
+            ]);
+        }
     }
 
     /**
@@ -740,6 +793,110 @@ class BelzonaInventoryController extends Controller {
             return substr($value, 0, 10);
         }
         return null;
+    }
+
+    /**
+     * Normalize filter date values.
+     * Accepts:
+     * - Gregorian YYYY-MM-DD
+     * - Jalali YYYY/M/D or YYYY/MM/DD (e.g. 1403/1/1)
+     *
+     * Returns Gregorian YYYY-MM-DD or null.
+     */
+    private function normalizeFilterDate($value): ?string
+    {
+        $value = trim((string) ($value ?? ''));
+        if ($value === '') {
+            return null;
+        }
+
+        if (preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/', $value)) {
+            return $value;
+        }
+
+        if (preg_match('/^[0-9]{4}\\/[0-9]{1,2}\\/[0-9]{1,2}$/', $value)) {
+            $parts = explode('/', $value);
+            $jy = (int) $parts[0];
+            $jm = (int) $parts[1];
+            $jd = (int) $parts[2];
+
+            if ($jy < 1300 || $jm < 1 || $jm > 12 || $jd < 1 || $jd > 31) {
+                return null;
+            }
+
+            [$gy, $gm, $gd] = $this->jalaliToGregorian($jy, $jm, $jd);
+            return sprintf('%04d-%02d-%02d', $gy, $gm, $gd);
+        }
+
+        return null;
+    }
+
+    /**
+     * Jalali to Gregorian conversion (pure PHP, no deps).
+     * Returns array [gy, gm, gd].
+     */
+    private function jalaliToGregorian($jy, $jm, $jd)
+    {
+        $jy = (int) $jy - 979;
+        $jm = (int) $jm - 1;
+        $jd = (int) $jd - 1;
+
+        $j_days_in_month = [31,31,31,31,31,31,30,30,30,30,30,29];
+        $g_days_in_month = [31,28,31,30,31,30,31,31,30,31,30,31];
+
+        $j_day_no = 365 * $jy + $this->div($jy, 33) * 8 + $this->div(($jy % 33) + 3, 4);
+        for ($i = 0; $i < $jm; $i++) {
+            $j_day_no += $j_days_in_month[$i];
+        }
+        $j_day_no += $jd;
+
+        $g_day_no = $j_day_no + 79;
+
+        $gy = 1600 + 400 * $this->div($g_day_no, 146097);
+        $g_day_no = $g_day_no % 146097;
+
+        $leap = true;
+        if ($g_day_no >= 36525) {
+            $g_day_no--;
+            $gy += 100 * $this->div($g_day_no, 36524);
+            $g_day_no = $g_day_no % 36524;
+
+            if ($g_day_no >= 365) {
+                $g_day_no++;
+            } else {
+                $leap = false;
+            }
+        }
+
+        $gy += 4 * $this->div($g_day_no, 1461);
+        $g_day_no %= 1461;
+
+        if ($g_day_no >= 366) {
+            $leap = false;
+            $g_day_no--;
+            $gy += $this->div($g_day_no, 365);
+            $g_day_no = $g_day_no % 365;
+        }
+
+        for ($i = 0; $g_day_no >= ($g_days_in_month[$i] + (($i == 1 && $leap) ? 1 : 0)); $i++) {
+            $g_day_no -= $g_days_in_month[$i] + (($i == 1 && $leap) ? 1 : 0);
+        }
+
+        $gm = $i + 1;
+        $gd = $g_day_no + 1;
+
+        return [$gy, $gm, $gd];
+    }
+
+    /**
+     * Integer division with PHP < 7 compatibility.
+     */
+    private function div($a, $b)
+    {
+        if (function_exists('intdiv')) {
+            return intdiv($a, $b);
+        }
+        return (int) floor($a / $b);
     }
 
     /**

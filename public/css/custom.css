@@ -88,6 +88,14 @@ thead, thead tr, thead th {
 	overflow: visible !important;
 }
 
+/* Ensure Bootstrap modal appears above custom table menus */
+#belzona-outbounds-modal.modal {
+	z-index: 3000;
+}
+.modal-backdrop.show {
+	z-index: 2990;
+}
+
 /* Column search inputs fill header cell */
 .column-search-row th .column-search-input {
 	width: 100% !important;
