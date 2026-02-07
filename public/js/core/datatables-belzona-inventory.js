@@ -2,28 +2,38 @@
  * DataTables Implementation for Belzona Inventory
  */
 
-$(document).ready(function() {
-    if ($('#belzona-inventory-table').length) {
-        var $table = $('#belzona-inventory-table');
-        var baseUrl = (window.NX && NX.site_url) ? String(NX.site_url).replace(/\/$/, '') : '';
-        function nxUrl(path) {
-            path = String(path || '').replace(/^\//, '');
-            return baseUrl ? (baseUrl + '/' + path) : ('/' + path);
-        }
+function initBelzonaInventoryDataTable() {
+    if (!$('#belzona-inventory-table').length) {
+        return;
+    }
 
-        function getColumnSearchPayload() {
-            var payload = {};
-            $('.belzona-filter').each(function() {
-                var key = $(this).data('filter');
-                var val = $(this).val();
-                if (val !== undefined && val !== null && String(val).trim() !== '') {
-                    payload[key] = val;
-                }
-            });
-            return payload;
-        }
+    var $table = $('#belzona-inventory-table');
 
-        var dt = $table.DataTable({
+    // reset if already initialized
+    if ($.fn.DataTable && $.fn.DataTable.isDataTable($table)) {
+        $table.DataTable().destroy();
+        $table.find('tbody').empty();
+    }
+
+    var baseUrl = (window.NX && NX.site_url) ? String(NX.site_url).replace(/\/$/, '') : '';
+    function nxUrl(path) {
+        path = String(path || '').replace(/^\//, '');
+        return baseUrl ? (baseUrl + '/' + path) : ('/' + path);
+    }
+
+    function getColumnSearchPayload() {
+        var payload = {};
+        $('.belzona-filter').each(function() {
+            var key = $(this).data('filter');
+            var val = $(this).val();
+            if (val !== undefined && val !== null && String(val).trim() !== '') {
+                payload[key] = val;
+            }
+        });
+        return payload;
+    }
+
+    var dt = $table.DataTable({
             processing: true,
             serverSide: true,
             ajax: {
@@ -50,7 +60,17 @@ $(document).ready(function() {
                 { data: 'input', name: 'input', title: 'ورودی' },
                 { data: 'output', name: 'output', title: 'خروجی' },
                 { data: 'balance', name: 'balance', title: 'مانده' },
-                { data: 'invoice_number', name: 'invoice_number', title: 'شماره فاکتور' },
+                { data: 'invoice_number', name: 'invoice_number', title: 'شماره فاکتور', render: function(d) {
+                        if (!d) return '';
+                        var safe = String(d)
+                            .replace(/&/g, '&amp;')
+                            .replace(/</g, '&lt;')
+                            .replace(/>/g, '&gt;')
+                            .replace(/"/g, '&quot;')
+                            .replace(/'/g, '&#039;');
+                        return '<a href="javascript:void(0)" class="belzona-invoice-link" data-invoice-number="' + safe + '">' + safe + '</a>';
+                    }
+                },
                 { data: 'customer_name', name: 'customer_name', title: 'نام مشتری' },
                 { data: 'notes', name: 'notes', title: 'توضیحات' },
                 {
@@ -77,25 +97,42 @@ $(document).ready(function() {
             order: [[0, 'desc']]
         });
 
-        // reload on filter change
-        $(document).on('keyup change', '.belzona-filter', function() {
+    // reload on filter change (namespace to prevent duplicates)
+    $(document)
+        .off('keyup.belzonaDt change.belzonaDt', '.belzona-filter')
+        .on('keyup.belzonaDt change.belzonaDt', '.belzona-filter', function() {
             dt.ajax.reload();
         });
-        $('#belzona-date-from, #belzona-date-to').on('change', function() {
+    $('#belzona-date-from, #belzona-date-to')
+        .off('change.belzonaDt')
+        .on('change.belzonaDt', function() {
             dt.ajax.reload();
         });
 
-        // clear filters
-        $('#belzona-clear-filters').on('click', function() {
+    // clear filters
+    $('#belzona-clear-filters')
+        .off('click.belzonaDt')
+        .on('click.belzonaDt', function() {
             $('.belzona-filter').val('');
             $('#search_query').val('');
             dt.search('').draw();
         });
 
-        // top search box (uses DataTables search)
-        $('#search_query').on('keyup', function() {
+    // top search box (uses DataTables search)
+    $('#search_query')
+        .off('keyup.belzonaDt')
+        .on('keyup.belzonaDt', function() {
             dt.search($(this).val()).draw();
         });
+}
+
+// export for AJAX-loaded report tabs
+window.initBelzonaInventoryDataTable = initBelzonaInventoryDataTable;
+
+$(document).ready(function() {
+    if (window.__belzonaInventoryAutoInitDisabled) {
+        return;
     }
+    initBelzonaInventoryDataTable();
 });
 

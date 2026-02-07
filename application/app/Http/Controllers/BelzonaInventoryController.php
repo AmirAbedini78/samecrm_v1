@@ -11,6 +11,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\BelzonaInventory;
+use App\Models\Invoice;
 use App\Repositories\BelzonaInventoryRepository;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -55,6 +56,11 @@ class BelzonaInventoryController extends Controller {
                 'success' => true,
                 'data' => $uniqueValues
             ]);
+        }
+
+        // Resolve invoice number from Belzona to system invoice id
+        if (request()->get('action') === 'resolve_invoice') {
+            return $this->resolveInvoiceByNumber();
         }
         
         // Check if requesting DataTables data
@@ -118,6 +124,60 @@ class BelzonaInventoryController extends Controller {
 
         //show the view
         return response()->view('pages.belzona-inventory.index', $payload);
+    }
+
+    /**
+     * Resolve an invoice (bill_invoiceid) from a Belzona invoice_number string.
+     * Returns URLs suitable for opening the standard invoice modal (/invoices/{id}/edit).
+     */
+    private function resolveInvoiceByNumber() {
+        $raw = trim((string) request('invoice_number', ''));
+        if ($raw === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'شماره فاکتور ارسال نشده است.',
+            ], 422);
+        }
+
+        // Attempt to extract numeric id (same approach used in InvoiceRepository search)
+        $candidate = $raw;
+        $prefix = (string) config('system.settings_invoices_prefix');
+        if ($prefix !== '') {
+            $candidate = str_replace($prefix, '', $candidate);
+        }
+        $candidate = preg_replace("/[^0-9]/", "", (string) $candidate);
+        $candidate = ltrim((string) $candidate, '0');
+
+        $invoice = null;
+        if ($candidate !== '' && is_numeric($candidate)) {
+            $invoice = Invoice::where('bill_invoiceid', (int) $candidate)->first();
+        }
+
+        // Fallback: if raw is numeric
+        if (!$invoice && is_numeric($raw)) {
+            $invoice = Invoice::where('bill_invoiceid', (int) $raw)->first();
+        }
+
+        if (!$invoice) {
+            return response()->json([
+                'success' => false,
+                'message' => 'فاکتور با این شماره پیدا نشد.',
+            ], 404);
+        }
+
+        $id = (int) $invoice->bill_invoiceid;
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'bill_invoiceid' => $id,
+                'formatted_bill_invoiceid' => $invoice->formatted_bill_invoiceid,
+                // modal edit endpoint (returns JSON for commonModal)
+                'edit_url' => urlResource('/invoices/' . $id . '/edit'),
+                // standard view page
+                'view_url' => url('/invoices/' . $id),
+            ],
+        ]);
     }
     
     /**

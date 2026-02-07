@@ -222,6 +222,7 @@
                 </a>
                 <div class="dropdown-menu" x-placement="bottom-start" id="fx-topnav-dropdown">
                     <a class="dropdown-item js-dynamic-url js-ajax-ux-request" data-toggle="tab" data-loading-class="loading-tabs" data-loading-target="embed-content-container" data-dynamic-url="{{ url('/report/warehouse') }}" data-url="{{ url('/report/warehouse') }}" href="javascript:void(0);" role="tab"><i class="ti-package"></i> گزارش انبار</a>
+                    <a class="dropdown-item js-dynamic-url js-ajax-ux-request" data-toggle="tab" data-loading-class="loading-tabs" data-loading-target="embed-content-container" data-dynamic-url="{{ url('/report/belzona-inventory') }}" data-url="{{ url('/report/belzona-inventory') }}" href="javascript:void(0);" role="tab"><i class="ti-package"></i> گزارشگیری انبار بلزونا</a>
                 </div>
             </li>
 

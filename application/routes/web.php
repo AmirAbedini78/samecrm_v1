@@ -1325,6 +1325,8 @@ Route::group(['prefix' => 'report'], function () {
     
     // warehouse reports
     Route::any("/warehouse", "Reports\\WarehouseReportsController@index");
+    // belzona inventory reports (custom)
+    Route::any("/belzona-inventory", "Reports\\BelzonaInventoryReportsController@index");
     Route::post("/warehouse/current-stock", "Reports\\WarehouseReportsController@getCurrentStock");
     Route::post("/warehouse/expiry", "Reports\\WarehouseReportsController@getExpiryReport");
     Route::post("/warehouse/sales", "Reports\\WarehouseReportsController@getSalesReport");
