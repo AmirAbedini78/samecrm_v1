@@ -482,7 +482,7 @@ function showPersianDatePicker(inputId) {
 
     var dialog = `
         <div id="datePickerDialog" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-             background: white; border: 2px solid #ccc; border-radius: 8px; padding: 20px; z-index: 9999;
+             background: white; border: 2px solid #ccc; border-radius: 8px; padding: 20px; z-index: 1049;
              box-shadow: 0 4px 8px rgba(0,0,0,0.3); min-width: 320px;">
             <h5 style="margin-bottom: 15px;">انتخاب تاریخ شمسی</h5>
             <div style="display: flex; gap: 10px; margin-bottom: 15px;">
@@ -513,7 +513,7 @@ function showPersianDatePicker(inputId) {
             </div>
         </div>
         <div id="datePickerOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-             background: rgba(0,0,0,0.5); z-index: 9998;"></div>
+             background: rgba(0,0,0,0.5); z-index: 1048;"></div>
     `;
 
     $('#datePickerDialog, #datePickerOverlay').remove();
@@ -560,18 +560,53 @@ $(document).ready(function() {
         }
     }
 
+    // Fix stuck/double Bootstrap backdrops (prevents "page stays dark" bugs)
+    function nxFixModalBackdrops() {
+        // if no visible modals, remove all backdrops and unlock body
+        if ($('.modal.show').length === 0) {
+            $('.modal-backdrop').remove();
+            $('body').removeClass('modal-open').css('padding-right', '');
+            return;
+        }
+        // if there are multiple backdrops, keep the last one only
+        var $backs = $('.modal-backdrop');
+        if ($backs.length > 1) {
+            $backs.slice(0, -1).remove();
+        }
+    }
+
     // Modal helpers (outbounds of a specific inbound)
+    // Use the system built-in common modal to avoid theme/z-index conflicts.
     function openOutboundsModal(sheetName, inboundRowNumber) {
         if (!sheetName || !inboundRowNumber) return;
 
-        $('#belzona-modal-sheet').text(sheetName);
-        $('#belzona-modal-inbound-row').text(inboundRowNumber);
-        $('#belzona-modal-title').text('خروجی‌های پارت');
-        $('#belzona-modal-meta').text('در حال بارگذاری...');
-        $('#belzona-modal-tbody').html('<tr><td colspan="6" class="text-muted">در حال بارگذاری...</td></tr>');
+        // ensure any persian datepicker overlay is closed (it can block clicks)
+        $('#datePickerDialog, #datePickerOverlay').remove();
 
-        // ensure modal is not trapped inside transformed containers
-        $('#belzona-outbounds-modal').appendTo('body').modal('show');
+        // prepare common modal
+        $('#commonModalContainer').addClass('modal-xl');
+        $('#commonModalTitle').html(
+            'خروجی‌های پارت' +
+            '<div class="text-muted" style="font-size:12px;margin-top:6px;">' +
+            'محصول: <strong>' + sheetName + '</strong>' +
+            ' | ردیف ورود: <strong>' + inboundRowNumber + '</strong>' +
+            '</div>'
+        );
+        $('#commonModalBody').html(
+            '<div class="alert alert-light border mb-3 text-muted">در حال بارگذاری...</div>' +
+            '<div class="table-responsive">' +
+            '<table class="table table-sm table-striped table-bordered mb-0">' +
+            '<thead class="table-light"><tr>' +
+            '<th>تاریخ</th><th>خروجی</th><th>مانده</th><th>فاکتور</th><th>مشتری</th><th>توضیحات</th>' +
+            '</tr></thead>' +
+            '<tbody id="belzona-commonmodal-tbody">' +
+            '<tr><td colspan="6" class="text-muted">در حال بارگذاری...</td></tr>' +
+            '</tbody></table></div>'
+        );
+        $('#commonModalFooter').hide();
+        $('#commonModal').modal('show');
+        // sometimes Bootstrap leaves extra backdrops behind when showing repeatedly
+        setTimeout(nxFixModalBackdrops, 0);
 
         $.get(nxUrl('belzona-inventory'), {
             action: 'batch_outbounds',
@@ -584,17 +619,20 @@ $(document).ready(function() {
             var d = res.data || {};
             var inbound = d.inbound || {};
 
-            $('#belzona-modal-title').text((inbound.label ? inbound.label : 'پارت ورود'));
-            $('#belzona-modal-meta').text(
+            var meta =
                 'ورود: ' + fmtNumber(inbound.input || 0) +
                 ' | خروجی: ' + fmtNumber(inbound.out_total || 0) +
                 ' | مانده: ' + fmtNumber(inbound.remaining || 0) +
-                (inbound.date_raw ? (' | تاریخ ورود: ' + inbound.date_raw) : '')
+                (inbound.date_raw ? (' | تاریخ ورود: ' + inbound.date_raw) : '');
+
+            $('#commonModalBody .alert').html(
+                '<strong>' + (inbound.label ? inbound.label : 'پارت ورود') + '</strong>' +
+                '<div class="text-muted" style="margin-top:6px;">' + meta + '</div>'
             );
 
             var rows = d.outbounds || [];
             if (!rows.length) {
-                $('#belzona-modal-tbody').html('<tr><td colspan="6" class="text-muted">خروجی‌ای یافت نشد.</td></tr>');
+                $('#belzona-commonmodal-tbody').html('<tr><td colspan="6" class="text-muted">خروجی‌ای یافت نشد.</td></tr>');
                 return;
             }
 
@@ -609,9 +647,21 @@ $(document).ready(function() {
                     '<td>' + (r.notes || '') + '</td>' +
                     '</tr>';
             });
-            $('#belzona-modal-tbody').html(html);
+            $('#belzona-commonmodal-tbody').html(html);
         });
     }
+
+    // cleanup common modal sizing after close (only if we opened it as xl)
+    $(document).on('hidden.bs.modal', '#commonModal', function () {
+        $('#commonModalContainer').removeClass('modal-xl');
+        $('#commonModalFooter').show();
+        nxFixModalBackdrops();
+    });
+
+    // also fix after show (handles double backdrop edge cases)
+    $(document).on('shown.bs.modal', '#commonModal', function () {
+        nxFixModalBackdrops();
+    });
 
     // Inbounds table (all products)
     var inboundsTable = null;
