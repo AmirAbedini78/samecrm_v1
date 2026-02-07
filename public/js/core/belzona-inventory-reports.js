@@ -131,38 +131,80 @@ function cancelDate() {
         function openInvoiceModalByNumber(invoiceNumber) {
             if (!invoiceNumber) return;
 
+            function showInfoModal(title, html, level) {
+                level = level || 'info';
+                $('#commonModalContainer').removeClass('modal-xl');
+                $('#commonModalTitle').text(title || 'فاکتور');
+                $('#commonModalBody').html('<div class="alert alert-' + level + ' mb-0">' + html + '</div>');
+                $('#commonModalFooter').hide();
+                $('#commonModal').modal('show');
+            }
+
             $.get(nxUrl('belzona-inventory'), {
                 action: 'resolve_invoice',
                 invoice_number: invoiceNumber
             }, function (res) {
-                if (!res || !res.success || !res.data || !res.data.bill_invoiceid) {
+                if (!res || !res.success || !res.data) {
+                    showInfoModal('فاکتور', 'فاکتور/تسویه موجود نیست.', 'warning');
+                    return;
+                }
+
+                var d = res.data;
+
+                if (d.type === 'settlement') {
+                    var html = '' +
+                        '<div class="mb-2"><strong>سند تسویه</strong></div>' +
+                        '<div class="table-responsive"><table class="table table-sm table-bordered mb-0">' +
+                        '<tr><th style="width:180px">شماره سند</th><td>' + escapeHtml(d.document_number) + '</td></tr>' +
+                        '<tr><th>تاریخ</th><td>' + escapeHtml(d.document_date || '---') + '</td></tr>' +
+                        '<tr><th>مشتری</th><td>' + escapeHtml(d.customer_name || '---') + '</td></tr>' +
+                        '<tr><th>مبلغ خالص</th><td>' + fmtNumber(d.base_net_amount || 0) + ' ' + escapeHtml(d.currency || '') + '</td></tr>' +
+                        '<tr><th>پرداختی</th><td>' + fmtNumber(d.paid_amount || 0) + ' ' + escapeHtml(d.currency || '') + '</td></tr>' +
+                        '<tr><th>مانده</th><td>' + fmtNumber(d.balance_amount || 0) + ' ' + escapeHtml(d.currency || '') + '</td></tr>' +
+                        '</table></div>';
                     $('#commonModalContainer').removeClass('modal-xl');
-                    $('#commonModalTitle').text('فاکتور');
-                    $('#commonModalBody').html('<div class="alert alert-warning mb-0">فاکتور یافت نشد.</div>');
+                    $('#commonModalTitle').text('فاکتور و تسویه - ' + (d.document_number || invoiceNumber));
+                    $('#commonModalBody').html(html);
                     $('#commonModalFooter').hide();
                     $('#commonModal').modal('show');
                     return;
                 }
 
-                var d = res.data;
-                var $a = $('<a href="javascript:void(0)"></a>');
-                $a.addClass('actions-modal-button js-ajax-ux-request reset-target-modal-form edit-add-modal-button');
-                $a.attr('data-toggle', 'modal');
-                $a.attr('data-target', '#commonModal');
-                $a.attr('data-url', d.edit_url);
-                $a.attr('data-loading-target', 'commonModalBody');
-                $a.attr('data-modal-title', 'فاکتور ' + (d.formatted_bill_invoiceid || invoiceNumber));
-                $a.attr('data-action-url', nxUrl('invoices/' + d.bill_invoiceid + '?ref=belzona'));
-                $a.attr('data-action-method', 'PUT');
-                $('body').append($a);
-                $a.trigger('click');
-                setTimeout(function () { $a.remove(); }, 0);
-            }).fail(function () {
-                $('#commonModalContainer').removeClass('modal-xl');
-                $('#commonModalTitle').text('فاکتور');
-                $('#commonModalBody').html('<div class="alert alert-danger mb-0">خطا در دریافت اطلاعات فاکتور.</div>');
-                $('#commonModalFooter').hide();
-                $('#commonModal').modal('show');
+                if (d.type === 'invoice' && d.bill_invoiceid && d.edit_url) {
+                    var $a = $('<a href="javascript:void(0)"></a>');
+                    $a.addClass('actions-modal-button js-ajax-ux-request reset-target-modal-form edit-add-modal-button');
+                    $a.attr('data-toggle', 'modal');
+                    $a.attr('data-target', '#commonModal');
+                    $a.attr('data-url', d.edit_url);
+                    $a.attr('data-loading-target', 'commonModalBody');
+                    $a.attr('data-modal-title', 'فاکتور ' + (d.formatted_bill_invoiceid || invoiceNumber));
+                    $a.attr('data-action-url', nxUrl('invoices/' + d.bill_invoiceid + '?ref=belzona'));
+                    $a.attr('data-action-method', 'PUT');
+                    $('body').append($a);
+                    $a.trigger('click');
+                    setTimeout(function () { $a.remove(); }, 0);
+                    return;
+                }
+
+                showInfoModal('فاکتور', 'فاکتور/تسویه موجود نیست.', 'warning');
+            }).fail(function (xhr) {
+                var msg = 'خطا در دریافت اطلاعات فاکتور.';
+                var level = 'danger';
+
+                if (xhr && xhr.status === 404) {
+                    msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'فاکتور/تسویه موجود نیست.';
+                    level = 'warning';
+                } else if (xhr && xhr.status === 422) {
+                    msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'شماره فاکتور نامعتبر است.';
+                    level = 'warning';
+                } else if (xhr && (xhr.status === 401 || xhr.status === 419)) {
+                    msg = 'دسترسی شما منقضی شده یا لاگین نیستید. صفحه را رفرش کنید.';
+                    level = 'warning';
+                } else if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = xhr.responseJSON.message;
+                }
+
+                showInfoModal('فاکتور', msg, level);
             });
         }
 

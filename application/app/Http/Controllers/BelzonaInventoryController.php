@@ -12,6 +12,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\BelzonaInventory;
 use App\Models\Invoice;
+use App\Models\InvoiceSettlement;
 use App\Repositories\BelzonaInventoryRepository;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -158,26 +159,50 @@ class BelzonaInventoryController extends Controller {
             $invoice = Invoice::where('bill_invoiceid', (int) $raw)->first();
         }
 
-        if (!$invoice) {
+        if ($invoice) {
+            $id = (int) $invoice->bill_invoiceid;
+
             return response()->json([
-                'success' => false,
-                'message' => 'فاکتور با این شماره پیدا نشد.',
-            ], 404);
+                'success' => true,
+                'data' => [
+                    'type' => 'invoice',
+                    'bill_invoiceid' => $id,
+                    'formatted_bill_invoiceid' => $invoice->formatted_bill_invoiceid,
+                    // modal edit endpoint (returns JSON for commonModal)
+                    'edit_url' => urlResource('/invoices/' . $id . '/edit'),
+                    // standard view page
+                    'view_url' => url('/invoices/' . $id),
+                ],
+            ]);
         }
 
-        $id = (int) $invoice->bill_invoiceid;
+        // Fallback 2: invoice settlements (accounting "فاکتور و تسویه")
+        $settlement = InvoiceSettlement::where('document_number', $raw)->first();
+        if (!$settlement && $candidate !== '') {
+            $settlement = InvoiceSettlement::where('document_number', $candidate)->first();
+        }
+
+        if ($settlement) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'type' => 'settlement',
+                    'invoice_settlement_id' => $settlement->invoice_settlement_id,
+                    'document_number' => $settlement->document_number,
+                    'document_date' => $settlement->document_date,
+                    'customer_name' => $settlement->customer_name,
+                    'base_net_amount' => $settlement->base_net_amount,
+                    'paid_amount' => $settlement->paid_amount,
+                    'balance_amount' => $settlement->balance_amount,
+                    'currency' => $settlement->currency,
+                ],
+            ]);
+        }
 
         return response()->json([
-            'success' => true,
-            'data' => [
-                'bill_invoiceid' => $id,
-                'formatted_bill_invoiceid' => $invoice->formatted_bill_invoiceid,
-                // modal edit endpoint (returns JSON for commonModal)
-                'edit_url' => urlResource('/invoices/' . $id . '/edit'),
-                // standard view page
-                'view_url' => url('/invoices/' . $id),
-            ],
-        ]);
+            'success' => false,
+            'message' => 'فاکتور/تسویه با این شماره پیدا نشد.',
+        ], 404);
     }
     
     /**
