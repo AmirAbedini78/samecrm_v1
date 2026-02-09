@@ -447,6 +447,13 @@
                             </a>
                         </li>
                         @endif
+                        <li class="sidenav-submenu {{ $page['submenu_smart_features'] ?? '' }}" id="submenu_smart_features">
+                            <a href="{{ _url('/smart-features') }}"
+                                class="{{ $page['submenu_smart_features'] ?? '' }}">
+                                <i class="ti-pulse"></i>
+                                فیچرهای جدید
+                            </a>
+                        </li>
                     </ul>
                 </li>
                 <!--accounting-->

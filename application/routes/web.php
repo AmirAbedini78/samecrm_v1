@@ -1475,6 +1475,22 @@ Route::group(['prefix' => 'import/belzona-inventory', 'middleware' => ['auth']],
 Route::group(['prefix' => 'import/inventory-entry', 'middleware' => ['auth']], function () {
     Route::get("/", "Import\InventoryEntry@index");
     Route::post("/", "Import\InventoryEntry@store");
+    Route::post("/pdf", "Import\InventoryEntry@processPdf");
+});
+
+//SMART FEATURES (فیچرهای جدید - تحلیل هوشمند)
+Route::group(['prefix' => 'smart-features', 'middleware' => ['auth']], function () {
+    Route::get("/", "SmartFeaturesController@index");
+    Route::get("/demand-forecast", "SmartFeaturesController@demandForecast");
+    Route::get("/demand-forecast-lstm", "SmartFeaturesController@demandForecastLstm");
+    Route::get("/smart-alerts", "SmartFeaturesController@smartAlerts");
+    Route::get("/customer-clustering", "SmartFeaturesController@customerClustering");
+    Route::get("/anomaly-detection", "SmartFeaturesController@anomalyDetection");
+    Route::get("/anomaly-autoencoder", "SmartFeaturesController@anomalyAutoencoder");
+    Route::get("/settlement-summary", "SmartFeaturesController@settlementSummary");
+    Route::get("/belzona-summary", "SmartFeaturesController@belzonaSummary");
+    Route::get("/sales-summary", "SmartFeaturesController@salesSummary");
+    Route::get("/inventory-summary", "SmartFeaturesController@inventorySummary");
 });
 
 //INVENTORY TRANSACTIONS

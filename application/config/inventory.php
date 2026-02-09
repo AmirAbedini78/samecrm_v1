@@ -51,5 +51,16 @@ return [
 
     // Threshold for high value quick filter
     'high_value_threshold' => env('INVENTORY_HIGH_VALUE_THRESHOLD', 500000000),
+
+    // فعال بودن فیچرهای وابسته به پایتون (PDF، LSTM، Autoencoder). روی هاست cPanel معمولاً false بگذارید.
+    'enable_python_ml' => env('ENABLE_PYTHON_ML', true),
+
+    // PDF extraction (Python script path - relative to project root or absolute)
+    'pdf_extract_script' => env('INVENTORY_PDF_EXTRACT_SCRIPT', 'tools/pdf_inventory_extract.py'),
+    'python_path' => env('PYTHON_PATH', 'python'),
+
+    // ML scripts (LSTM forecast, Autoencoder anomaly) - relative to project root
+    'lstm_forecast_script' => env('INVENTORY_LSTM_SCRIPT', 'tools/lstm_forecast.py'),
+    'autoencoder_anomaly_script' => env('INVENTORY_AUTOENCODER_SCRIPT', 'tools/autoencoder_anomaly.py'),
 ];
 

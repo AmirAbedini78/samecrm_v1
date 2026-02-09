@@ -64,7 +64,18 @@
                             </div>
                         @endif
 
-                        <!-- Import Form -->
+                        <!-- Tabs: Excel/CSV | PDF -->
+                        <ul class="nav nav-tabs mb-4" id="importMethodTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="tab-excel" data-bs-toggle="tab" data-bs-target="#panel-excel" type="button" role="tab">Excel / CSV</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="tab-pdf" data-bs-toggle="tab" data-bs-target="#panel-pdf" type="button" role="tab">PDF (تحلیل خودکار)</button>
+                            </li>
+                        </ul>
+                        <div class="tab-content" id="importMethodTabContent">
+                            <!-- Excel/CSV Panel -->
+                            <div class="tab-pane fade show active" id="panel-excel" role="tabpanel">
                         <form id="inventory-entry-import-form" method="POST" action="/import/inventory-entry" enctype="multipart/form-data">
                             @csrf
                             
@@ -73,7 +84,7 @@
                                     <div class="form-group">
                                         <label>کد کالا <span class="text-danger">*</span></label>
                                         <input type="text" class="form-control" name="inventory_code" 
-                                               id="inventory_code" required placeholder="کد کالا را وارد کنید">
+                                               id="inventory_code" placeholder="کد کالا را وارد کنید">
                                         <small class="form-text text-muted">
                                             کد کالایی که از فایل anbar.xlsx ایمپورت شده است
                                         </small>
@@ -83,7 +94,7 @@
                                     <div class="form-group">
                                         <label>انتخاب فایل <span class="text-danger">*</span></label>
                                         <input type="file" class="form-control" name="attachments[]" 
-                                               accept=".xlsx,.xls,.csv" required>
+                                               accept=".xlsx,.xls,.csv" id="file_excel">
                                         <small class="form-text text-muted">
                                             فرمت‌های پشتیبانی شده: XLSX, XLS, CSV (حداکثر حجم: 10MB)
                                         </small>
@@ -141,7 +152,7 @@
                             <!-- Submit Button -->
                             <div class="row mt-4">
                                 <div class="col-md-12">
-                                    <button type="submit" class="btn btn-primary">
+                                    <button type="submit" class="btn btn-primary" id="btn-submit-excel">
                                         <i class="ti-upload"></i> شروع ایمپورت
                                     </button>
                                     <a href="/report/warehouse" class="btn btn-light">
@@ -150,6 +161,47 @@
                                 </div>
                             </div>
                         </form>
+                            </div>
+                            <!-- PDF Panel -->
+                            <div class="tab-pane fade" id="panel-pdf" role="tabpanel">
+                                @if(empty($page['enable_python_ml']))
+                                <div class="alert alert-warning mb-3">
+                                    <strong>غیرفعال در این سرور.</strong> استخراج خودکار از PDF روی این هاست در دسترس نیست. از تب Excel/CSV برای ایمپورت استفاده کنید، یا روی سروری که پایتون نصب است (مثلاً لاراگون یا VPS) این قابلیت فعال می‌شود.
+                                </div>
+                                @else
+                                <p class="text-muted mb-3">
+                                    هر گونه فایل <strong>PDF گردش کالا</strong> را آپلود کنید. سیستم به صورت خودکار جدول و در صورت امکان <strong>کد کالا</strong> را تشخیص می‌دهد و ورودها را ایمپورت می‌کند.
+                                </p>
+                                <form id="inventory-entry-pdf-form" method="POST" action="/import/inventory-entry/pdf" enctype="multipart/form-data">
+                                    @csrf
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>فایل PDF <span class="text-danger">*</span></label>
+                                                <input type="file" class="form-control" name="attachments[]" 
+                                                       accept=".pdf" id="file_pdf" required>
+                                                <small class="form-text text-muted">حداکثر ۲۰ مگابایت</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>کد کالا (اختیاری)</label>
+                                                <input type="text" class="form-control" name="inventory_code" 
+                                                       id="inventory_code_pdf" placeholder="در صورت خالی بودن، از داخل PDF تشخیص داده می‌شود">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row mt-3">
+                                        <div class="col-md-12">
+                                            <button type="submit" class="btn btn-primary" id="btn-submit-pdf">
+                                                <i class="ti-file"></i> تحلیل و ایمپورت PDF
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                                @endif
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -188,15 +240,59 @@
 
 <script>
 $(document).ready(function() {
-    $('#inventory-entry-import-form').on('submit', function(e) {
+    function submitExcel(e) {
         e.preventDefault();
-        
-        var formData = new FormData(this);
-        var $form = $(this);
-        var $submitBtn = $form.find('button[type="submit"]');
-        
+        var $form = $('#inventory-entry-import-form');
+        if (!$form[0].checkValidity()) {
+            $form[0].reportValidity();
+            return;
+        }
+        if (!$('#file_excel').val()) {
+            if (typeof NX !== 'undefined') NX.notification({ type: 'error', message: 'لطفاً فایل Excel/CSV انتخاب کنید' });
+            return;
+        }
+        if (!$('#inventory_code').val().trim()) {
+            if (typeof NX !== 'undefined') NX.notification({ type: 'error', message: 'کد کالا را وارد کنید' });
+            return;
+        }
+        var formData = new FormData($form[0]);
+        var $submitBtn = $('#btn-submit-excel');
         $submitBtn.prop('disabled', true).html('<i class="ti-reload"></i> در حال پردازش...');
-        
+        $.ajax({
+            url: $form.attr('action'),
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if (response.success) {
+                    if (typeof NX !== 'undefined') NX.notification({ type: 'success', message: response.message || 'ایمپورت با موفقیت انجام شد' });
+                    setTimeout(function() { location.reload(); }, 1500);
+                } else {
+                    if (typeof NX !== 'undefined') NX.notification({ type: 'error', message: response.message || 'ایمپورت با خطا مواجه شد' });
+                }
+            },
+            error: function(xhr) {
+                var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'خطا در ارتباط با سرور';
+                if (typeof NX !== 'undefined') NX.notification({ type: 'error', message: msg });
+            },
+            complete: function() {
+                $submitBtn.prop('disabled', false).html('<i class="ti-upload"></i> شروع ایمپورت');
+            }
+        });
+    }
+
+    $('#inventory-entry-import-form').on('submit', submitExcel);
+
+    $('#inventory-entry-pdf-form').on('submit', function(e) {
+        e.preventDefault();
+        if (!$('#file_pdf').val()) {
+            if (typeof NX !== 'undefined') NX.notification({ type: 'error', message: 'لطفاً یک فایل PDF انتخاب کنید' });
+            return;
+        }
+        var formData = new FormData(this);
+        var $submitBtn = $('#btn-submit-pdf');
+        $submitBtn.prop('disabled', true).html('<i class="ti-reload"></i> در حال تحلیل PDF...');
         $.ajax({
             url: $(this).attr('action'),
             type: 'POST',
@@ -205,32 +301,18 @@ $(document).ready(function() {
             contentType: false,
             success: function(response) {
                 if (response.success) {
-                    NX.notification({
-                        type: 'success',
-                        message: response.message || 'ایمپورت با موفقیت انجام شد'
-                    });
-                    setTimeout(function() {
-                        location.reload();
-                    }, 1500);
+                    if (typeof NX !== 'undefined') NX.notification({ type: 'success', message: response.message || 'ایمپورت PDF با موفقیت انجام شد' });
+                    setTimeout(function() { location.reload(); }, 1500);
                 } else {
-                    NX.notification({
-                        type: 'error',
-                        message: response.message || 'ایمپورت با خطا مواجه شد'
-                    });
+                    if (typeof NX !== 'undefined') NX.notification({ type: 'error', message: response.message || 'خطا در پردازش PDF' });
                 }
             },
             error: function(xhr) {
-                var errorMessage = 'خطا در ارتباط با سرور';
-                if (xhr.responseJSON && xhr.responseJSON.message) {
-                    errorMessage = xhr.responseJSON.message;
-                }
-                NX.notification({
-                    type: 'error',
-                    message: errorMessage
-                });
+                var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'خطا در ارتباط با سرور';
+                if (typeof NX !== 'undefined') NX.notification({ type: 'error', message: msg });
             },
             complete: function() {
-                $submitBtn.prop('disabled', false).html('<i class="ti-upload"></i> شروع ایمپورت');
+                $submitBtn.prop('disabled', false).html('<i class="ti-file"></i> تحلیل و ایمپورت PDF');
             }
         });
     });
