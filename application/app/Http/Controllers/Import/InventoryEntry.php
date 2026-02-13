@@ -54,7 +54,7 @@ class InventoryEntry extends Controller
             $request->validate([
                 'attachments' => 'required|array',
                 'attachments.*' => 'required|file|mimes:xlsx,xls,csv|max:10240',
-                'inventory_code' => 'required|string|max:255',
+                'inventory_code' => 'nullable|string|max:255',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
@@ -99,17 +99,9 @@ class InventoryEntry extends Controller
         }
 
         try {
-            // دریافت کد کالا از درخواست
-            $inventoryCode = $request->input('inventory_code');
-            
-            if (empty($inventoryCode)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'کد کالا الزامی است',
-                    'imported' => 0,
-                    'skipped' => 0,
-                ], 400);
-            }
+            // کد کالا اختیاری: اگر خالی باشد از ستون فایل Excel (کد کالا / inventory_code / code / کد) خوانده می‌شود
+            $inventoryCode = trim((string) $request->input('inventory_code', ''));
+            $inventoryCode = $inventoryCode !== '' ? $inventoryCode : null;
 
             $import = new InventoryEntryImport($this->entryService, null, $inventoryCode);
             $import->import($file_path);
@@ -117,11 +109,14 @@ class InventoryEntry extends Controller
             $failures = $import->failures();
             $failureCount = $failures->count();
 
+            $importedCount = $import->getRowCount() ?? 0;
             $import_results = [
-                'success' => true,
-                'imported' => $import->getRowCount() ?? 0,
+                'success' => $importedCount > 0,
+                'imported' => $importedCount,
                 'skipped' => $failureCount,
-                'message' => "با موفقیت {$import->getRowCount()} ورود انبار ایمپورت شد",
+                'message' => $importedCount > 0
+                    ? "با موفقیت {$importedCount} ورود انبار ایمپورت شد."
+                    : "هیچ ردیفی ایمپورت نشد. اگر کد کالا را وارد نکرده‌اید، یک ستون با نام «کد کالا» یا «کد» در فایل Excel اضافه کنید، یا کد کالا را در فرم وارد کنید.",
                 'failures' => $failures->map(function ($failure) {
                     return [
                         'row' => $failure->row(),

@@ -64,13 +64,13 @@
                             </div>
                         @endif
 
-                        <!-- Tabs: Excel/CSV | PDF -->
+                        <!-- Tabs: Excel/CSV | PDF (سازگار با Bootstrap 4) -->
                         <ul class="nav nav-tabs mb-4" id="importMethodTabs" role="tablist">
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link active" id="tab-excel" data-bs-toggle="tab" data-bs-target="#panel-excel" type="button" role="tab">Excel / CSV</button>
+                                <a class="nav-link active" id="tab-excel" data-toggle="tab" href="#panel-excel" role="tab" aria-controls="panel-excel" aria-selected="true">Excel / CSV</a>
                             </li>
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="tab-pdf" data-bs-toggle="tab" data-bs-target="#panel-pdf" type="button" role="tab">PDF (تحلیل خودکار)</button>
+                                <a class="nav-link" id="tab-pdf" data-toggle="tab" href="#panel-pdf" role="tab" aria-controls="panel-pdf" aria-selected="false">PDF (تحلیل خودکار)</a>
                             </li>
                         </ul>
                         <div class="tab-content" id="importMethodTabContent">
@@ -82,11 +82,11 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label>کد کالا <span class="text-danger">*</span></label>
+                                        <label>کد کالا (اختیاری)</label>
                                         <input type="text" class="form-control" name="inventory_code" 
-                                               id="inventory_code" placeholder="کد کالا را وارد کنید">
+                                               id="inventory_code" placeholder="خالی بگذارید تا از فایل خوانده شود">
                                         <small class="form-text text-muted">
-                                            کد کالایی که از فایل anbar.xlsx ایمپورت شده است
+                                            اگر خالی باشد، از ستون «کد کالا» یا «کد» در فایل Excel خوانده می‌شود
                                         </small>
                                     </div>
                                 </div>
@@ -110,6 +110,7 @@
                                         <table class="table table-bordered table-sm">
                                             <thead class="table-light">
                                                 <tr>
+                                                    <th>کد کالا</th>
                                                     <th>تاريخ</th>
                                                     <th>سند</th>
                                                     <th>نوع</th>
@@ -121,6 +122,7 @@
                                             </thead>
                                             <tbody>
                                                 <tr>
+                                                    <td>20008</td>
                                                     <td>1403/01/15</td>
                                                     <td>DOC-001</td>
                                                     <td>ورودی</td>
@@ -135,15 +137,11 @@
                                     <small class="text-muted">
                                         <strong>توضیحات:</strong>
                                         <ul class="mb-0">
-                                            <li>فایل باید دقیقاً این 7 ستون را داشته باشد</li>
+                                            <li>ستون‌های ضروری: تاريخ، سند، نوع، شماره سند مبنا، مقدار، في، مبلغ تمام شده</li>
+                                            <li><strong>کد کالا (اختیاری):</strong> اگر در فرم خالی بگذارید، این ستون در فایل الزامی است (نام ستون: کد کالا، کد، یا inventory_code)</li>
                                             <li><strong>تاريخ:</strong> تاریخ تراکنش (شمسی یا میلادی)</li>
-                                            <li><strong>سند:</strong> شماره سند تراکنش</li>
                                             <li><strong>نوع:</strong> ورودی یا خروجی</li>
-                                            <li><strong>شماره سند مبنا:</strong> شماره سند مرجع</li>
-                                            <li><strong>مقدار:</strong> تعداد کالا</li>
-                                            <li><strong>في:</strong> قیمت واحد</li>
-                                            <li><strong>مبلغ تمام شده:</strong> مقدار × فی</li>
-                                            <li class="text-danger"><strong>نکته مهم:</strong> این فایل برای یک کالا است. قبل از ایمپورت باید کد کالا را مشخص کنید.</li>
+                                            <li>اگر کد کالا را در فرم وارد کنید، برای همهٔ ردیف‌ها استفاده می‌شود و نیازی به ستون کد در فایل نیست.</li>
                                         </ul>
                                     </small>
                                 </div>
@@ -251,10 +249,7 @@ $(document).ready(function() {
             if (typeof NX !== 'undefined') NX.notification({ type: 'error', message: 'لطفاً فایل Excel/CSV انتخاب کنید' });
             return;
         }
-        if (!$('#inventory_code').val().trim()) {
-            if (typeof NX !== 'undefined') NX.notification({ type: 'error', message: 'کد کالا را وارد کنید' });
-            return;
-        }
+        // کد کالا اختیاری است (می‌تواند از ستون فایل Excel خوانده شود)
         var formData = new FormData($form[0]);
         var $submitBtn = $('#btn-submit-excel');
         $submitBtn.prop('disabled', true).html('<i class="ti-reload"></i> در حال پردازش...');

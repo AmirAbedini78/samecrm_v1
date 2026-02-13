@@ -108,6 +108,30 @@
                                 </div>
                             </div>
                         </form>
+
+                        <hr class="my-4">
+                        <h5 class="card-title mt-4">ایمپورت مدت ماندگاری (شلف لایف)</h5>
+                        <p class="text-muted">فایل اکسل مدت ماندگاری محصولات بلزونا را بارگذاری کنید. در هر شیت جدولی با ستون‌های «کد/نام محصول» و «مدت ماندگاری (سال)» یا مشابه داشته باشید. تطابق با نام شیت انبار انجام می‌شود.</p>
+                        <form id="belzona-shelf-life-import-form" method="POST" action="/import/belzona-inventory/shelf-life" enctype="multipart/form-data">
+                            @csrf
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="form-group">
+                                        <label>فایل اکسل مدت ماندگاری <span class="text-danger">*</span></label>
+                                        <input type="file" class="form-control" name="shelf_life_file" accept=".xlsx,.xls" required>
+                                        <small class="form-text text-muted">فرمت: XLSX یا XLS (حداکثر 10 مگابایت)</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 d-flex align-items-end">
+                                    <div class="form-group mb-0">
+                                        <button type="submit" class="btn btn-success" id="belzona-shelf-life-submit">
+                                            <i class="ti-upload"></i> بارگذاری شلف لایف
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="belzona-shelf-life-result" class="mt-2"></div>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -162,6 +186,41 @@ $(document).ready(function() {
             },
             complete: function() {
                 $('button[type="submit"]').prop('disabled', false).html('<i class="ti-upload"></i> {{ cleanLang(__('lang.import_data')) }}');
+            }
+        });
+    });
+
+    $('#belzona-shelf-life-import-form').on('submit', function(e) {
+        e.preventDefault();
+        var formData = new FormData(this);
+        var fileInput = $('input[name="shelf_life_file"]')[0];
+        if (fileInput.files.length === 0) {
+            alert('لطفاً یک فایل انتخاب کنید.');
+            return;
+        }
+        var $btn = $('#belzona-shelf-life-submit');
+        var $result = $('#belzona-shelf-life-result');
+        $btn.prop('disabled', true).html('<i class="ti-spinner"></i> در حال بارگذاری...');
+        $result.html('');
+        $.ajax({
+            url: '/import/belzona-inventory/shelf-life',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if (response.success) {
+                    $result.html('<div class="alert alert-success">' + response.message + '</div>');
+                } else {
+                    $result.html('<div class="alert alert-danger">' + (response.message || 'خطا') + '</div>');
+                }
+            },
+            error: function(xhr) {
+                var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'خطا در ارتباط با سرور';
+                $result.html('<div class="alert alert-danger">' + msg + '</div>');
+            },
+            complete: function() {
+                $btn.prop('disabled', false).html('<i class="ti-upload"></i> بارگذاری شلف لایف');
             }
         });
     });

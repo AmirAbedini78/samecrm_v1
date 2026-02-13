@@ -40,6 +40,13 @@ protected $fillable = [
     'invoice_number',
     'customer_name',
     'notes',
+    'shelf_life_years',
+    'expiry_date',
+];
+
+protected $casts = [
+    'date' => 'datetime',
+    'expiry_date' => 'date',
 ];
 
 

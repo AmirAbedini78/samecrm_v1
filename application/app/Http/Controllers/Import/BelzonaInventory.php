@@ -458,5 +458,209 @@ class BelzonaInventory extends Controller
         }
         return (int) floor($a / $b);
     }
+
+    /**
+     * Import shelf life (مدت ماندگاری) from Excel: read all sheets, map product code -> years, update belzona_inventories.
+     */
+    public function storeShelfLife(Request $request)
+    {
+        try {
+            $request->validate([
+                'shelf_life_file' => 'required|file|mimes:xlsx,xls|max:10240',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed: ' . $e->getMessage(),
+                'updated' => 0,
+            ], 422);
+        }
+
+        $file = $request->file('shelf_life_file');
+        $path = $file->getPathname();
+
+        if (!file_exists($path)) {
+            return response()->json(['success' => false, 'message' => 'File not found', 'updated' => 0], 404);
+        }
+
+        // Possible header names (exact and partial) for product and shelf life columns
+        $productColumnKeys = [
+            'کد محصول', 'نام محصول', 'محصول', 'کد', 'نام', 'product', 'product code', 'product name',
+            'کد کالا', 'نام کالا', 'کالا', 'شماره محصول', 'کد کالا',
+        ];
+        $shelfLifeColumnKeys = [
+            'مدت زمان ماندگاری (سال)', 'مدت زمان ماندگاری', 'مدت زمان ماندگاری محصول', 'مدت ماندگاری (سال)', 'مدت ماندگاری',
+            'ماندگاری (سال)', 'ماندگاری', 'سال', 'shelf life', 'shelf life (years)', 'shelf_life', 'shelf_life_years',
+            'years', 'مدت (سال)', 'مدت',
+        ];
+
+        $normalizeHeader = function ($s) {
+            $s = trim(preg_replace('/\s+/u', ' ', (string) $s));
+            return $s;
+        };
+
+        try {
+            if (method_exists('PhpOffice\\PhpSpreadsheet\\Settings', 'setZipClass')) {
+                $const = 'PhpOffice\\PhpSpreadsheet\\Settings::PCLZIP';
+                if (defined($const)) {
+                    call_user_func(['PhpOffice\\PhpSpreadsheet\\Settings', 'setZipClass'], constant($const));
+                }
+            }
+
+            $spreadsheet = IOFactory::load($path);
+            $productToYears = [];
+
+            foreach ($spreadsheet->getWorksheetIterator() as $worksheet) {
+                $rows = $worksheet->toArray(null, true, true, true);
+                if (empty($rows)) {
+                    continue;
+                }
+
+                $sheetName = trim($worksheet->getTitle());
+
+                // Find header row: try rows 1, 2, 3 and pick first that contains a known header
+                $headerRowIndex = null;
+                $headerMap = [];
+                $productCol = null;
+                $shelfLifeCol = null;
+
+                for ($hr = 1; $hr <= 3; $hr++) {
+                    $header = isset($rows[$hr]) ? $rows[$hr] : [];
+                    $headerMap = [];
+                    foreach ($header as $col => $val) {
+                        $key = $normalizeHeader($val);
+                        if ($key !== '') {
+                            $headerMap[$key] = $col;
+                        }
+                    }
+                    foreach ($productColumnKeys as $k) {
+                        if (isset($headerMap[$k])) {
+                            $productCol = $headerMap[$k];
+                            break;
+                        }
+                    }
+                    foreach (array_keys($headerMap) as $h) {
+                        if (stripos($h, 'محصول') !== false || stripos($h, 'کد') !== false || stripos($h, 'product') !== false) {
+                            $productCol = $productCol ?? $headerMap[$h];
+                            break;
+                        }
+                    }
+                    foreach ($shelfLifeColumnKeys as $k) {
+                        if (isset($headerMap[$k])) {
+                            $shelfLifeCol = $headerMap[$k];
+                            break;
+                        }
+                    }
+                    foreach (array_keys($headerMap) as $h) {
+                        if (preg_match('/(سال|year|ماندگاری|shelf|مدت)/ui', $h)) {
+                            $shelfLifeCol = $shelfLifeCol ?? $headerMap[$h];
+                            break;
+                        }
+                    }
+                    if ($productCol !== null || $shelfLifeCol !== null) {
+                        $headerRowIndex = $hr;
+                        break;
+                    }
+                }
+
+                if ($headerRowIndex === null) {
+                    // Fallback: assume first row is header, A=product, find column with number (years)
+                    $headerRowIndex = 1;
+                    $productCol = 'A';
+                    $firstRow = isset($rows[1]) ? $rows[1] : [];
+                    $shelfLifeCol = 'B';
+                    foreach ($firstRow as $col => $val) {
+                        if ($col === 'A') continue;
+                        $v = $this->parseDecimal($val);
+                        if ($v >= 0.5 && $v <= 20) {
+                            $shelfLifeCol = $col;
+                            break;
+                        }
+                    }
+                } else {
+                    if ($productCol === null) {
+                        $productCol = 'A';
+                    }
+                    if ($shelfLifeCol === null) {
+                        foreach (array_keys($headerMap) as $h) {
+                            if (preg_match('/(سال|year|ماندگاری|shelf)/ui', $h)) {
+                                $shelfLifeCol = $headerMap[$h];
+                                break;
+                            }
+                        }
+                        $shelfLifeCol = $shelfLifeCol ?? 'B';
+                    }
+                }
+
+                $dataStartRow = $headerRowIndex + 1;
+                foreach ($rows as $rowNum => $row) {
+                    if ((int) $rowNum < $dataStartRow) {
+                        continue;
+                    }
+                    $productKey = $normalizeHeader($row[$productCol] ?? '');
+                    $yearsRaw = $row[$shelfLifeCol] ?? null;
+                    if ($productKey === '') {
+                        continue;
+                    }
+                    $years = $this->parseDecimal($yearsRaw);
+                    if ($years <= 0) {
+                        continue;
+                    }
+                    $productToYears[$productKey] = $years;
+                }
+
+                // Fallback: if no data rows found but sheet has a number, use sheet name as product
+                if (empty($productToYears) && $sheetName !== '') {
+                    for ($r = 1; $r <= min(15, count($rows)); $r++) {
+                        $row = $rows[$r] ?? [];
+                        foreach ($row as $cell) {
+                            $y = $this->parseDecimal($cell);
+                            if ($y >= 0.5 && $y <= 20) {
+                                $productToYears[$sheetName] = $y;
+                                break 2;
+                            }
+                        }
+                    }
+                }
+            }
+
+            Log::info('Belzona shelf life import: products mapped', ['count' => count($productToYears), 'keys' => array_keys($productToYears)]);
+
+            $updated = 0;
+            foreach ($productToYears as $productKey => $years) {
+                $q = BelzonaInventoryModel::query()
+                    ->where(function ($query) use ($productKey) {
+                        $query->where('sheet_name', $productKey)
+                            ->orWhere('sheet_name', 'LIKE', $productKey . ' (%')
+                            ->orWhere('sheet_name', 'LIKE', $productKey . ' %')
+                            ->orWhere('sheet_name', 'LIKE', $productKey . '%');
+                    });
+                $rows = $q->get();
+                foreach ($rows as $row) {
+                    $row->shelf_life_years = $years;
+                    if ($row->date) {
+                        $d = $row->date instanceof \DateTimeInterface ? $row->date : \Carbon\Carbon::parse($row->date);
+                        $row->expiry_date = $d->copy()->addYears((int) round($years))->format('Y-m-d');
+                    }
+                    $row->save();
+                    $updated++;
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'مدت ماندگاری برای ' . $updated . ' ردیف به‌روز شد. تعداد محصولات مپ‌شده: ' . count($productToYears),
+                'updated' => $updated,
+                'products_mapped' => count($productToYears),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('BelzonaInventory shelf life import failed: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Import failed: ' . $e->getMessage(),
+                'updated' => 0,
+            ], 500);
+        }
+    }
 }
 

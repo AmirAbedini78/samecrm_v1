@@ -76,6 +76,15 @@
                             </select>
                         </div>
                         <div class="col-lg-2">
+                            <label class="form-label">مدت ماندگاری (سال)</label>
+                            <div class="input-group">
+                                <input type="number" id="belzona-shelf-life-years" class="form-control" min="0.5" step="0.5" placeholder="مثلاً 2" title="شلف لایف به سال">
+                                <button type="button" id="belzona-apply-shelf-life" class="btn btn-outline-success" title="اعمال برای محصول انتخاب‌شده">
+                                    <i class="ti-check"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-lg-2">
                             <label class="form-label">از تاریخ</label>
                             <div class="input-group">
                                 <input type="text" id="belzona-date-from" class="form-control persian-datepicker" autocomplete="off" placeholder="مثلاً 1403/1/1">
@@ -302,6 +311,8 @@
                                     <th>شماره فاکتور</th>
                                     <th>نام مشتری</th>
                                     <th>توضیحات</th>
+                                    <th>شلف لایف (سال)</th>
+                                    <th>تاریخ انقضا (شمسی) / مانده</th>
                                     <th>عملیات</th>
                                 </tr>
                             </thead>

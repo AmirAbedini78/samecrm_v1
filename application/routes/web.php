@@ -1456,6 +1456,7 @@ Route::resource('inventory', 'InventoryController');
 Route::group(['prefix' => 'belzona-inventory'], function () {
     Route::any("/search", "BelzonaInventoryController@index");
     Route::post("/delete", "BelzonaInventoryController@destroy")->middleware(['demoModeCheck']);
+    Route::post("/set-shelf-life", "BelzonaInventoryController@setShelfLife");
 });
 Route::resource('belzona-inventory', 'BelzonaInventoryController');
 
@@ -1469,6 +1470,7 @@ Route::group(['prefix' => 'import/inventory', 'middleware' => ['auth']], functio
 Route::group(['prefix' => 'import/belzona-inventory', 'middleware' => ['auth']], function () {
     Route::get("/", "Import\BelzonaInventory@index");
     Route::post("/", "Import\BelzonaInventory@store");
+    Route::post("/shelf-life", "Import\BelzonaInventory@storeShelfLife");
 });
 
 //INVENTORY ENTRIES IMPORT

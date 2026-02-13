@@ -239,10 +239,10 @@ $(document).ready(function () {
             '<div class="table-responsive">' +
             '<table class="table table-sm table-striped table-bordered mb-0">' +
             '<thead class="table-light"><tr>' +
-            '<th>تاریخ</th><th>خروجی</th><th>مانده</th><th>فاکتور</th><th>مشتری</th><th>توضیحات</th>' +
+            '<th>تاریخ</th><th>خروجی</th><th>مانده</th><th>شلف لایف / انقضا</th><th>فاکتور</th><th>مشتری</th><th>توضیحات</th>' +
             '</tr></thead>' +
             '<tbody id="belzona-commonmodal-tbody">' +
-            '<tr><td colspan="6" class="text-muted">در حال بارگذاری...</td></tr>' +
+            '<tr><td colspan="7" class="text-muted">در حال بارگذاری...</td></tr>' +
             '</tbody></table></div>'
         );
         $('#commonModalFooter').hide();
@@ -264,7 +264,9 @@ $(document).ready(function () {
                 'ورود: ' + fmtNumber(inbound.input || 0) +
                 ' | خروجی: ' + fmtNumber(inbound.out_total || 0) +
                 ' | مانده: ' + fmtNumber(inbound.remaining || 0) +
-                (inbound.date_raw ? (' | تاریخ ورود: ' + inbound.date_raw) : '');
+                (inbound.date_raw ? (' | تاریخ ورود: ' + inbound.date_raw) : '') +
+                (inbound.shelf_life_years != null ? (' | شلف لایف: ' + inbound.shelf_life_years + ' سال') : '') +
+                (inbound.remaining_shelf_life ? (' | ' + inbound.remaining_shelf_life) : '');
 
             $('#commonModalBody .alert').html(
                 '<strong>' + (inbound.label ? inbound.label : 'پارت ورود') + '</strong>' +
@@ -273,16 +275,18 @@ $(document).ready(function () {
 
             var rows = d.outbounds || [];
             if (!rows.length) {
-                $('#belzona-commonmodal-tbody').html('<tr><td colspan="6" class="text-muted">خروجی‌ای یافت نشد.</td></tr>');
+                $('#belzona-commonmodal-tbody').html('<tr><td colspan="7" class="text-muted">خروجی‌ای یافت نشد.</td></tr>');
                 return;
             }
 
             var html = '';
             rows.forEach(function (r) {
+                var shelfCell = (r.remaining_shelf_life || r.expiry_date) ? ((r.expiry_date || '') + (r.remaining_shelf_life ? ' <small class="text-muted">(' + r.remaining_shelf_life + ')</small>' : '')) : '—';
                 html += '<tr>' +
                     '<td>' + (r.date_raw || '') + '</td>' +
                     '<td>' + fmtNumber(r.output || 0) + '</td>' +
                     '<td>' + fmtNumber(r.balance || 0) + '</td>' +
+                    '<td>' + shelfCell + '</td>' +
                     '<td>' + renderInvoiceLink(r.invoice_number) + '</td>' +
                     '<td>' + (r.customer_name || '') + '</td>' +
                     '<td>' + (r.notes || '') + '</td>' +
@@ -340,6 +344,15 @@ $(document).ready(function () {
                 { data: 'out_total', name: 'out_total', orderable: false, render: function (d) { return fmtNumber(d); } },
                 { data: 'remaining', name: 'remaining', orderable: false, render: function (d) { return fmtNumber(d); } },
                 { data: 'out_count', name: 'out_count', orderable: false, render: function (d) { return fmtNumber(d); } },
+                { data: 'shelf_life_years', name: 'shelf_life_years', orderable: false, defaultContent: '—', render: function (d) { return d != null && d !== '' ? d : '—'; } },
+                { data: 'remaining_shelf_life', name: 'remaining_shelf_life', orderable: false, defaultContent: '—', render: function (remaining, type, row) {
+                        if (type !== 'display') return remaining || '—';
+                        var expiry = row.expiry_date ? String(row.expiry_date) : '';
+                        var rem = row.remaining_shelf_life ? String(row.remaining_shelf_life) : '—';
+                        if (expiry && rem !== '—') return expiry + ' <small class="text-muted">(' + rem + ')</small>';
+                        return rem;
+                    }
+                },
                 {
                     data: null,
                     orderable: false,

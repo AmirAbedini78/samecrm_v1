@@ -14,6 +14,7 @@ class Kernel extends ConsoleKernel {
      */
     protected $commands = [
         \App\Console\Commands\InventoryEntriesImportCommand::class,
+        \App\Console\Commands\BelzonaShelfLifeImportCommand::class,
     ];
 
     /**

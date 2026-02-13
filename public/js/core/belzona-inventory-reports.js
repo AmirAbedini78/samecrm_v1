@@ -383,6 +383,48 @@ function cancelDate() {
                 openInvoiceModalByNumber($(this).data('invoice-number'));
             });
 
+        // set shelf life for selected product
+        $('#belzona-apply-shelf-life')
+            .off('click.belzonaReports')
+            .on('click.belzonaReports', function () {
+                var sheetName = $('#belzona-product-select').val();
+                var years = parseFloat($('#belzona-shelf-life-years').val(), 10);
+                if (!sheetName) {
+                    alert('لطفاً یک محصول انتخاب کنید.');
+                    return;
+                }
+                if (isNaN(years) || years <= 0) {
+                    alert('مدت ماندگاری (سال) را به صورت عدد مثبت وارد کنید.');
+                    return;
+                }
+                var $btn = $(this);
+                $btn.prop('disabled', true);
+                $.ajax({
+                    url: nxUrl('belzona-inventory/set-shelf-life'),
+                    type: 'POST',
+                    data: {
+                        _token: (window.NX && NX.csrf_token) ? NX.csrf_token : $('meta[name="csrf-token"]').attr('content'),
+                        sheet_name: sheetName,
+                        shelf_life_years: years
+                    },
+                    success: function (res) {
+                        if (res && res.success) {
+                            if (window.belzonaInventoryDt) window.belzonaInventoryDt.ajax.reload();
+                            alert(res.message || 'مدت ماندگاری ثبت شد.');
+                        } else {
+                            alert(res.message || 'خطا');
+                        }
+                    },
+                    error: function (xhr) {
+                        var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'خطا در ارتباط با سرور';
+                        alert(msg);
+                    },
+                    complete: function () {
+                        $btn.prop('disabled', false);
+                    }
+                });
+            });
+
         loadProducts();
     }
 
