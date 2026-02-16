@@ -127,6 +127,53 @@ function middlewareBootSettings() {
 
     //custom css froms database
     $settings2_theme_css = '<style>' . $settings->settings2_theme_css . '</style>';
+
+    //font settings CSS (optional)
+    $fontCss = '';
+    if (!empty($settings->settings2_font_settings)) {
+        $fontJson = json_decode($settings->settings2_font_settings, true);
+        if (is_array($fontJson)) {
+            $scope = $fontJson['scope'] ?? 'whole_app';
+            $pageRoute = $fontJson['page_route'] ?? '';
+            $prefix = ($scope === 'this_page' && $pageRoute !== '') ? '[data-page-route="' . e($pageRoute) . '"] ' : '';
+            $selectors = [
+                'datatable_title' => $prefix . '.belzona-datatable-title',
+                'page_titles' => $prefix . '.belzona-page-titles',
+                'datatable_text' => $prefix . '.belzona-datatable-text, ' . $prefix . '.belzona-datatable-text td, ' . $prefix . '.belzona-datatable-text th',
+                'page_text' => $prefix . '.belzona-page-text',
+                'buttons' => $prefix . '.belzona-buttons',
+            ];
+            foreach ($selectors as $key => $selector) {
+                $d = $fontJson[$key] ?? [];
+                if (!is_array($d)) {
+                    continue;
+                }
+                $fam = trim($d['font_family'] ?? '');
+                $size = trim($d['font_size'] ?? '');
+                $color = trim($d['color'] ?? '');
+                if ($fam === '' && $size === '' && $color === '') {
+                    continue;
+                }
+                $rules = [];
+                if ($fam !== '') {
+                    $rules[] = 'font-family:' . $fam . ';';
+                }
+                if ($size !== '') {
+                    $rules[] = 'font-size:' . $size . ';';
+                }
+                if ($color !== '') {
+                    $rules[] = 'color:' . $color . ';';
+                }
+                if (!empty($rules)) {
+                    $fontCss .= $selector . '{' . implode('', $rules) . '}';
+                }
+            }
+            if ($fontCss !== '') {
+                $settings2_theme_css .= '<style id="app-font-settings">' . $fontCss . '</style>';
+            }
+        }
+    }
+
     config(['css.application' => $settings2_theme_css]);
 
     //[modules] - enabled modules

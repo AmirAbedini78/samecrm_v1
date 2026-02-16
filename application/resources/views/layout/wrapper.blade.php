@@ -6,7 +6,8 @@
 @include('helpers.rtl')
 
 <body id="main-body"
-    class="loggedin fix-header card-no-border fix-sidebar {{ config('settings.css_kanban') }} {{ runtimePreferenceLeftmenuPosition(auth()->user()->left_menu_position) }} {{ $page['page'] ?? '' }}">
+    class="loggedin fix-header card-no-border fix-sidebar {{ config('settings.css_kanban') }} {{ runtimePreferenceLeftmenuPosition(auth()->user()->left_menu_position) }} {{ $page['page'] ?? '' }}"
+    data-page-route="{{ $page['page_route'] ?? '' }}">
 
     <!--main wrapper-->
     <div id="main-wrapper">

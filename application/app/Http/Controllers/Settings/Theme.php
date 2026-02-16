@@ -51,12 +51,34 @@ class Theme extends Controller {
 
         $settings = \App\Models\Settings::find(1);
         $settings2 = \App\Models\Settings2::find(1);
+        $fontSettings = [];
+        if (!empty($settings2->settings2_font_settings)) {
+            $fontSettings = json_decode($settings2->settings2_font_settings, true) ?: [];
+        }
+        $fontDefaults = [
+            'scope' => 'whole_app',
+            'page_route' => 'belzona-inventory',
+            'datatable_title' => ['font_family' => '', 'font_size' => '', 'color' => ''],
+            'page_titles' => ['font_family' => '', 'font_size' => '', 'color' => ''],
+            'datatable_text' => ['font_family' => '', 'font_size' => '', 'color' => ''],
+            'page_text' => ['font_family' => '', 'font_size' => '', 'color' => ''],
+            'buttons' => ['font_family' => '', 'font_size' => '', 'color' => ''],
+        ];
+        $fontSettings = array_merge($fontDefaults, $fontSettings);
+        foreach (['datatable_title', 'page_titles', 'datatable_text', 'page_text', 'buttons'] as $key) {
+            if (isset($fontSettings[$key]) && is_array($fontSettings[$key])) {
+                $fontSettings[$key] = array_merge($fontDefaults[$key], $fontSettings[$key]);
+            } else {
+                $fontSettings[$key] = $fontDefaults[$key];
+            }
+        }
 
         //reponse payload
         $payload = [
             'page' => $page,
             'settings' => $settings,
             'settings2' => $settings2,
+            'fontSettings' => $fontSettings,
         ];
 
         //show the view
@@ -100,10 +122,43 @@ class Theme extends Controller {
 
         //update custom css - strip out the <style> tag
         $style_css = preg_replace('/<style\b[^>]*>(.*?)<\/style>/is', '', request('settings2_theme_css'));
-        \App\Models\Settings2::where('settings2_id', 1)
-            ->update([
-                'settings2_theme_css' => $style_css,
-            ]);
+        $updateData = ['settings2_theme_css' => $style_css];
+
+        //font settings (optional JSON)
+        $fontSettings = [
+            'scope' => request('font_scope', 'whole_app'),
+            'page_route' => request('font_page_route', ''),
+            'datatable_title' => [
+                'font_family' => request('font_datatable_title_family', ''),
+                'font_size' => request('font_datatable_title_size', ''),
+                'color' => request('font_datatable_title_color', ''),
+            ],
+            'page_titles' => [
+                'font_family' => request('font_page_titles_family', ''),
+                'font_size' => request('font_page_titles_size', ''),
+                'color' => request('font_page_titles_color', ''),
+            ],
+            'datatable_text' => [
+                'font_family' => request('font_datatable_text_family', ''),
+                'font_size' => request('font_datatable_text_size', ''),
+                'color' => request('font_datatable_text_color', ''),
+            ],
+            'page_text' => [
+                'font_family' => request('font_page_text_family', ''),
+                'font_size' => request('font_page_text_size', ''),
+                'color' => request('font_page_text_color', ''),
+            ],
+            'buttons' => [
+                'font_family' => request('font_buttons_family', ''),
+                'font_size' => request('font_buttons_size', ''),
+                'color' => request('font_buttons_color', ''),
+            ],
+        ];
+        if (\Illuminate\Support\Facades\Schema::hasColumn('settings2', 'settings2_font_settings')) {
+            $updateData['settings2_font_settings'] = json_encode($fontSettings);
+        }
+
+        \App\Models\Settings2::where('settings2_id', 1)->update($updateData);
 
         //are we updating all users
         if (request('reset_users_theme') == 'on') {

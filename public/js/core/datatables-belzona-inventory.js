@@ -74,9 +74,9 @@ function initBelzonaInventoryDataTable() {
                 { data: 'customer_name', name: 'customer_name', title: 'نام مشتری' },
                 { data: 'notes', name: 'notes', title: 'توضیحات' },
                 { data: 'shelf_life_years', name: 'shelf_life_years', title: 'شلف لایف (سال)' },
-                { data: 'remaining_shelf_life', name: 'remaining_shelf_life', title: 'تاریخ انقضا (شمسی) / مانده', render: function(remaining, type, row) {
+                { data: 'remaining_shelf_life', name: 'remaining_shelf_life', title: 'تاریخ انقضا / مانده', render: function(remaining, type, row) {
                         if (type !== 'display') return remaining;
-                        var expiry = (row.expiry_date_shamsi || row.expiry_date) ? String(row.expiry_date_shamsi || row.expiry_date) : '';
+                        var expiry = row.expiry_date ? String(row.expiry_date) : '';
                         var rem = row.remaining_shelf_life ? String(row.remaining_shelf_life) : '—';
                         if (expiry && rem !== '—') return expiry + ' <small class="text-muted">(' + rem + ')</small>';
                         return rem;

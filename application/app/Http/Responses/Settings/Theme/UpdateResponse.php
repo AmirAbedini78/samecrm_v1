@@ -34,7 +34,11 @@ class UpdateResponse implements Responsable {
         //notice
         request()->session()->flash('success-notification', __('lang.request_has_been_completed'));
 
-        $jsondata['redirect_url'] = url('app/settings/theme');
+        if (request('url_type') === 'modal') {
+            $jsondata['dom_visibility'][] = ['selector' => '#commonModal', 'action' => 'close-modal'];
+        } else {
+            $jsondata['redirect_url'] = url('app/settings/theme');
+        }
 
         //response
         return response()->json($jsondata);

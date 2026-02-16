@@ -31,15 +31,17 @@ class IndexResponse implements Responsable {
             $$key = $value;
         }
 
-        $html = view('pages/settings/sections/theme/page', compact('page', 'settings', 'settings2'))->render();
+        $isModal = request('url_type') === 'modal';
+        $html = view('pages/settings/sections/theme/page', compact('page', 'settings', 'settings2', 'fontSettings', 'isModal'))->render();
 
+        $targetSelector = $isModal ? '#commonModalBody' : '#settings-wrapper';
         $jsondata['dom_html'][] = array(
-            'selector' => "#settings-wrapper",
+            'selector' => $targetSelector,
             'action' => 'replace',
             'value' => $html);
 
-        //left menu activate
-        if (request('url_type') == 'dynamic') {
+        //left menu activate (skip when opened as modal)
+        if (request('url_type') == 'dynamic' && !$isModal) {
             $jsondata['dom_attributes'][] = [
                 'selector' => '#settings-menu-main',
                 'attr' => 'aria-expanded',
@@ -57,7 +59,7 @@ class IndexResponse implements Responsable {
             ];
         }
 
-        // postrun function
+        // postrun function (CodeMirror for CSS editor - only when not modal or when modal has the textarea)
         $jsondata['postrun_functions'][] = [
             'value' => 'NXCodeMirrorCSSEditor',
         ];

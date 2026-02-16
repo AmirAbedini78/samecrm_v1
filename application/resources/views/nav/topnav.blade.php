@@ -260,6 +260,23 @@
                 <!--[MODULES] - dynamic menu-->
                 {!! config('modules.menus.topnav.parent6') !!}
 
+                <!-- theme & font shortcut (modal) - admin only -->
+                @if(auth()->user()->is_admin)
+                <li class="nav-item hidden-mobile">
+                    <a href="javascript:void(0)" class="nav-link waves-effect waves-dark font-22 p-t-10 p-r-10 edit-add-modal-button js-ajax-ux-request reset-target-modal-form"
+                        data-toggle="modal" data-target="#commonModal"
+                        data-url="{{ url('settings/theme?url_type=modal') }}" data-loading-target="commonModalBody"
+                        data-modal-title="{{ cleanLang(__('lang.theme')) }}"
+                        data-action-url="{{ url('settings/theme') }}" data-action-method="PUT"
+                        data-action-ajax-class="js-ajax-ux-request" data-modal-size="modal-xl"
+                        data-form-design="form-material" data-header-visibility="hidden"
+                        data-header-extra-close-icon="visible"
+                        data-action-ajax-loading-target="commonModalBody"
+                        title="{{ cleanLang(__('lang.theme')) }}">
+                        <i class="ti-image"></i>
+                    </a>
+                </li>
+                @endif
                 <!-- settings -->
                 @if(auth()->user()->is_admin)
                 <li class="nav-item hidden-mobile">

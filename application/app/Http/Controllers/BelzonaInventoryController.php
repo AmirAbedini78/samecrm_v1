@@ -10,7 +10,6 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Helpers\PersianCalendarHelper;
 use App\Models\BelzonaInventory;
 use App\Models\Invoice;
 use App\Models\InvoiceSettlement;
@@ -314,7 +313,6 @@ class BelzonaInventoryController extends Controller {
                 $expiryDate = $d->copy()->addYears((int) round((float) $item->shelf_life_years));
             }
             $expiryFormatted = $expiryDate ? (\Carbon\Carbon::parse($expiryDate)->format('Y-m-d')) : null;
-            $expiryShamsi = $expiryFormatted ? PersianCalendarHelper::gregorianToPersian($expiryFormatted) : null;
             $remainingText = $this->remainingShelfLifeText($expiryDate);
 
             $data[] = [
@@ -329,8 +327,7 @@ class BelzonaInventoryController extends Controller {
                 'customer_name' => $item->customer_name,
                 'notes' => $item->notes,
                 'shelf_life_years' => $item->shelf_life_years,
-                'expiry_date' => $expiryShamsi ?? $expiryFormatted,
-                'expiry_date_shamsi' => $expiryShamsi,
+                'expiry_date' => $expiryFormatted,
                 'remaining_shelf_life' => $remainingText,
                 'actions' => '',
             ];
@@ -553,7 +550,7 @@ class BelzonaInventoryController extends Controller {
                 ];
                 if (Schema::hasColumn('belzona_inventories', 'shelf_life_years')) {
                     $current['shelf_life_years'] = $r->shelf_life_years ?? null;
-                    $current['expiry_date'] = $this->formatExpiryShamsi($expiry);
+                    $current['expiry_date'] = $expiry ? \Carbon\Carbon::parse($expiry)->format('Y-m-d') : null;
                     $current['remaining_shelf_life'] = $expiry ? $this->remainingShelfLifeText($expiry) : null;
                 }
                 continue;
@@ -665,7 +662,7 @@ class BelzonaInventoryController extends Controller {
         ];
         if (Schema::hasColumn('belzona_inventories', 'shelf_life_years')) {
             $inboundPayload['shelf_life_years'] = $inbound->shelf_life_years;
-            $inboundPayload['expiry_date'] = $this->formatExpiryShamsi($inboundExpiry);
+            $inboundPayload['expiry_date'] = $inboundExpiry ? \Carbon\Carbon::parse($inboundExpiry)->format('Y-m-d') : null;
             $inboundPayload['remaining_shelf_life'] = $inboundRemainingText;
         }
 
@@ -688,7 +685,7 @@ class BelzonaInventoryController extends Controller {
             ];
             if (Schema::hasColumn('belzona_inventories', 'shelf_life_years')) {
                 $row['shelf_life_years'] = $r->shelf_life_years;
-                $row['expiry_date'] = $this->formatExpiryShamsi($expiry);
+                $row['expiry_date'] = $expiry ? \Carbon\Carbon::parse($expiry)->format('Y-m-d') : null;
                 $row['remaining_shelf_life'] = $remText;
             }
             return $row;
@@ -881,7 +878,7 @@ class BelzonaInventoryController extends Controller {
                 'out_count' => (int) $r->out_count,
                 'inbound_row_number' => (int) $r->sheet_row_number,
                 'shelf_life_years' => $hasShelfLife && isset($r->shelf_life_years) ? $r->shelf_life_years : null,
-                'expiry_date' => $this->formatExpiryShamsi($expiryFormatted ? \Carbon\Carbon::parse($expiryFormatted) : null),
+                'expiry_date' => $expiryFormatted,
                 'remaining_shelf_life' => $remainingText,
             ];
             $data[] = $row;
@@ -1076,19 +1073,6 @@ class BelzonaInventoryController extends Controller {
             return $toPersian($years) . ' سال مانده';
         }
         return $toPersian($months) . ' ماه مانده';
-    }
-
-    /**
-     * Format Gregorian date to Shamsi (YYYY/MM/DD) for display.
-     * @param \DateTimeInterface|string|null $date
-     */
-    private function formatExpiryShamsi($date): ?string
-    {
-        if ($date === null || $date === '') {
-            return null;
-        }
-        $str = $date instanceof \DateTimeInterface ? $date->format('Y-m-d') : (\is_string($date) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) ? $date : \Carbon\Carbon::parse($date)->format('Y-m-d'));
-        return PersianCalendarHelper::gregorianToPersian($str);
     }
 
     /**
