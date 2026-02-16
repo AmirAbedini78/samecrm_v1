@@ -1284,6 +1284,7 @@ class BelzonaInventoryController extends Controller {
 
         $page = [
             'page' => $section,
+            'page_route' => 'belzona-inventory',
             'crumbs' => [
                 __('lang.accounting'),
                 'انبار بلزونا',
