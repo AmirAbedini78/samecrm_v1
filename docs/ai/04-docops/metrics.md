@@ -25,5 +25,11 @@
 
 ---
 
+## Entries
+
+- 2026-02-18 | inventory-belzona | feature | Docs: yes | ADR: no | Mismatch: 0 | باکس آخرین مانده خروجی‌های پارت
+
+---
+
 ## قانون خود-بهبود
 هر 5 entry یک “Improvement Proposal” در `04-docops/improvements.md` ثبت کن.

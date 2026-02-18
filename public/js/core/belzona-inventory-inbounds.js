@@ -389,10 +389,13 @@ $(document).ready(function () {
                     .prop('disabled', false)
                     .data('sheet', latest.sheet_name)
                     .data('row', latest.inbound_row_number);
+                var lastBalance = latest.last_outbound_balance;
+                $('#belzona-last-outbound-balance').text(lastBalance != null ? fmtNumber(lastBalance) : '—');
             } else {
                 $('#belzona-latest-inbound-title').text('-');
                 $('#belzona-latest-inbound-meta').text('-');
                 $('#belzona-latest-inbound-open').prop('disabled', true);
+                $('#belzona-last-outbound-balance').text('—');
             }
         });
     }

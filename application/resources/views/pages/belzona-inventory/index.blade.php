@@ -101,7 +101,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-8">
+                        <div class="col-md-4">
                             <div class="card border mb-0">
                                 <div class="card-body d-flex justify-content-between align-items-center">
                                     <div>
@@ -114,6 +114,15 @@
                                             <i class="ti-eye"></i> مشاهده خروجی‌ها
                                         </button>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border mb-0">
+                                <div class="card-body">
+                                    <div class="text-muted belzona-page-text">آخرین مانده خروجی‌های پارت</div>
+                                    <div class="h4 mb-0 belzona-datatable-text" id="belzona-last-outbound-balance">-</div>
+                                    <small class="text-muted belzona-page-text">ماندهٔ آخرین رکورد خروجی در آخرین پارت ورود</small>
                                 </div>
                             </div>
                         </div>

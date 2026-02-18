@@ -934,6 +934,16 @@ class BelzonaInventoryController extends Controller {
             ->orderBy('sheet_row_number', 'desc')
             ->first();
 
+        $lastOutboundBalance = null;
+        if ($latest) {
+            $lastOutboundBalance = $this->getLastOutboundBalanceForInbound(
+                $latest->sheet_name,
+                (int) $latest->sheet_row_number,
+                $fromDate,
+                $toDate
+            );
+        }
+
         return response()->json([
             'success' => true,
             'data' => [
@@ -946,6 +956,7 @@ class BelzonaInventoryController extends Controller {
                     'input' => (float) $latest->input,
                     'label' => $this->extractInboundLabel($latest),
                     'inbound_row_number' => (int) $latest->sheet_row_number,
+                    'last_outbound_balance' => $lastOutboundBalance,
                 ] : null,
             ],
         ]);
@@ -982,6 +993,37 @@ class BelzonaInventoryController extends Controller {
         }
 
         return 'ورود';
+    }
+
+    /**
+     * Get the balance of the last outbound row for a given inbound (for display in summary box).
+     */
+    private function getLastOutboundBalanceForInbound(string $sheetName, int $inboundRowNumber, ?string $fromDate, ?string $toDate): ?float
+    {
+        $nextInboundRowNumber = (int) BelzonaInventory::query()
+            ->where('sheet_name', $sheetName)
+            ->where('sheet_row_number', '>', $inboundRowNumber)
+            ->where('input', '>', 0)
+            ->min('sheet_row_number');
+
+        $outQuery = BelzonaInventory::query()
+            ->where('sheet_name', $sheetName)
+            ->where('sheet_row_number', '>', $inboundRowNumber)
+            ->where('output', '>', 0);
+
+        if ($nextInboundRowNumber > 0) {
+            $outQuery->where('sheet_row_number', '<', $nextInboundRowNumber);
+        }
+        if ($fromDate) {
+            $outQuery->whereDate('date', '>=', $fromDate);
+        }
+        if ($toDate) {
+            $outQuery->whereDate('date', '<=', $toDate);
+        }
+
+        $lastOutbound = $outQuery->orderBy('sheet_row_number', 'desc')->first();
+
+        return $lastOutbound !== null ? (float) $lastOutbound->balance : null;
     }
 
     /**

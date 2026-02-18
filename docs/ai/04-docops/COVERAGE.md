@@ -23,3 +23,9 @@ Date: 2026-02-17
 - و اگر ماژول جدید ساخته شد، status را “bootstrapped” کن.
 
 (این فایل را AI به‌صورت سبک آپدیت می‌کند.)
+
+---
+
+## Entries
+
+- 2026-02-18 — inventory-belzona: Feature «آخرین مانده خروجی‌های پارت». Discovery: no. Coverage: doc موجود بود، History و metrics آپدیت شد.

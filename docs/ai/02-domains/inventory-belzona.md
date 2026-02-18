@@ -80,6 +80,10 @@ validation_queries:
 
 > این بخش از این به بعد با قالب استاندارد پر می‌شود.
 
+- 2026-02-18 — Feature: باکس «آخرین مانده خروجی‌های پارت» در صفحه انبار بلزونا
+  - دلیل: نمایش آخرین رکورد ستون مانده از خروجی‌های آخرین پارت ورود در صفحه اصلی، بدون نیاز به باز کردن مودال
+  - فایل‌های لمس‌شده: `BelzonaInventoryController.php` (getInboundSummary + متد جدید getLastOutboundBalanceForInbound), `belzona-inventory/index.blade.php`, `belzona-inventory-inbounds.js`
+  - تأثیر: باکس جدید کنار «آخرین پارت ورود» با عنوان «آخرین مانده خروجی‌های پارت» که مقدار ماندهٔ آخرین رکورد خروجی را نمایش می‌دهد
 - 2026-02-17 — Migration: جداسازی این دامنه از فایل تاریخچهٔ کلی و انتقال به `02-domains/`.
   - فایل‌ها: `01-PROJECT-CONTEXT-AND-HISTORY.md` → `02-domains/theme-custom-styling-belzona.md`
   - تغییر رفتار: ندارد (صرفاً بازآرایی مستندات)
