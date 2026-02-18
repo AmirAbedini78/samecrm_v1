@@ -1,11 +1,10 @@
-﻿# AI-MODE.yml â€” Active profile switch (single source of truth)
+# AI-MODE.yml — Active profile switch (single source of truth)
 # This file is updated at the START of each AI session by the running tool:
 # - Cursor/Cloud should set active_profile: cursor
 # - Ollama/Local should set active_profile: local
 # Do not manually edit unless needed.
 
-active_profile: cursor
-last_set_by: "cursor"
-last_set_at: "2026-02-18T07:59:30Z"
+active_profile: unknown   # cursor | local | unknown
+last_set_by: ""
+last_set_at: ""
 notes: ""
-

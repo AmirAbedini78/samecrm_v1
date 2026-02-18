@@ -1,0 +1,203 @@
+---
+description: samecrm_v1 Smart Docs System — FULL ENFORCEMENT (ALWAYS)
+alwaysApply: true
+---
+
+# samecrm_v1 — SMART DOCS EXECUTION CONTRACT (NON-NEGOTIABLE)
+
+You are operating inside a Laravel CRM repo where documentation is a living system.
+You MUST follow the Smart Documentation workflow. Do NOT skip steps.
+
+## Repo layout (source of truth)
+- Smart docs: docs/ai/
+- Mode switch: AI-MODE.yml (root)
+- Laravel code root: application/
+- Public assets: public/
+
+## Absolute rule
+You MUST NOT finish a task after code changes only.
+A task is DONE only after:
+- verification + gate questions + DOC-OPS expansion + metrics/coverage/memory updates.
+
+---
+
+# 0) SESSION BOOTSTRAP (MANDATORY)
+
+1) Read: docs/ai/00-START-HERE.md
+2) Read: docs/ai/AI-RULES.md
+3) Open: AI-MODE.yml (root) and confirm:
+   - active_profile MUST be cursor for this session.
+4) Confirm docs root is: docs/ai/
+5) Treat English identifiers as ground truth; explanations in Persian.
+
+If any of the above cannot be done, STOP and explain what is missing.
+
+---
+
+# 1) USER INPUT RULE (KEEP USER PROMPT SHORT)
+
+User will provide only intent (Persian):
+- "می‌خوام <بخش/ماژول> رو تغییر بدم: ..."
+
+You must NOT ask the user to list files.
+You may ask ONLY if the target is ambiguous (multiple possible modules/pages).
+
+---
+
+# 2) RESOLVER (MANDATORY)
+
+You MUST resolve the module before touching code:
+
+1) Read: docs/ai/02-domains/INDEX.yml
+2) Resolve the user’s target (Persian aliases allowed) to module doc path:
+   docs/ai/02-domains/<module-id>.md
+
+If resolved:
+- Read module Frontmatter FIRST (not necessarily the entire entire file).
+- Collect: reads, depends_on, touches_code, validation_queries, smoke_checks, update_rules, aliases.
+
+Then recursively load depends_on docs that are relevant.
+(Prefer shared capabilities referenced by the module.)
+
+---
+
+# 3) VALIDATION: DOCS VS CODE (MANDATORY, BEFORE CHANGES)
+
+Before modifying code, you MUST validate documentation against the real project:
+
+A) Open the project files listed in touches_code (or the most likely ones if list is partial):
+- controllers: application/app/Http/Controllers/
+- models: application/app/Models/
+- views: application/resources/views/pages/
+- routes: application/routes/
+- public JS: public/js/core/
+
+B) Answer validation_queries with evidence from code.
+C) If mismatch exists:
+- Produce a short "Mismatch Report"
+- Propose a small docs patch to fix the mismatch
+- Apply the docs patch (or queue it) BEFORE continuing with feature changes
+
+You MUST NOT implement changes if docs are obviously inconsistent, unless you first patch docs.
+
+---
+
+# 4) DISCOVERY MODE (MANDATORY WHEN DOC IS MISSING/UNUSABLE)
+
+Trigger Discovery Mode if:
+- target module not found in INDEX.yml, OR
+- module doc file missing, OR
+- module doc lacks usable frontmatter (touches_code/validation_queries effectively empty)
+
+Then you MUST follow:
+- docs/ai/04-docops/DISCOVERY.md
+
+Discovery requirements for Cursor (strong model):
+- Identify entry points: route/controller/view/model/assets
+- Follow references (at least 1–2 hops where meaningful)
+- Build/repair module doc:
+  docs/ai/02-domains/<module-id>.md
+  including at minimum:
+  - frontmatter with touches_code, validation_queries, smoke_checks, update_rules, aliases
+  - current state summary from code
+  - key files map (5–15 files)
+  - initial History entry ("Bootstrapped by Discovery")
+- Update docs/ai/02-domains/INDEX.yml with:
+  - module_id mapping
+  - Persian alias used by the user
+
+ONLY AFTER building/repairing module docs, proceed to implementation.
+
+---
+
+# 5) IMPLEMENTATION RULES (STRONG MODEL, SAFE CHANGES)
+
+Implementation must be:
+- Evidence-driven (based on resolved docs + real code)
+- Incremental (small changes, avoid giant refactors)
+- Patch-oriented (clear diffs)
+
+During implementation:
+- Prefer minimal viable change first
+- Keep a short internal task plan
+- Track what files you touched (final list must be recorded)
+
+---
+
+# 6) POST-CHANGE LOOP (NON-SKIPPABLE — THIS IS THE CORE)
+
+After code changes, you MUST do ALL steps below before ending.
+
+## 6A) VERIFY AGAINST CODE (MANDATORY)
+- Re-open the touched files and confirm changes are present.
+- Re-check the behavior path (controller→view→js, etc).
+- Confirm no obvious break in related pages/modules (1-hop neighbors if relevant).
+
+## 6B) UPDATE DOCS (MANDATORY)
+Update the module doc (and shared docs if needed):
+- Add a History entry with:
+  - date
+  - what changed
+  - why
+  - touched files
+  - user-visible impact
+- If architectural decision/contract changed:
+  - Add/Update an ADR in docs/ai/03-adr/
+- If new dependency discovered:
+  - Update depends_on in module doc
+- Keep bilingual policy:
+  - Persian explanations
+  - English identifiers/terms
+
+## 6C) GATE QUESTION (MANDATORY)
+Ask the user explicitly (Persian):
+- "آیا این بخش فعلاً تمام/متوقف است تا گسترش داکیومنت انجام شود؟"
+
+If user says YES → run DOC-OPS immediately (6D).
+If user says NO → create a backlog item for expansion and stop (but still do metrics).
+
+## 6D) EXPANSION (ONLY THROUGH DOC-OPS — NO DUPLICATES)
+Follow: docs/ai/04-docops/DOC-OPS.md
+- Use expansion_level = deep (Cursor default)
+- Produce:
+  1) Suggested doc patch (clearly scoped)
+  2) 3–7 verification questions / test checklist
+- Apply expansion patch ONLY after user approval (Gate)
+
+## 6E) METRICS + COVERAGE + MEMORY (MANDATORY)
+You MUST update these after each task:
+- docs/ai/04-docops/COVERAGE.md
+  - log module, whether discovery ran, and what coverage improved
+- docs/ai/04-docops/metrics.md
+  - log: task summary, mismatches found, doc patches proposed/accepted, errors
+- docs/ai/04-docops/expansion/<module-id>.json
+  - update: last_updated, reviewed_areas, open_questions, next_targets, coverage estimate
+
+If any file is missing, create it (minimal valid structure) rather than skipping.
+
+## 6F) DONE CONDITION
+You may say “done” only after steps 6A–6E completed.
+Otherwise you MUST state what is blocked and write it into:
+- docs/ai/04-docops/backlog.md
+
+---
+
+# 7) MODE SWITCH SAFETY (CURSOR vs OLLAMA)
+
+This repo uses a single source of truth for docs/history.
+Never create separate parallel histories for local vs cursor.
+
+- Cursor sessions: active_profile must be cursor.
+- Local sessions follow docs/ai/AI-RULES-LOCAL.md (but same docs storage).
+
+---
+
+# 8) OUTPUT STYLE (KEEP IT OPERATIONAL)
+
+Always provide:
+- What you read (docs paths)
+- What you validated (key code files)
+- What you changed (touched files list)
+- What you updated in docs (which files)
+- Gate question result
+- Metrics/Coverage/Memory updates summary
