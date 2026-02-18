@@ -1,0 +1,24 @@
+{
+  "module_id": "inventory-belzona",
+  "last_updated": "2026-02-17",
+  "coverage": {
+    "architecture_notes": 0.35,
+    "key_files_map": 0.25,
+    "data_state": 0.15,
+    "edge_cases": 0.1,
+    "testing_notes": 0.2
+  },
+  "reviewed_areas": [
+    "docs: module frontmatter, dependencies, smoke_checks, validation_queries"
+  ],
+  "open_questions": [
+    "مسیر دقیق route/controller/view صفحه بلزونا چیست؟ (نیاز به صحت‌سنجی با کد)",
+    "کامپوننت/کتابخانه دیتاتیبل دقیقاً چیست و کجا تعریف شده؟",
+    "کلید(های) settings2 برای فونت/تم دقیقاً چیست؟"
+  ],
+  "next_expansion_targets": [
+    "routes + controller + view chain for belzona",
+    "datatable implementation details",
+    "css scoping implementation details"
+  ]
+}

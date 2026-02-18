@@ -1,0 +1,24 @@
+# Cursor Project Rules — samecrm_v1 (Unified, Standard Layout)
+
+# IMPORTANT:
+# Cursor reads this file ONLY if it is located at the REPO ROOT.
+
+# Docs root folder:
+# - All AI documentation lives under: docs/ai/
+
+# Session bootstrap (must do first):
+# 1) Open and update AI-MODE.yml (at repo root):
+#    - set active_profile: cursor
+#    - set last_set_by: "cursor"
+#    - set last_set_at: current datetime (UTC)
+# 2) Read docs/ai/00-START-HERE.md
+
+# Execution (cursor profile):
+# - Follow docs/ai/AI-RULES.md
+# - Then follow docs/ai/04-docops/DOC-OPS.md (progressive expansion full)
+
+# Language:
+# - Persian explanations
+# - English technical identifiers
+
+# Default expansion_level for Cursor: deep (configured inside docs/ai/04-docops/DOC-OPS.md)

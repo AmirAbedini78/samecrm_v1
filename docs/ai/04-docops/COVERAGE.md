@@ -1,0 +1,25 @@
+# COVERAGE — پوشش مستندسازی (Documentation Coverage)
+
+Date: 2026-02-17
+
+هدف: بفهمیم چه بخش‌هایی از سیستم هنوز داکیومنت ماژول ندارند یا ناقص‌اند.
+
+---
+
+## معیارهای پوشش (High-level)
+برای هر ماژول:
+- Has module doc? (yes/no)
+- touches_code filled? (yes/no)
+- validation_queries filled? (yes/no)
+- smoke_checks present? (yes/no)
+- ADRs linked when needed? (yes/no)
+- Expansion memory exists? (yes/no)
+
+---
+
+## قانون خودکار
+هر بار که Discovery Mode اجرا شد:
+- یک entry اینجا ثبت کن (ماژول + نتیجه)
+- و اگر ماژول جدید ساخته شد، status را “bootstrapped” کن.
+
+(این فایل را AI به‌صورت سبک آپدیت می‌کند.)
