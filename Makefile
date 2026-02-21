@@ -10,3 +10,20 @@ ai-cursor:
 
 show-mode:
 	@cat AI-MODE.yml
+# --- SmartDocs Guard CLI (v14) ---
+SMARTDOCS=python3 tools/smartdocs/smartdocs.py
+
+task-start:
+	@$(SMARTDOCS) start --module="$(module)" --name="$(name)" --notes="$(notes)"
+
+task-gate-yes:
+	@$(SMARTDOCS) set-gate --answer=yes
+
+task-gate-no:
+	@$(SMARTDOCS) set-gate --answer=no
+
+task-close:
+	@$(SMARTDOCS) close
+
+task-status:
+	@$(SMARTDOCS) status

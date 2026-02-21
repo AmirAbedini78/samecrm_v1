@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "status": "idle",
+  "task_id": null,
+  "task_name": null,
+  "module_id": null,
+  "started_at": null,
+  "closed_at": null,
+  "gate_answer": null,
+  "expected_artifacts": {
+    "history_updated": false,
+    "metrics_updated": false,
+    "coverage_updated": false,
+    "expansion_memory_updated": false,
+    "backlog_updated_if_gate_no": false
+  },
+  "notes": ""
+}
