@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# SmartDocs task wrapper (macOS/Linux)
+set -e
+cmd="${1:-}"
+shift || true
+
+if [[ -z "$cmd" ]]; then
+  echo "Usage:"
+  echo "  ./task start "target phrase" "task name""
+  echo "  ./task start --module="inventory-belzona" --name="swap datepickers""
+  echo "  ./task gate yes|no"
+  echo "  ./task close"
+  echo "  ./task status"
+  exit 1
+fi
+
+case "$cmd" in
+  start)
+    if printf "%s" "$*" | grep -q -- "--name="; then
+      python3 tools/smartdocs/smartdocs.py start "$@"
+    else
+      target="${1:-}"; name="${2:-}"
+      if [[ -z "$name" ]]; then
+        echo "ERROR: Provide both target phrase and task name."
+        exit 1
+      fi
+      python3 tools/smartdocs/smartdocs.py start --target="$target" --name="$name"
+    fi
+    ;;
+  gate)
+    python3 tools/smartdocs/smartdocs.py gate --answer="${1:?yes|no}"
+    ;;
+  close)
+    python3 tools/smartdocs/smartdocs.py close
+    ;;
+  status)
+    python3 tools/smartdocs/smartdocs.py status
+    ;;
+  *)
+    echo "Unknown command: $cmd"
+    exit 1
+    ;;
+esac

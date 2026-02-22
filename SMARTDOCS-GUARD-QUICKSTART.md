@@ -1,34 +1,41 @@
-# SmartDocs Guard Quickstart (v14)
+# SmartDocs Guard Quickstart (v15)
 
-This package adds a mechanical guard to prevent AI shortcutting.
+This version fixes two UX issues:
+1) No `make` needed on Windows (use `task` wrapper).
+2) Module-id memorization not needed (aliases + fuzzy resolve via INDEX.yml).
 
-## Start a task (operator)
-From repo root:
+## Windows usage (cmd/PowerShell/Laragon terminal)
+Start a task:
 ```bash
-make task-start module="inventory-belzona" name="swap datepickers"
+task start "انبار بلزونا" "swap datepickers"
+```
+Or advanced:
+```bash
+task start --module="inventory-belzona" --name="swap datepickers"
 ```
 
-## Work in Cursor chat
-Give your short intent. The AI implements changes and updates docs.
-
-## Record Gate (after the AI asks and you answer in chat)
-If you answered YES:
+Record Gate (after AI asks and you answer in chat):
 ```bash
-make task-gate-yes
-```
-If you answered NO:
-```bash
-make task-gate-no
+task gate no
+# or
+task gate yes
 ```
 
-## Close task (must pass checks)
+Close task (mechanical check):
 ```bash
-make task-close
+task close
 ```
 
-If close fails, update missing artifacts and retry.
-
-## Inspect state
+Status:
 ```bash
-make task-status
+task status
 ```
+
+## macOS/Linux usage
+```bash
+./task start "انبار بلزونا" "swap datepickers"
+./task gate no
+./task close
+```
+
+If close fails, paste the error into Cursor and tell it to complete missing artifacts.

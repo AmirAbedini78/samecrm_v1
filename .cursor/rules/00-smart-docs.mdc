@@ -3,6 +3,39 @@ description: samecrm_v1 Smart Docs System — FULL ENFORCEMENT (v14 GUARD + ANTI
 alwaysApply: true
 ---
 
+
+---
+
+## SmartDocs Guard (Mechanical Enforcement — v15)
+
+Rules alone are soft. This repo uses a guard CLI to prevent shortcutting.
+
+Use the human-friendly wrapper command:
+
+- Windows: `task ...`  (task.bat in repo root)
+- macOS/Linux: `./task ...`
+
+Per task workflow (MANDATORY):
+
+1) Operator starts task from repo root:
+   - `task start "target phrase" "task name"`
+   - OR advanced: `task start --module="inventory-belzona" --name="swap datepickers"`
+
+2) After you ask the Gate question and user answers:
+   - `task gate yes`  OR  `task gate no`
+
+3) Before declaring DONE you MUST run:
+   - `task close`
+
+If `task close` fails, you MUST update docs/metrics/coverage/memory/backlog and retry until it passes.
+
+Notes:
+- `task start` does NOT require exact module-id. It resolves aliases + fuzzy match from `docs/ai/02-domains/INDEX.yml`.
+- If module docs don't exist yet, you MUST run Discovery and create them; `task close` can auto-bind the module in simple cases.
+- If auto-bind is ambiguous, `task close` will fail and show candidates; you must clarify by re-running `task start --module="<module-id>" --name="..."`.
+
+---
+
 # SMART DOCUMENTATION EXECUTION CONTRACT (MECHANICAL GUARD)
 
 You are operating inside a Laravel CRM repository with a living, versioned architectural documentation system.
@@ -44,17 +77,17 @@ If bootstrap fails → STOP and explain what is missing.
 Per task workflow:
 
 1) Operator MUST run from repo root (before giving/starting the task):
-   - make task-start module="<module-id>" name="<short title>"
+   - task start module="<module-id>" name="<short title>"
 
 2) After you ask the Gate question and the user answers:
-   - If YES: run  make task-gate-yes
-   - If NO:  run  make task-gate-no
+   - If YES: run  task gate yes
+   - If NO:  run  task gate no
 
 3) Before declaring DONE you MUST run:
-   - make task-close
+   - task close
 
-If make task-close fails, you MUST NOT declare DONE.
-You MUST update missing artifacts (History/Metrics/Coverage/Expansion memory/Backlog) and retry make task-close.
+If task close fails, you MUST NOT declare DONE.
+You MUST update missing artifacts (History/Metrics/Coverage/Expansion memory/Backlog) and retry task close.
 
 Hard rule:
 - If there is NO open task in task_state.json, you MUST ask the operator to run task-start and you MUST NOT proceed.
@@ -187,8 +220,8 @@ Interpretation:
 - NO: do NOT run expansion now, BUT still update Metrics/Coverage/Memory and write backlog entry for future expansion.
 
 Then record gate via Guard CLI:
-- YES → make task-gate-yes
-- NO  → make task-gate-no
+- YES → task gate yes
+- NO  → task gate no
 
 ## 7D) EXPANSION (ONLY VIA DOC-OPS, IF Gate=YES)
 Follow:
@@ -221,7 +254,7 @@ If the user replies YES/NO AND also provides a new task in the same message:
 1) FIRST fully close the CURRENT task:
    - Gate record (task-gate-yes/no)
    - required docs/metrics updates
-   - make task-close (must pass)
+   - task close (must pass)
 2) ONLY AFTER closing, start a NEW task cycle from Resolver for the new request.
 3) Never treat the new task as a quick edit.
 
@@ -245,7 +278,7 @@ If you cannot fill a section, explain why and write a backlog item.
 
 # 10) TASK CLOSURE UX (MANDATORY)
 
-After make task-close succeeds, ALWAYS end with:
+After task close succeeds, ALWAYS end with:
 "Task closed. Ready for the next task."
 
 Do NOT invent new tasks yourself.
