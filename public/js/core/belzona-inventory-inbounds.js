@@ -94,7 +94,10 @@ $(document).ready(function () {
     }
 
     var baseUrl = (window.NX && NX.site_url) ? String(NX.site_url).replace(/\/$/, '') : '';
+    var belzonaAjaxUrl = $('#belzona-inventory-page').attr('data-belzona-ajax-url') ||
+        (baseUrl ? (baseUrl + '/belzona-inventory') : '/belzona-inventory');
     function nxUrl(path) {
+        if (path === 'belzona-inventory') return belzonaAjaxUrl;
         path = String(path || '').replace(/^\//, '');
         return baseUrl ? (baseUrl + '/' + path) : ('/' + path);
     }
@@ -310,22 +313,26 @@ $(document).ready(function () {
             nxFixModalBackdrops();
         });
 
-    // Inbounds table (all products)
+    // Inbounds table — فقط ۴ ستون: تاریخ ورود، محصول، عنوان، تعداد ورود
     var inboundsTable = null;
     function initInboundsTable() {
         if (inboundsTable) {
-            inboundsTable.destroy();
-            $('#belzona-inbounds-table tbody').empty();
+            try { inboundsTable.destroy(); } catch (e) {}
+            inboundsTable = null;
         }
+        var $tbl = $('#belzona-inbounds-table');
+        if (!$tbl.length) return;
+        $tbl.find('tbody').empty();
 
-        inboundsTable = $('#belzona-inbounds-table').DataTable({
+        inboundsTable = $tbl.DataTable({
             processing: true,
             serverSide: true,
             pageLength: 25,
             order: [[0, 'desc']],
             ajax: {
-                url: nxUrl('belzona-inventory'),
+                url: belzonaAjaxUrl,
                 type: 'GET',
+                dataType: 'json',
                 data: function (d) {
                     d.action = 'inbound_datatables';
                     d.sheet_name = $('#belzona-inbounds-filter-sheet').val();
@@ -333,44 +340,21 @@ $(document).ready(function () {
                     d.filter_date_to = $('#belzona-inbounds-date-to').val();
                 },
                 error: function (xhr) {
-                    console.error('Belzona inbounds datatable ajax error', xhr.status, xhr.responseText);
+                    console.error('Belzona inbounds datatable ajax error', xhr.status, xhr.responseText ? xhr.responseText.substring(0, 200) : '');
                 }
             },
             columns: [
-                { data: 'date_raw', name: 'date_raw' },
-                { data: 'sheet_name', name: 'sheet_name' },
-                { data: 'inbound_label', name: 'inbound_label' },
-                { data: 'input', name: 'input', render: function (d) { return fmtNumber(d); } },
-                { data: 'out_total', name: 'out_total', orderable: false, render: function (d) { return fmtNumber(d); } },
-                { data: 'remaining', name: 'remaining', orderable: false, render: function (d) { return fmtNumber(d); } },
-                { data: 'out_count', name: 'out_count', orderable: false, render: function (d) { return fmtNumber(d); } },
-                { data: 'shelf_life_years', name: 'shelf_life_years', orderable: false, defaultContent: '—', render: function (d) { return d != null && d !== '' ? d : '—'; } },
-                { data: 'remaining_shelf_life', name: 'remaining_shelf_life', orderable: false, defaultContent: '—', render: function (remaining, type, row) {
-                        if (type !== 'display') return remaining || '—';
-                        var expiry = row.expiry_date ? String(row.expiry_date) : '';
-                        var rem = row.remaining_shelf_life ? String(row.remaining_shelf_life) : '—';
-                        if (expiry && rem !== '—') return expiry + ' <small class="text-muted">(' + rem + ')</small>';
-                        return rem;
-                    }
-                },
-                {
-                    data: null,
-                    orderable: false,
-                    searchable: false,
-                    render: function (_, __, row) {
-                        return '<button type="button" class="btn btn-sm btn-outline-primary belzona-open-outbounds" ' +
-                            'data-sheet="' + (row.sheet_name || '') + '" data-row="' + (row.inbound_row_number || '') + '">' +
-                            '<i class="ti-eye"></i> مشاهده خروجی‌ها</button>';
-                    }
-                }
+                { data: 'date_raw' },
+                { data: 'sheet_name' },
+                { data: 'inbound_label' },
+                { data: 'input', render: function (d) { return fmtNumber(d); } }
             ],
-            language: { url: nxUrl('public/js/datatables-persian.json') },
-            responsive: true
+            language: { url: nxUrl('public/js/datatables-persian.json') }
         });
     }
 
     function refreshInboundSummary() {
-        $.get(nxUrl('belzona-inventory'), {
+        $.get(belzonaAjaxUrl, {
             action: 'inbound_summary',
             sheet_name: $('#belzona-inbounds-filter-sheet').val(),
             filter_date_from: $('#belzona-inbounds-date-from').val(),
@@ -401,7 +385,7 @@ $(document).ready(function () {
     }
 
     function loadInboundProductsCombo() {
-        $.get(nxUrl('belzona-inventory'), { action: 'unique_values', column: 'sheet_name' }, function (res) {
+        $.get(belzonaAjaxUrl, { action: 'unique_values', column: 'sheet_name' }, function (res) {
             if (!res || !res.success) return;
             var $sel = $('#belzona-inbounds-filter-sheet');
             var prev = $sel.val() || '';
@@ -426,7 +410,7 @@ $(document).ready(function () {
         });
     }
 
-    // init on load
+    // init on load — فقط ورودها
     initInboundsTable();
     refreshInboundSummary();
     loadInboundProductsCombo();
@@ -437,6 +421,8 @@ $(document).ready(function () {
         .on('click.belzonaInbounds', function () {
             refreshInboundSummary();
             if (inboundsTable) inboundsTable.ajax.reload();
+            if (outputsTable) outputsTable.ajax.reload();
+            if (expiryTable) expiryTable.ajax.reload();
         });
     $('#belzona-inbounds-clear')
         .off('click.belzonaInbounds')
@@ -446,12 +432,16 @@ $(document).ready(function () {
             $('#belzona-inbounds-date-to').val('');
             refreshInboundSummary();
             if (inboundsTable) inboundsTable.ajax.reload();
+            if (outputsTable) outputsTable.ajax.reload();
+            if (expiryTable) expiryTable.ajax.reload();
         });
     $('#belzona-inbounds-filter-sheet, #belzona-inbounds-date-from, #belzona-inbounds-date-to')
         .off('change.belzonaInbounds keyup.belzonaInbounds')
         .on('change.belzonaInbounds keyup.belzonaInbounds', function () {
             refreshInboundSummary();
             if (inboundsTable) inboundsTable.ajax.reload();
+            if (outputsTable) outputsTable.ajax.reload();
+            if (expiryTable) expiryTable.ajax.reload();
         });
 
     $(document)
@@ -472,5 +462,136 @@ $(document).ready(function () {
             e.preventDefault();
             openInvoiceModalByNumber($(this).data('invoice-number'));
         });
+
+    // ---- تب خروجی‌ها و تب تاریخ انقضا ----
+    var outputsTable = null;
+    var expiryTable = null;
+    var outputsTableInited = false;
+    var expiryTableInited = false;
+
+    function getSharedFiltersPayload() {
+        var payload = {};
+        var sheet = $('#belzona-inbounds-filter-sheet').val();
+        if (sheet && String(sheet).trim() !== '') {
+            payload.sheet_name = sheet;
+        }
+        return payload;
+    }
+
+    function initOutputsTable() {
+        if (!$('#belzona-inventory-outputs-table').length || outputsTableInited) return;
+        outputsTableInited = true;
+        var $t = $('#belzona-inventory-outputs-table');
+        if ($.fn.DataTable && $.fn.DataTable.isDataTable($t)) {
+            $t.DataTable().destroy();
+            $t.find('tbody').empty();
+        }
+        outputsTable = $t.DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: belzonaAjaxUrl,
+                type: 'GET',
+                dataType: 'json',
+                data: function (d) {
+                    d.action = 'datatables';
+                    d.column_search = getSharedFiltersPayload();
+                    d.filter_date_from = $('#belzona-inbounds-date-from').val();
+                    d.filter_date_to = $('#belzona-inbounds-date-to').val();
+                }
+            },
+            columns: [
+                { data: 'belzona_inventory_id', title: 'ID' },
+                { data: 'sheet_name', title: 'محصول' },
+                { data: 'product_weight_raw', title: 'وزن' },
+                { data: 'date_raw', title: 'تاریخ' },
+                { data: 'input', title: 'ورودی', render: function (d) { return fmtNumber(d); } },
+                { data: 'output', title: 'خروجی', render: function (d) { return fmtNumber(d); } },
+                { data: 'balance', title: 'مانده', render: function (d) { return fmtNumber(d); } },
+                { data: 'invoice_number', title: 'فاکتور', render: function (d) { return renderInvoiceLink(d); } },
+                { data: 'customer_name', title: 'مشتری' },
+                { data: 'notes', title: 'توضیحات' },
+                { data: 'shelf_life_years', title: 'شلف لایف', defaultContent: '—' },
+                { data: 'expiry_date', title: 'تاریخ انقضا', defaultContent: '—', render: function (d, type, row) {
+                    if (type !== 'display') return d || '—';
+                    var exp = d ? String(d) : '';
+                    var rem = row.remaining_shelf_life ? String(row.remaining_shelf_life) : '';
+                    return exp + (rem ? ' <small class="text-muted">(' + rem + ')</small>' : '');
+                }},
+                { data: 'actions', title: 'عملیات', orderable: false, searchable: false, render: function (_, type, row) {
+                    var id = row.belzona_inventory_id;
+                    return '<a href="' + nxUrl('belzona-inventory/' + id) + '" class="btn btn-sm btn-primary"><i class="ti-eye"></i></a> ' +
+                        '<a href="' + nxUrl('belzona-inventory/' + id + '/edit') + '" class="btn btn-sm btn-warning"><i class="ti-pencil"></i></a>';
+                }}
+            ],
+            language: { url: nxUrl('public/js/datatables-persian.json') },
+            pageLength: 25,
+            order: [[0, 'desc']]
+        });
+        // خروجی‌ها و انقضا از فیلترهای بالای صفحه استفاده می‌کنند — در change ورودها reload می‌شوند
+    }
+
+    function initExpiryTable() {
+        if (!$('#belzona-expiry-table').length || expiryTableInited) return;
+        expiryTableInited = true;
+        var $t = $('#belzona-expiry-table');
+        if ($.fn.DataTable && $.fn.DataTable.isDataTable($t)) {
+            $t.DataTable().destroy();
+            $t.find('tbody').empty();
+        }
+        expiryTable = $t.DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: belzonaAjaxUrl,
+                type: 'GET',
+                dataType: 'json',
+                data: function (d) {
+                    d.action = 'datatables_expiry';
+                    d.sheet_name = $('#belzona-inbounds-filter-sheet').val();
+                    d.filter_date_from = $('#belzona-inbounds-date-from').val();
+                    d.filter_date_to = $('#belzona-inbounds-date-to').val();
+                }
+            },
+            columns: [
+                { data: 'sheet_name', title: 'نام محصول' },
+                { data: 'date_raw', title: 'تاریخ ورود' },
+                { data: 'shelf_life_years', title: 'شلف لایف (سال)', defaultContent: '—' },
+                { data: 'expiry_date', title: 'تاریخ انقضا', defaultContent: '—' }
+            ],
+            language: { url: nxUrl('public/js/datatables-persian.json') },
+            pageLength: 25,
+            order: [[3, 'asc']]
+        });
+    }
+
+    // هنگام نمایش تب: lazy init خروجی/انقضا + تنظیم layout برای جلوگیری از ناپدید شدن
+    $(document).on('shown.bs.tab', '#belzona-main-tabs a[data-toggle="tab"]', function (e) {
+        var target = $(e.target).attr('href');
+        setTimeout(function () {
+            if (target === '#belzona-pane-inbounds' && inboundsTable) {
+                try {
+                    inboundsTable.columns().adjust();
+                    inboundsTable.draw(false);
+                } catch (err) {}
+            } else if (target === '#belzona-pane-outputs') {
+                initOutputsTable();
+                if (outputsTable) {
+                    try {
+                        outputsTable.columns().adjust();
+                        outputsTable.draw(false);
+                    } catch (err) {}
+                }
+            } else if (target === '#belzona-pane-expiry') {
+                initExpiryTable();
+                if (expiryTable) {
+                    try {
+                        expiryTable.columns().adjust();
+                        expiryTable.draw(false);
+                    } catch (err) {}
+                }
+            }
+        }, 150);
+    });
 });
 

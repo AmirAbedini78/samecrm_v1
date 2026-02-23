@@ -27,6 +27,7 @@
 
 ## Entries
 
+- 2026-02-23 | inventory-belzona | refactor | Docs: yes | ADR: no | Mismatch: 0 | Doc Patch: yes | بهینه‌سازی دیتاتیبل ورودها (حذف ساب‌کوئری‌های سنگین)، آپدیت metrics/COVERAGE/expansion
 - 2026-02-18 | inventory-belzona | feature | Docs: yes | ADR: no | Mismatch: 0 | باکس آخرین مانده خروجی‌های پارت
 
 ---

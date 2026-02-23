@@ -43,7 +43,7 @@ if "%NAME%"=="" (
   goto help
 )
 
-python tools\smartdocs\smartdocs.py start --target "%TARGET%" --name "%NAME%"
+python tools\smartdocs\smartdocs.py start --module "%TARGET%" --target "%TARGET%" --name "%NAME%"
 exit /b %errorlevel%
 
 :gate

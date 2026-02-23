@@ -80,6 +80,15 @@ validation_queries:
 
 > این بخش از این به بعد با قالب استاندارد پر می‌شود.
 
+- 2026-02-18 — Feature: تب‌بندی صفحه انبار بلزونا + ستون‌های موقتاً غیرفعال
+  - تب ورودها: دیتاتیبل ورودی‌ها (ستون‌های جمع خروجی، مانده پارت، تعداد خروجی‌ها، شلف لایف، تاریخ انقضا، عملیات موقتاً کامنت شدند)
+  - تب خروجی‌ها: دیتاتیبل کامل انبار (همان گزارشات) با فیلترها
+  - تب تاریخ انقضا: دیتاتیبل جدید با نام محصول، تاریخ ورود، شلف لایف، تاریخ انقضا (فقط پارت‌های ورودی)
+  - فایل‌ها: `index.blade.php`, `belzona-inventory-inbounds.js`, `BelzonaInventoryController.php` (action datatables_expiry)
+- 2026-02-23 — Refactor: بهینه‌سازی دیتاتیبل ورودها
+  - حذف ساب‌کوئری‌های سنگین (outTotalSub, outCountSub, remaining) از getInboundDataTables چون ستون‌های مربوط نمایش داده نمی‌شوند
+  - فایل: BelzonaInventoryController.php
+  - تأثیر: سرعت لود تب ورودها نزدیک به تب خروجی‌ها شد
 - 2026-02-18 — Feature: باکس «آخرین مانده خروجی‌های پارت» در صفحه انبار بلزونا
   - دلیل: نمایش آخرین رکورد ستون مانده از خروجی‌های آخرین پارت ورود در صفحه اصلی، بدون نیاز به باز کردن مودال
   - فایل‌های لمس‌شده: `BelzonaInventoryController.php` (getInboundSummary + متد جدید getLastOutboundBalanceForInbound), `belzona-inventory/index.blade.php`, `belzona-inventory-inbounds.js`

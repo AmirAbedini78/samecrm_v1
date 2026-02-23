@@ -6,3 +6,15 @@
 - Why it matters
 - Suggested verification
 - Status: open | verified | documented
+
+---
+
+- **Module:** inventory-belzona
+- **Task:** تکمیل تسک «تغییر در صفحه انبار بلزونا» — گسترش داکیومنت و DOC-OPS expansion
+- **Why:** کاربر گفت بخش فعلاً تمام نیست؛ ادامه کار و گسترش داکیومنت برای بعد ذخیره شود.
+- **Status:** open
+
+- **Module:** inventory-belzona
+- **Task:** اجرای DOC-OPS expansion (سطح deep) پس از اتمام فیچر «آخرین مانده خروجی‌های پارت»
+- **Why:** کاربر فعلاً گسترش داکیومنت را متوقف کرد؛ برای بعد ذخیره شود.
+- **Status:** open

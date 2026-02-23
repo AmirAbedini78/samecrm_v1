@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
-  "status": "open",
-  "task_id": "task_20260221_120459",
-  "task_name": "I Say No For Continue Task",
-  "module_id": "__unbound__",
-  "started_at": "2026-02-21T12:04:59.892466+00:00",
-  "closed_at": null,
-  "gate_answer": null,
+  "status": "closed",
+  "task_id": "task_20260223_085526",
+  "task_name": "تغییر در صفحه انبار بلزونا",
+  "module_id": "inventory-belzona",
+  "started_at": "2026-02-23T08:55:26.084587+00:00",
+  "closed_at": "2026-02-23T10:03:46.777843+00:00",
+  "gate_answer": "no",
   "expected_artifacts": {
     "history_updated": true,
     "metrics_updated": true,
@@ -17,7 +17,9 @@
   "notes": "",
   "target_phrase": "inventory-belzona",
   "resolution": {
-    "method": "unbound",
-    "candidates": []
+    "method": "direct",
+    "candidates": [
+      "inventory-belzona"
+    ]
   }
 }

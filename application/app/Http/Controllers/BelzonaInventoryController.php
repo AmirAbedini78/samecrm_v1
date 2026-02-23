@@ -99,6 +99,11 @@ class BelzonaInventoryController extends Controller {
             return $this->getProductTransactions();
         }
 
+        // Expiry datatable (for تب تاریخ انقضا)
+        if (request()->get('action') === 'datatables_expiry') {
+            return $this->getDataTablesExpiry();
+        }
+
         //basic page settings
         $page = $this->pageSettings('index');
 
@@ -330,6 +335,74 @@ class BelzonaInventoryController extends Controller {
                 'expiry_date' => $expiryFormatted,
                 'remaining_shelf_life' => $remainingText,
                 'actions' => '',
+            ];
+        }
+
+        return response()->json([
+            'draw' => (int) request('draw'),
+            'recordsTotal' => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered,
+            'data' => $data,
+        ]);
+    }
+
+    /**
+     * DataTables for تب تاریخ انقضا: نام محصول، تاریخ ورود، شلف لایف، تاریخ انقضا (فقط پارت‌های ورودی)
+     */
+    private function getDataTablesExpiry()
+    {
+        $baseQuery = BelzonaInventory::query()->where('input', '>', 0);
+        $recordsTotal = (clone $baseQuery)->count();
+
+        $searchValue = request('search.value');
+        if (!empty($searchValue)) {
+            $baseQuery->where(function ($q) use ($searchValue) {
+                $q->where('sheet_name', 'LIKE', "%{$searchValue}%")
+                    ->orWhere('date_raw', 'LIKE', "%{$searchValue}%")
+                    ->orWhere('shelf_life_years', 'LIKE', "%{$searchValue}%");
+            });
+        }
+        if (request()->filled('sheet_name')) {
+            $baseQuery->where('sheet_name', 'LIKE', '%' . request('sheet_name') . '%');
+        }
+        $fromDate = $this->normalizeFilterDate(request('filter_date_from'));
+        $toDate = $this->normalizeFilterDate(request('filter_date_to'));
+        if ($fromDate) {
+            $baseQuery->whereDate('date', '>=', $fromDate);
+        }
+        if ($toDate) {
+            $baseQuery->whereDate('date', '<=', $toDate);
+        }
+
+        $recordsFiltered = (clone $baseQuery)->count();
+
+        $columns = [0 => 'sheet_name', 1 => 'date_raw', 2 => 'shelf_life_years', 3 => 'expiry_date'];
+        $orderColIndex = (int) request('order.0.column', 0);
+        $orderDir = in_array(request('order.0.dir'), ['asc', 'desc']) ? request('order.0.dir') : 'desc';
+        $orderBy = $columns[$orderColIndex] ?? 'sheet_name';
+        $baseQuery->orderBy($orderBy, $orderDir);
+
+        $start = (int) request('start', 0);
+        $length = (int) request('length', 25);
+        if ($length <= 0) {
+            $length = 25;
+        }
+
+        $rows = $baseQuery->skip($start)->take($length)->get();
+        $data = [];
+        foreach ($rows as $item) {
+            $expiryDate = $item->expiry_date;
+            if ($expiryDate === null && $item->date && $item->shelf_life_years) {
+                $d = $item->date instanceof \DateTimeInterface ? $item->date : \Carbon\Carbon::parse($item->date);
+                $expiryDate = $d->copy()->addYears((int) round((float) $item->shelf_life_years));
+            }
+            $expiryFormatted = $expiryDate ? (\Carbon\Carbon::parse($expiryDate)->format('Y-m-d')) : null;
+
+            $data[] = [
+                'sheet_name' => $item->sheet_name,
+                'date_raw' => $item->date_raw,
+                'shelf_life_years' => $item->shelf_life_years,
+                'expiry_date' => $expiryFormatted,
             ];
         }
 
@@ -725,29 +798,7 @@ class BelzonaInventoryController extends Controller {
         }
 
         try {
-        $nextInboundSub = "(SELECT MIN(n.sheet_row_number)
-            FROM belzona_inventories n
-            WHERE n.sheet_name = i.sheet_name
-              AND n.sheet_row_number > i.sheet_row_number
-              AND n.input > 0)";
-
-        $windowUpper = "COALESCE($nextInboundSub, 2147483647)";
-
-        $outTotalSub = "(SELECT COALESCE(SUM(o.output), 0)
-            FROM belzona_inventories o
-            WHERE o.sheet_name = i.sheet_name
-              AND o.sheet_row_number > i.sheet_row_number
-              AND o.sheet_row_number < $windowUpper
-              AND o.output > 0)";
-
-        $outCountSub = "(SELECT COUNT(*)
-            FROM belzona_inventories o
-            WHERE o.sheet_name = i.sheet_name
-              AND o.sheet_row_number > i.sheet_row_number
-              AND o.sheet_row_number < $windowUpper
-              AND o.output > 0)";
-
-        // crude label extraction in SQL (best-effort)
+        // بهینه‌سازی: ساب‌کوئری‌های out_total/out_count/remaining حذف شدند چون ستون‌های مربوط نمایش داده نمی‌شوند
         $labelSql = "CASE
             WHEN i.notes IS NOT NULL AND (i.notes LIKE '%واردات%' OR i.notes LIKE '%پرونده%' OR i.notes LIKE '%پارت%') THEN i.notes
             WHEN i.customer_name IS NOT NULL AND (i.customer_name LIKE '%واردات%' OR i.customer_name LIKE '%پرونده%' OR i.customer_name LIKE '%پارت%') THEN i.customer_name
@@ -759,23 +810,12 @@ class BelzonaInventoryController extends Controller {
         $selectColumns = [
             'i.belzona_inventory_id',
             'i.sheet_name',
-            'i.product_name',
-            'i.product_weight_raw',
             'i.sheet_row_number',
             'i.date_raw',
             'i.date',
             'i.input',
-            DB::raw("$labelSql as inbound_label"),
-            DB::raw("$outTotalSub as out_total"),
-            DB::raw("$outCountSub as out_count"),
-            DB::raw("(i.input - $outTotalSub) as remaining"),
+            DB::raw("($labelSql) as inbound_label"),
         ];
-        if (Schema::hasColumn('belzona_inventories', 'shelf_life_years')) {
-            $selectColumns[] = 'i.shelf_life_years';
-        }
-        if (Schema::hasColumn('belzona_inventories', 'expiry_date')) {
-            $selectColumns[] = 'i.expiry_date';
-        }
         $baseQuery = DB::table('belzona_inventories as i')
             ->where('i.input', '>', 0)
             ->select($selectColumns);
@@ -819,8 +859,7 @@ class BelzonaInventoryController extends Controller {
         $orderDir = request('order.0.dir', 'desc');
         $orderDir = in_array($orderDir, ['asc', 'desc'], true) ? $orderDir : 'desc';
 
-        // map datatable columns to DB fields
-        // 0 date_raw, 1 sheet_name, 2 inbound_label, 3 input, 4 out_total, 5 remaining, 6 out_count
+        // map datatable columns: 0 date_raw, 1 sheet_name, 2 inbound_label, 3 input
         switch ($orderColIndex) {
             case 0:
                 // best-effort: order by parsed date then row number
@@ -848,40 +887,17 @@ class BelzonaInventoryController extends Controller {
         }
 
         $rows = $baseQuery->skip($start)->take($length)->get();
-        $hasShelfLife = Schema::hasColumn('belzona_inventories', 'shelf_life_years');
 
         $data = [];
         foreach ($rows as $r) {
-            $expiryFormatted = null;
-            $remainingText = '—';
-            if ($hasShelfLife) {
-                $expiryDate = isset($r->expiry_date) ? $r->expiry_date : null;
-                if ($expiryDate === null && !empty($r->date) && isset($r->shelf_life_years) && $r->shelf_life_years !== null && $r->shelf_life_years !== '') {
-                    $d = \Carbon\Carbon::parse($r->date);
-                    $expiryDate = $d->copy()->addYears((int) round((float) $r->shelf_life_years));
-                }
-                if ($expiryDate) {
-                    $remainingText = $this->remainingShelfLifeText($expiryDate);
-                    $expiryFormatted = \Carbon\Carbon::parse($expiryDate)->format('Y-m-d');
-                }
-            }
-
-            $row = [
+            $data[] = [
                 'inbound_id' => $r->belzona_inventory_id,
                 'sheet_name' => $r->sheet_name,
-                'product_weight_raw' => $r->product_weight_raw ?? null,
                 'date_raw' => $r->date_raw,
                 'inbound_label' => $r->inbound_label,
                 'input' => (float) $r->input,
-                'out_total' => (float) $r->out_total,
-                'remaining' => (float) $r->remaining,
-                'out_count' => (int) $r->out_count,
                 'inbound_row_number' => (int) $r->sheet_row_number,
-                'shelf_life_years' => $hasShelfLife && isset($r->shelf_life_years) ? $r->shelf_life_years : null,
-                'expiry_date' => $expiryFormatted,
-                'remaining_shelf_life' => $remainingText,
             ];
-            $data[] = $row;
         }
 
         return response()->json([
