@@ -89,6 +89,11 @@ class BelzonaInventoryController extends Controller {
             return $this->getInboundDataTables();
         }
 
+        // COC documents (screenshots) for a given inbound — موقت: محصول 1111 و تاریخ 1404
+        if (request()->get('action') === 'get_coc_documents') {
+            return $this->getCocDocuments();
+        }
+
         // Inbound summary (totals + latest inbound)
         if (request()->get('action') === 'inbound_summary') {
             return $this->getInboundSummary();
@@ -890,6 +895,10 @@ class BelzonaInventoryController extends Controller {
 
         $data = [];
         foreach ($rows as $r) {
+            $sheetName = (string) ($r->sheet_name ?? '');
+            $dateRaw = (string) ($r->date_raw ?? '');
+            $showCoc = (strpos($sheetName, '1111') !== false) && (strpos($dateRaw, '1404') !== false);
+
             $data[] = [
                 'inbound_id' => $r->belzona_inventory_id,
                 'sheet_name' => $r->sheet_name,
@@ -897,6 +906,7 @@ class BelzonaInventoryController extends Controller {
                 'inbound_label' => $r->inbound_label,
                 'input' => (float) $r->input,
                 'inbound_row_number' => (int) $r->sheet_row_number,
+                'show_coc' => $showCoc,
             ];
         }
 
@@ -919,6 +929,44 @@ class BelzonaInventoryController extends Controller {
                 'error' => 'Inbound DataTables failed (check DB columns/migrations).',
             ]);
         }
+    }
+
+    /**
+     * لیست فایل‌های COC (اسکرین‌شات‌های سند تاریخ انقضا) برای یک ورود.
+     * موقت: فقط برای محصول 1111 و تاریخ ورود 1404 از public/documents/coc استفاده می‌کند.
+     */
+    private function getCocDocuments()
+    {
+        $sheetName = (string) request('sheet_name', '');
+        $dateRaw = (string) request('date_raw', '');
+        // پشتیبانی از اعداد فارسی و انگلیسی
+        $has1111 = (strpos($sheetName, '1111') !== false) || (strpos($sheetName, '۱۱۱۱') !== false);
+        $has1404 = (strpos($dateRaw, '1404') !== false) || (strpos($dateRaw, '۱۴۰۴') !== false);
+        $allowed = $has1111 && $has1404;
+        if (!$allowed) {
+            return response()->json(['success' => true, 'data' => ['urls' => []]]);
+        }
+
+        // مسیر فایل‌ها: BASE_DIR/public/documents/coc
+        $cocPath = (defined('BASE_DIR') ? BASE_DIR : base_path()) . '/public/documents/coc';
+        $cocPath = realpath($cocPath) ?: $cocPath;
+        $urls = [];
+        if (is_dir($cocPath)) {
+            $extensions = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
+            $files = @scandir($cocPath) ?: [];
+            foreach ($files as $filename) {
+                if ($filename === '.' || $filename === '..') {
+                    continue;
+                }
+                $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+                if (in_array($ext, $extensions)) {
+                    $urls[] = url('public/documents/coc/' . rawurlencode($filename));
+                }
+            }
+            sort($urls);
+        }
+
+        return response()->json(['success' => true, 'data' => ['urls' => $urls]]);
     }
 
     /**

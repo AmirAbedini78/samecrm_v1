@@ -28,5 +28,6 @@ Date: 2026-02-17
 
 ## Entries
 
+- 2026-02-23 — inventory-belzona: Feature «ستون COC + اسلایدر زوم/تمام‌صفحه» + رفع مسیر فایل. Discovery: no. Coverage: History و metrics و expansion آپدیت شد. Gate: no → backlog ثبت شد.
 - 2026-02-23 — inventory-belzona: Refactor «بهینه‌سازی دیتاتیبل ورودها». Discovery: no. Coverage: doc موجود بود، History و metrics و expansion memory آپدیت شد.
 - 2026-02-18 — inventory-belzona: Feature «آخرین مانده خروجی‌های پارت». Discovery: no. Coverage: doc موجود بود، History و metrics آپدیت شد.

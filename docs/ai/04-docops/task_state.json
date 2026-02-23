@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "status": "closed",
-  "task_id": "task_20260223_085526",
-  "task_name": "تغییر در صفحه انبار بلزونا",
+  "task_id": "task_20260223_105049",
+  "task_name": "فزودن coc ها",
   "module_id": "inventory-belzona",
-  "started_at": "2026-02-23T08:55:26.084587+00:00",
-  "closed_at": "2026-02-23T10:03:46.777843+00:00",
+  "started_at": "2026-02-23T10:50:49.182201+00:00",
+  "closed_at": "2026-02-23T12:15:42.403686+00:00",
   "gate_answer": "no",
   "expected_artifacts": {
     "history_updated": true,

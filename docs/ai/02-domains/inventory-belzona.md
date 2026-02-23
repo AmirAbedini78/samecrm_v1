@@ -85,6 +85,11 @@ validation_queries:
   - تب خروجی‌ها: دیتاتیبل کامل انبار (همان گزارشات) با فیلترها
   - تب تاریخ انقضا: دیتاتیبل جدید با نام محصول، تاریخ ورود، شلف لایف، تاریخ انقضا (فقط پارت‌های ورودی)
   - فایل‌ها: `index.blade.php`, `belzona-inventory-inbounds.js`, `BelzonaInventoryController.php` (action datatables_expiry)
+- 2026-02-23 — Feature: ستون COC ها در دیتاتیبل ورودها + اسلایدر با زوم و تمام‌صفحه
+  - ستون COC ها: برای رکوردهای محصول 1111 با تاریخ 1404 (انگلیسی/فارسی)، دکمه COC نمایش داده می‌شود
+  - مودال: اسکرین‌شات‌ها از base_path('public/documents/coc') با scandir (سازگار ویندوز)
+  - اسلایدر: دکمه‌های قبلی/بعدی، شمارنده تصویر، زوم این/آوت، reset 100٪، تمام‌صفحه، کلیدهای جهت‌دار و Esc
+  - فایل‌ها: BelzonaInventoryController.php (show_coc، getCocDocuments، پشتیبانی اعداد فارسی)، index.blade.php، belzona-inventory-inbounds.js
 - 2026-02-23 — Refactor: بهینه‌سازی دیتاتیبل ورودها
   - حذف ساب‌کوئری‌های سنگین (outTotalSub, outCountSub, remaining) از getInboundDataTables چون ستون‌های مربوط نمایش داده نمی‌شوند
   - فایل: BelzonaInventoryController.php

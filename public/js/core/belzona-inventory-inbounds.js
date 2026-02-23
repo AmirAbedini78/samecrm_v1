@@ -208,6 +208,95 @@ $(document).ready(function () {
         });
     }
 
+    // COC modal — نمایش اسکرین‌شات‌های سند COC (تاریخ انقضا)
+    function openCocModal(sheetName, dateRaw) {
+        if (!sheetName && !dateRaw) return;
+        $('#datePickerDialog, #datePickerOverlay').remove();
+        $('#commonModalContainer').addClass('modal-xl');
+        $('#commonModalTitle').html('سند COC (تاریخ انقضا) — ' + escapeHtml(sheetName) + (dateRaw ? ' | ' + escapeHtml(dateRaw) : ''));
+        $('#commonModalBody').html('<div class="alert alert-light border text-muted">در حال بارگذاری...</div>');
+        $('#commonModalFooter').hide();
+        $('#commonModal').modal('show');
+        setTimeout(nxFixModalBackdrops, 0);
+
+        $.get(nxUrl('belzona-inventory'), {
+            action: 'get_coc_documents',
+            sheet_name: sheetName,
+            date_raw: dateRaw
+        }, function (res) {
+            if (!res || !res.success || !res.data || !res.data.urls || !res.data.urls.length) {
+                $('#commonModalBody').html('<div class="alert alert-warning mb-0">سند COC برای این رکورد یافت نشد.</div>');
+                return;
+            }
+            var urls = res.data.urls;
+            var idx = 0;
+            var zoomLevel = 1;
+            var isFullscreen = false;
+
+            var html = '<div class="belzona-coc-slider position-relative" style="min-height:400px;">' +
+                '<div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">' +
+                '<div class="d-flex gap-1 align-items-center">' +
+                '<button type="button" class="btn btn-sm btn-outline-secondary belzona-coc-prev"><i class="ti-angle-right"></i> قبلی</button>' +
+                '<span class="badge bg-secondary belzona-coc-counter">1 / ' + urls.length + '</span>' +
+                '<button type="button" class="btn btn-sm btn-outline-secondary belzona-coc-next">بعدی <i class="ti-angle-left"></i></button>' +
+                '</div>' +
+                '<div class="d-flex gap-1">' +
+                '<button type="button" class="btn btn-sm btn-outline-secondary belzona-coc-zoom-out" title="کوچک‌نمایی"><i class="ti-zoom-out"></i></button>' +
+                '<button type="button" class="btn btn-sm btn-outline-secondary belzona-coc-zoom-reset" title="حجم عادی">100%</button>' +
+                '<button type="button" class="btn btn-sm btn-outline-secondary belzona-coc-zoom-in" title="بزرگ‌نمایی"><i class="ti-zoom-in"></i></button>' +
+                '<button type="button" class="btn btn-sm btn-outline-secondary belzona-coc-fullscreen" title="تمام صفحه"><i class="ti-fullscreen"></i></button>' +
+                '</div></div>' +
+                '<div class="belzona-coc-viewport overflow-auto border rounded bg-dark d-flex align-items-center justify-content-center p-2" style="height:65vh;min-height:350px;">' +
+                '<img src="' + escapeHtml(urls[0]) + '" class="belzona-coc-img img-fluid" style="transform:scale(1);transform-origin:center center;transition:transform 0.2s;" alt="COC">' +
+                '</div></div>';
+
+            $('#commonModalBody').html(html);
+
+            function goTo(i) {
+                idx = Math.max(0, Math.min(i, urls.length - 1));
+                zoomLevel = 1;
+                var $img = $('.belzona-coc-img');
+                $img.attr('src', urls[idx]).css('transform', 'scale(1)');
+                $('.belzona-coc-counter').text((idx + 1) + ' / ' + urls.length);
+            }
+
+            function applyZoom() {
+                $('.belzona-coc-img').css('transform', 'scale(' + zoomLevel + ')');
+            }
+
+            $('.belzona-coc-prev').on('click', function () { goTo(idx - 1); });
+            $('.belzona-coc-next').on('click', function () { goTo(idx + 1); });
+            $('.belzona-coc-zoom-in').on('click', function () { zoomLevel = Math.min(3, zoomLevel + 0.25); applyZoom(); });
+            $('.belzona-coc-zoom-out').on('click', function () { zoomLevel = Math.max(0.25, zoomLevel - 0.25); applyZoom(); });
+            $('.belzona-coc-zoom-reset').on('click', function () { zoomLevel = 1; applyZoom(); });
+            $('.belzona-coc-fullscreen').on('click', function () {
+                var $vp = $('.belzona-coc-viewport');
+                if (!isFullscreen) {
+                    $vp.css({
+                        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100vh',
+                        zIndex: 9999, margin: 0, borderRadius: 0
+                    });
+                    $('.belzona-coc-fullscreen i').removeClass('ti-fullscreen').addClass('ti-fullscreen-alt');
+                    isFullscreen = true;
+                } else {
+                    $vp.css({ position: '', top: '', left: '', right: '', bottom: '', width: '', height: '', zIndex: '', margin: '', borderRadius: '' });
+                    $('.belzona-coc-fullscreen i').removeClass('ti-fullscreen-alt').addClass('ti-fullscreen');
+                    isFullscreen = false;
+                }
+            });
+
+            $(document).on('keydown.belzonaCoc', function (e) {
+                if ($('#commonModal').hasClass('show') && $('.belzona-coc-slider').length) {
+                    if (e.key === 'ArrowRight') { goTo(idx - 1); e.preventDefault(); }
+                    if (e.key === 'ArrowLeft') { goTo(idx + 1); e.preventDefault(); }
+                    if (e.key === 'Escape' && isFullscreen) { $('.belzona-coc-fullscreen').click(); }
+                }
+            });
+        }).fail(function () {
+            $('#commonModalBody').html('<div class="alert alert-danger mb-0">خطا در دریافت اسناد COC.</div>');
+        });
+    }
+
     // Fix stuck/double Bootstrap backdrops (prevents "page stays dark" bugs)
     function nxFixModalBackdrops() {
         if ($('.modal.show').length === 0) {
@@ -305,6 +394,7 @@ $(document).ready(function () {
         .on('hidden.bs.modal.belzonaInbounds', '#commonModal', function () {
             $('#commonModalContainer').removeClass('modal-xl');
             $('#commonModalFooter').show();
+            $(document).off('keydown.belzonaCoc');
             nxFixModalBackdrops();
         });
     $(document)
@@ -347,7 +437,18 @@ $(document).ready(function () {
                 { data: 'date_raw' },
                 { data: 'sheet_name' },
                 { data: 'inbound_label' },
-                { data: 'input', render: function (d) { return fmtNumber(d); } }
+                { data: 'input', render: function (d) { return fmtNumber(d); } },
+                {
+                    data: 'show_coc',
+                    orderable: false,
+                    searchable: false,
+                    render: function (showCoc, type, row) {
+                        if (!showCoc) return '—';
+                        return '<a href="javascript:void(0)" class="belzona-open-coc belzona-buttons btn btn-sm btn-outline-info" ' +
+                            'data-sheet="' + escapeHtml(row.sheet_name || '') + '" data-date-raw="' + escapeHtml(row.date_raw || '') + '">' +
+                            '<i class="ti-file"></i> COC</a>';
+                    }
+                }
             ],
             language: { url: nxUrl('public/js/datatables-persian.json') }
         });
@@ -448,6 +549,12 @@ $(document).ready(function () {
         .off('click.belzonaInbounds', '.belzona-open-outbounds')
         .on('click.belzonaInbounds', '.belzona-open-outbounds', function () {
             openOutboundsModal($(this).data('sheet'), $(this).data('row'));
+        });
+    $(document)
+        .off('click.belzonaInbounds', '.belzona-open-coc')
+        .on('click.belzonaInbounds', '.belzona-open-coc', function (e) {
+            e.preventDefault();
+            openCocModal($(this).data('sheet'), $(this).data('dateRaw'));
         });
     $('#belzona-latest-inbound-open')
         .off('click.belzonaInbounds')

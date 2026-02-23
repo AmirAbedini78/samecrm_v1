@@ -151,6 +151,7 @@
                                             <th class="belzona-datatable-title">محصول</th>
                                             <th class="belzona-datatable-title">عنوان</th>
                                             <th class="belzona-datatable-title">تعداد ورود</th>
+                                            <th class="belzona-datatable-title">COC ها</th>
                                         </tr>
                                     </thead>
                                     <tbody></tbody>
