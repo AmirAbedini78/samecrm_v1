@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
-  "status": "closed",
-  "task_id": "task_20260223_105049",
-  "task_name": "فزودن coc ها",
+  "status": "open",
+  "task_id": "task_20260224_114957",
+  "task_name": "ادیت کردن دسترسی coc ها",
   "module_id": "inventory-belzona",
-  "started_at": "2026-02-23T10:50:49.182201+00:00",
-  "closed_at": "2026-02-23T12:15:42.403686+00:00",
-  "gate_answer": "no",
+  "started_at": "2026-02-24T11:49:57.516308+00:00",
+  "closed_at": null,
+  "gate_answer": "yes",
   "expected_artifacts": {
     "history_updated": true,
     "metrics_updated": true,

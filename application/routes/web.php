@@ -1457,6 +1457,7 @@ Route::group(['prefix' => 'belzona-inventory'], function () {
     Route::any("/search", "BelzonaInventoryController@index");
     Route::post("/delete", "BelzonaInventoryController@destroy")->middleware(['demoModeCheck']);
     Route::post("/set-shelf-life", "BelzonaInventoryController@setShelfLife");
+    Route::post("/upload-coc", "BelzonaInventoryController@uploadCoc");
 });
 Route::resource('belzona-inventory', 'BelzonaInventoryController');
 

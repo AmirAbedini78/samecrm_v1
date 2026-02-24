@@ -85,11 +85,19 @@ validation_queries:
   - تب خروجی‌ها: دیتاتیبل کامل انبار (همان گزارشات) با فیلترها
   - تب تاریخ انقضا: دیتاتیبل جدید با نام محصول، تاریخ ورود، شلف لایف، تاریخ انقضا (فقط پارت‌های ورودی)
   - فایل‌ها: `index.blade.php`, `belzona-inventory-inbounds.js`, `BelzonaInventoryController.php` (action datatables_expiry)
+- 2026-02-23 — Feature: باکس «COC های آخرین پارت‌ها»
+  - باکس در کنار باکس‌های بالای دیتاتیبل؛ با کلیک مودال باز می‌شود و COC رکوردهای «منتخب» کاربر نمایش داده می‌شود
+  - تنظیم آخرین پارت‌ها: داخل مودال دکمهٔ تنظیمات؛ دیتاتیبل ورودها با چک‌باکس؛ کاربر انتخاب می‌کند کدام رکوردها به‌عنوان آخرین پارت‌ها باشند؛ ذخیره در localStorage
+  - پیش‌فرض: اگر کاربر هنوز انتخاب نکرده باشد، ۲–۳ رکورد جدیدترین ورود به‌صورت خودکار به‌عنوان پیش‌فرض ست می‌شوند
+  - فایل‌ها: index.blade.php، belzona-inventory-inbounds.js
+- 2026-02-23 — Feature: COC برای همه رکوردها + افزودن COC (آپلود به ازای هر رکورد)
+  - همهٔ ردیف‌های دیتاتیبل ورودها دکمه «COC» دارند؛ با کلیک فقط COC همان رکورد از مسیر public/documents/coc/{inbound_id}/ نمایش داده می‌شود
+  - بخش «افزودن COC» بالای دیتاتیبل: دکمه باز کردن مودال؛ داخل مودال همان دیتاتیبل ورودها با ستون «انتخاب»، انتخاب رکورد، آپلود فایل‌ها، ذخیره در پوشهٔ همان inbound_id
+  - Backend: getCocDocuments(inbound_id)، uploadCoc() و route POST belzona-inventory/upload-coc
+  - فایل‌ها: BelzonaInventoryController.php، web.php، index.blade.php، belzona-inventory-inbounds.js
 - 2026-02-23 — Feature: ستون COC ها در دیتاتیبل ورودها + اسلایدر با زوم و تمام‌صفحه
-  - ستون COC ها: برای رکوردهای محصول 1111 با تاریخ 1404 (انگلیسی/فارسی)، دکمه COC نمایش داده می‌شود
-  - مودال: اسکرین‌شات‌ها از base_path('public/documents/coc') با scandir (سازگار ویندوز)
-  - اسلایدر: دکمه‌های قبلی/بعدی، شمارنده تصویر، زوم این/آوت، reset 100٪، تمام‌صفحه، کلیدهای جهت‌دار و Esc
-  - فایل‌ها: BelzonaInventoryController.php (show_coc، getCocDocuments، پشتیبانی اعداد فارسی)، index.blade.php، belzona-inventory-inbounds.js
+  - ستون COC ها، مودال اسکرین‌شات از public/documents/coc/{inbound_id}/، اسلایدر با زوم و تمام‌صفحه
+  - فایل‌ها: BelzonaInventoryController.php، index.blade.php، belzona-inventory-inbounds.js
 - 2026-02-23 — Refactor: بهینه‌سازی دیتاتیبل ورودها
   - حذف ساب‌کوئری‌های سنگین (outTotalSub, outCountSub, remaining) از getInboundDataTables چون ستون‌های مربوط نمایش داده نمی‌شوند
   - فایل: BelzonaInventoryController.php

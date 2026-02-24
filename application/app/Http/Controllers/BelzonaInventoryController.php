@@ -895,10 +895,6 @@ class BelzonaInventoryController extends Controller {
 
         $data = [];
         foreach ($rows as $r) {
-            $sheetName = (string) ($r->sheet_name ?? '');
-            $dateRaw = (string) ($r->date_raw ?? '');
-            $showCoc = (strpos($sheetName, '1111') !== false) && (strpos($dateRaw, '1404') !== false);
-
             $data[] = [
                 'inbound_id' => $r->belzona_inventory_id,
                 'sheet_name' => $r->sheet_name,
@@ -906,7 +902,6 @@ class BelzonaInventoryController extends Controller {
                 'inbound_label' => $r->inbound_label,
                 'input' => (float) $r->input,
                 'inbound_row_number' => (int) $r->sheet_row_number,
-                'show_coc' => $showCoc,
             ];
         }
 
@@ -932,41 +927,100 @@ class BelzonaInventoryController extends Controller {
     }
 
     /**
-     * لیست فایل‌های COC (اسکرین‌شات‌های سند تاریخ انقضا) برای یک ورود.
-     * موقت: فقط برای محصول 1111 و تاریخ ورود 1404 از public/documents/coc استفاده می‌کند.
+     * لیست فایل‌های COC برای یک رکورد ورود (بر اساس inbound_id).
+     * مسیر ذخیره: public/documents/coc/{inbound_id}/
      */
     private function getCocDocuments()
     {
-        $sheetName = (string) request('sheet_name', '');
-        $dateRaw = (string) request('date_raw', '');
-        // پشتیبانی از اعداد فارسی و انگلیسی
-        $has1111 = (strpos($sheetName, '1111') !== false) || (strpos($sheetName, '۱۱۱۱') !== false);
-        $has1404 = (strpos($dateRaw, '1404') !== false) || (strpos($dateRaw, '۱۴۰۴') !== false);
-        $allowed = $has1111 && $has1404;
-        if (!$allowed) {
+        $inboundId = (int) request('inbound_id', 0);
+        if ($inboundId <= 0) {
             return response()->json(['success' => true, 'data' => ['urls' => []]]);
         }
 
-        // مسیر فایل‌ها: BASE_DIR/public/documents/coc
-        $cocPath = (defined('BASE_DIR') ? BASE_DIR : base_path()) . '/public/documents/coc';
+        $baseDir = defined('BASE_DIR') ? BASE_DIR : base_path();
+        $cocPath = $baseDir . '/public/documents/coc/' . $inboundId;
         $cocPath = realpath($cocPath) ?: $cocPath;
-        $urls = [];
-        if (is_dir($cocPath)) {
-            $extensions = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
-            $files = @scandir($cocPath) ?: [];
-            foreach ($files as $filename) {
-                if ($filename === '.' || $filename === '..') {
-                    continue;
-                }
-                $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-                if (in_array($ext, $extensions)) {
-                    $urls[] = url('public/documents/coc/' . rawurlencode($filename));
-                }
-            }
-            sort($urls);
+        if (!$cocPath || !is_dir($cocPath)) {
+            return response()->json(['success' => true, 'data' => ['urls' => []]]);
         }
 
+        $urls = [];
+        $extensions = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
+        $files = @scandir($cocPath) ?: [];
+        foreach ($files as $filename) {
+            if ($filename === '.' || $filename === '..') {
+                continue;
+            }
+            $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+            if (in_array($ext, $extensions)) {
+                $urls[] = url('public/documents/coc/' . $inboundId . '/' . rawurlencode($filename));
+            }
+        }
+        sort($urls);
+
         return response()->json(['success' => true, 'data' => ['urls' => $urls]]);
+    }
+
+    /**
+     * آپلود و ذخیرهٔ فایل‌های COC برای یک رکورد ورود.
+     * POST: inbound_id, files (coc_files[])
+     */
+    public function uploadCoc(Request $request)
+    {
+        $inboundId = (int) $request->input('inbound_id', 0);
+        if ($inboundId <= 0) {
+            return response()->json(['success' => false, 'message' => 'رکورد ورود معتبر نیست.']);
+        }
+
+        // وجود رکورد در جدول ورودی‌ها
+        $exists = DB::table('belzona_inventories')
+            ->where('belzona_inventory_id', $inboundId)
+            ->where('input', '>', 0)
+            ->exists();
+        if (!$exists) {
+            return response()->json(['success' => false, 'message' => 'رکورد ورود یافت نشد.']);
+        }
+
+        $baseDir = defined('BASE_DIR') ? BASE_DIR : base_path();
+        $cocDir = $baseDir . '/public/documents/coc/' . $inboundId;
+        if (!is_dir($cocDir)) {
+            if (!@mkdir($cocDir, 0755, true)) {
+                return response()->json(['success' => false, 'message' => 'ایجاد پوشهٔ COC ممکن نشد.']);
+            }
+        }
+
+        $allowedExtensions = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
+        $files = $request->file('coc_files');
+        if (!$files) {
+            $files = $request->hasFile('coc_files') ? [$request->file('coc_files')] : [];
+        }
+        if (!is_array($files)) {
+            $files = $files ? [$files] : [];
+        }
+
+        $uploaded = 0;
+        foreach ($files as $file) {
+            if (!$file || !$file->isValid()) {
+                continue;
+            }
+            $ext = strtolower($file->getClientOriginalExtension());
+            if (!in_array($ext, $allowedExtensions)) {
+                continue;
+            }
+            $safeName = preg_replace('/[^a-zA-Z0-9._-]/', '_', $file->getClientOriginalName());
+            if (strlen($safeName) > 200) {
+                $safeName = substr($safeName, 0, 200) . '.' . $ext;
+            }
+            if ($file->move($cocDir, $safeName)) {
+                $uploaded++;
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $uploaded > 0 ? ($uploaded . ' فایل ذخیره شد.') : 'هیچ فایل معتبری آپلود نشد.',
+            'uploaded' => $uploaded,
+        ]);
     }
 
     /**

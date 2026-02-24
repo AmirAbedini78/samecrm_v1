@@ -208,12 +208,12 @@ $(document).ready(function () {
         });
     }
 
-    // COC modal — نمایش اسکرین‌شات‌های سند COC (تاریخ انقضا)
-    function openCocModal(sheetName, dateRaw) {
-        if (!sheetName && !dateRaw) return;
+    // COC modal — نمایش اسکرین‌شات‌های سند COC برای یک رکورد (بر اساس inbound_id)
+    function openCocModal(inboundId, sheetName, dateRaw) {
+        if (!inboundId) return;
         $('#datePickerDialog, #datePickerOverlay').remove();
         $('#commonModalContainer').addClass('modal-xl');
-        $('#commonModalTitle').html('سند COC (تاریخ انقضا) — ' + escapeHtml(sheetName) + (dateRaw ? ' | ' + escapeHtml(dateRaw) : ''));
+        $('#commonModalTitle').html('سند COC — ' + escapeHtml(sheetName || '') + (dateRaw ? ' | ' + escapeHtml(dateRaw) : ''));
         $('#commonModalBody').html('<div class="alert alert-light border text-muted">در حال بارگذاری...</div>');
         $('#commonModalFooter').hide();
         $('#commonModal').modal('show');
@@ -221,8 +221,7 @@ $(document).ready(function () {
 
         $.get(nxUrl('belzona-inventory'), {
             action: 'get_coc_documents',
-            sheet_name: sheetName,
-            date_raw: dateRaw
+            inbound_id: inboundId
         }, function (res) {
             if (!res || !res.success || !res.data || !res.data.urls || !res.data.urls.length) {
                 $('#commonModalBody').html('<div class="alert alert-warning mb-0">سند COC برای این رکورد یافت نشد.</div>');
@@ -439,13 +438,12 @@ $(document).ready(function () {
                 { data: 'inbound_label' },
                 { data: 'input', render: function (d) { return fmtNumber(d); } },
                 {
-                    data: 'show_coc',
+                    data: 'inbound_id',
                     orderable: false,
                     searchable: false,
-                    render: function (showCoc, type, row) {
-                        if (!showCoc) return '—';
+                    render: function (id, type, row) {
                         return '<a href="javascript:void(0)" class="belzona-open-coc belzona-buttons btn btn-sm btn-outline-info" ' +
-                            'data-sheet="' + escapeHtml(row.sheet_name || '') + '" data-date-raw="' + escapeHtml(row.date_raw || '') + '">' +
+                            'data-inbound-id="' + (id || '') + '" data-sheet="' + escapeHtml(row.sheet_name || '') + '" data-date-raw="' + escapeHtml(row.date_raw || '') + '">' +
                             '<i class="ti-file"></i> COC</a>';
                     }
                 }
@@ -554,8 +552,312 @@ $(document).ready(function () {
         .off('click.belzonaInbounds', '.belzona-open-coc')
         .on('click.belzonaInbounds', '.belzona-open-coc', function (e) {
             e.preventDefault();
-            openCocModal($(this).data('sheet'), $(this).data('dateRaw'));
+            openCocModal($(this).data('inbound-id'), $(this).data('sheet'), $(this).data('dateRaw'));
         });
+
+    // مودال افزودن COC — انتخاب رکورد از دیتاتیبل و آپلود فایل
+    var addCocTable = null;
+    var addCocSelected = { id: null, sheet: '', dateRaw: '' };
+
+    function openAddCocModal() {
+        $('#datePickerDialog, #datePickerOverlay').remove();
+        $('#commonModalContainer').addClass('modal-xl');
+        $('#commonModalTitle').text('افزودن COC');
+        addCocSelected = { id: null, sheet: '', dateRaw: '' };
+        var bodyHtml = '<div class="belzona-add-coc-modal">' +
+            '<p class="text-muted small mb-2">یک رکورد از جدول زیر انتخاب کنید، سپس فایل‌های COC (تصویر) را انتخاب و ذخیره کنید.</p>' +
+            '<div class="table-responsive mb-3" style="max-height:40vh;">' +
+            '<table id="belzona-add-coc-table" class="table table-sm table-striped table-bordered" style="width:100%">' +
+            '<thead class="table-light"><tr>' +
+            '<th>تاریخ ورود</th><th>محصول</th><th>عنوان</th><th>تعداد ورود</th><th>انتخاب</th>' +
+            '</tr></thead><tbody></tbody></table></div>' +
+            '<div id="belzona-add-coc-selection" class="alert alert-secondary mb-2" style="display:none;">' +
+            '<strong>رکورد انتخاب‌شده:</strong> <span id="belzona-add-coc-selection-text"></span>' +
+            '</div>' +
+            '<div class="mb-2">' +
+            '<label class="form-label">فایل‌های COC (png, jpg, ...)</label>' +
+            '<input type="file" id="belzona-add-coc-files" class="form-control" accept=".png,.jpg,.jpeg,.webp,.gif" multiple>' +
+            '</div>' +
+            '<button type="button" id="belzona-add-coc-save" class="btn btn-primary" disabled>ذخیره COC</button>' +
+            '</div>';
+        $('#commonModalBody').html(bodyHtml);
+        $('#commonModalFooter').show();
+        $('#commonModal').modal('show');
+        setTimeout(nxFixModalBackdrops, 0);
+
+        if (addCocTable) {
+            try { addCocTable.destroy(); } catch (e) {}
+            addCocTable = null;
+        }
+        var $tbl = $('#belzona-add-coc-table');
+        if ($tbl.length && $.fn.DataTable) {
+            addCocTable = $tbl.DataTable({
+                processing: true,
+                serverSide: true,
+                pageLength: 10,
+                order: [[0, 'desc']],
+                ajax: {
+                    url: belzonaAjaxUrl,
+                    type: 'GET',
+                    dataType: 'json',
+                    data: function (d) {
+                        d.action = 'inbound_datatables';
+                        d.sheet_name = $('#belzona-inbounds-filter-sheet').val();
+                        d.filter_date_from = $('#belzona-inbounds-date-from').val();
+                        d.filter_date_to = $('#belzona-inbounds-date-to').val();
+                    }
+                },
+                columns: [
+                    { data: 'date_raw' },
+                    { data: 'sheet_name' },
+                    { data: 'inbound_label' },
+                    { data: 'input', render: function (d) { return fmtNumber(d); } },
+                    {
+                        data: 'inbound_id',
+                        orderable: false,
+                        searchable: false,
+                        render: function (id, type, row) {
+                            return '<button type="button" class="btn btn-sm btn-success belzona-select-inbound" ' +
+                                'data-inbound-id="' + (id || '') + '" data-sheet="' + escapeHtml(row.sheet_name || '') + '" data-date-raw="' + escapeHtml(row.date_raw || '') + '">' +
+                                'انتخاب این رکورد</button>';
+                        }
+                    }
+                ],
+                language: { url: nxUrl('public/js/datatables-persian.json') }
+            });
+        }
+
+        $('#belzona-add-coc-selection').hide();
+        $('#belzona-add-coc-files').val('');
+        $('#belzona-add-coc-save').prop('disabled', true);
+
+        $(document).off('click.belzonaAddCoc', '.belzona-select-inbound').on('click.belzonaAddCoc', '.belzona-select-inbound', function () {
+            addCocSelected.id = $(this).data('inbound-id');
+            addCocSelected.sheet = $(this).data('sheet') || '';
+            addCocSelected.dateRaw = $(this).data('dateRaw') || '';
+            $('#belzona-add-coc-selection-text').text(addCocSelected.sheet + (addCocSelected.dateRaw ? ' | ' + addCocSelected.dateRaw : ''));
+            $('#belzona-add-coc-selection').show();
+            $('#belzona-add-coc-save').prop('disabled', false);
+        });
+
+        $('#belzona-add-coc-save').off('click.belzonaAddCoc').on('click.belzonaAddCoc', function () {
+            if (!addCocSelected.id) return;
+            var $files = $('#belzona-add-coc-files')[0];
+            if (!$files || !$files.files || !$files.files.length) {
+                alert('حداقل یک فایل انتخاب کنید.');
+                return;
+            }
+            var fd = new FormData();
+            fd.append('inbound_id', addCocSelected.id);
+            for (var i = 0; i < $files.files.length; i++) {
+                fd.append('coc_files[]', $files.files[i]);
+            }
+            var token = $('meta[name="csrf-token"]').attr('content');
+            if (token) fd.append('_token', token);
+
+            var $btn = $('#belzona-add-coc-save').prop('disabled', true).text('در حال ذخیره...');
+            $.ajax({
+                url: nxUrl('belzona-inventory/upload-coc'),
+                type: 'POST',
+                data: fd,
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res && res.success) {
+                        alert(res.message || 'ذخیره شد.');
+                        $('#commonModal').modal('hide');
+                        if (inboundsTable) inboundsTable.ajax.reload();
+                    } else {
+                        alert(res.message || 'خطا در ذخیره.');
+                    }
+                },
+                error: function (xhr) {
+                    var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'خطا در ارسال.';
+                    alert(msg);
+                },
+                complete: function () {
+                    $btn.prop('disabled', false).text('ذخیره COC');
+                }
+            });
+        });
+    }
+
+    $('#belzona-add-coc-btn').off('click.belzonaInbounds').on('click.belzonaInbounds', function () {
+        openAddCocModal();
+    });
+
+    // COC های آخرین پارت‌ها — انتخاب داینامیک توسط کاربر، پیش‌فرض ۲–۳ رکورد جدید
+    var LAST_BATCH_STORAGE_KEY = 'belzona_last_batch_selection';
+    var lastBatchCocTable = null;
+
+    function getLastBatchSelection() {
+        try {
+            var raw = localStorage.getItem(LAST_BATCH_STORAGE_KEY);
+            if (!raw) return { rows: [] };
+            var parsed = JSON.parse(raw);
+            return Array.isArray(parsed.rows) ? parsed : { rows: parsed.rows || [] };
+        } catch (e) {
+            return { rows: [] };
+        }
+    }
+
+    function setLastBatchSelection(rows) {
+        localStorage.setItem(LAST_BATCH_STORAGE_KEY, JSON.stringify({ rows: rows || [] }));
+    }
+
+    function ensureDefaultLastBatch(done) {
+        var cur = getLastBatchSelection();
+        if (cur.rows && cur.rows.length > 0) {
+            done(cur.rows);
+            return;
+        }
+        $.get(belzonaAjaxUrl, {
+            action: 'inbound_datatables',
+            start: 0,
+            length: 3,
+            'order[0][column]': 0,
+            'order[0][dir]': 'desc',
+            sheet_name: $('#belzona-inbounds-filter-sheet').val(),
+            filter_date_from: $('#belzona-inbounds-date-from').val(),
+            filter_date_to: $('#belzona-inbounds-date-to').val()
+        }, function (res) {
+            if (res && res.data && res.data.length) {
+                var rows = res.data.map(function (r) {
+                    return { inbound_id: r.inbound_id, sheet_name: r.sheet_name || '', date_raw: r.date_raw || '' };
+                });
+                setLastBatchSelection(rows);
+                done(rows);
+            } else {
+                done([]);
+            }
+        }).fail(function () { done([]); });
+    }
+
+    function renderLastBatchViewMode(rows) {
+        if (!rows || !rows.length) {
+            return '<p class="text-muted">رکوردی انتخاب نشده. روی «تنظیم آخرین پارت‌ها» کلیک کنید.</p>';
+        }
+        var html = '<ul class="list-group list-group-flush">';
+        rows.forEach(function (r) {
+            html += '<li class="list-group-item d-flex justify-content-between align-items-center">' +
+                '<span>' + escapeHtml(r.sheet_name) + (r.date_raw ? ' | ' + escapeHtml(r.date_raw) : '') + '</span>' +
+                '<button type="button" class="btn btn-sm btn-info belzona-open-coc-lb" data-inbound-id="' + (r.inbound_id || '') + '" data-sheet="' + escapeHtml(r.sheet_name || '') + '" data-date-raw="' + escapeHtml(r.date_raw || '') + '">مشاهده COC</button>' +
+                '</li>';
+        });
+        html += '</ul>';
+        return html;
+    }
+
+    function openLastBatchCocModal() {
+        $('#datePickerDialog, #datePickerOverlay').remove();
+        $('#commonModalContainer').addClass('modal-xl');
+        $('#commonModalTitle').html('COC های آخرین پارت‌ها <button type="button" class="btn btn-sm btn-outline-secondary ms-2" id="belzona-lb-settings-btn"><i class="ti-settings"></i> تنظیم آخرین پارت‌ها</button>');
+        $('#commonModalBody').html('<div class="text-muted">در حال بارگذاری...</div>');
+        $('#commonModalFooter').show();
+        $('#commonModal').modal('show');
+        setTimeout(nxFixModalBackdrops, 0);
+
+        function showViewMode() {
+            ensureDefaultLastBatch(function (rows) {
+                $('#commonModalBody').html('<div id="belzona-lb-view">' + renderLastBatchViewMode(rows) + '</div>');
+                $(document).off('click.belzonaLB', '.belzona-open-coc-lb').on('click.belzonaLB', '.belzona-open-coc-lb', function (e) {
+                    e.preventDefault();
+                    openCocModal($(this).data('inbound-id'), $(this).data('sheet'), $(this).data('dateRaw'));
+                });
+            });
+        }
+
+        showViewMode();
+
+        $('#belzona-lb-settings-btn').off('click.belzonaLB').on('click.belzonaLB', function () {
+            var stored = getLastBatchSelection().rows || [];
+            var selectedRowsMap = {};
+            stored.forEach(function (r) {
+                selectedRowsMap[r.inbound_id] = { inbound_id: r.inbound_id, sheet_name: r.sheet_name || '', date_raw: r.date_raw || '' };
+            });
+
+            var bodyHtml = '<div id="belzona-lb-settings">' +
+                '<p class="text-muted small">رکوردهایی که می‌خواهید به‌عنوان «آخرین پارت‌ها» در این باکس ببینید را تیک بزنید و ذخیره کنید.</p>' +
+                '<div class="table-responsive mb-2" style="max-height:50vh;">' +
+                '<table id="belzona-lb-settings-table" class="table table-sm table-striped table-bordered" style="width:100%">' +
+                '<thead class="table-light"><tr><th style="width:40px">انتخاب</th><th>تاریخ ورود</th><th>محصول</th><th>عنوان</th><th>تعداد ورود</th></tr></thead><tbody></tbody></table></div>' +
+                '<button type="button" class="btn btn-primary" id="belzona-lb-save">ذخیره و بازگشت</button></div>';
+            $('#commonModalBody').html(bodyHtml);
+
+            if (lastBatchCocTable) {
+                try { lastBatchCocTable.destroy(); } catch (e) {}
+                lastBatchCocTable = null;
+            }
+            var $tbl = $('#belzona-lb-settings-table');
+            if ($tbl.length && $.fn.DataTable) {
+                lastBatchCocTable = $tbl.DataTable({
+                    processing: true,
+                    serverSide: true,
+                    pageLength: 15,
+                    order: [[1, 'desc']],
+                    ajax: {
+                        url: belzonaAjaxUrl,
+                        type: 'GET',
+                        dataType: 'json',
+                        data: function (d) {
+                            d.action = 'inbound_datatables';
+                            d.sheet_name = $('#belzona-inbounds-filter-sheet').val();
+                            d.filter_date_from = $('#belzona-inbounds-date-from').val();
+                            d.filter_date_to = $('#belzona-inbounds-date-to').val();
+                        }
+                    },
+                    columns: [
+                        {
+                            data: 'inbound_id',
+                            orderable: false,
+                            searchable: false,
+                            render: function (val, type, row) {
+                                if (type !== 'display') return val;
+                                var checked = selectedRowsMap[row.inbound_id] ? ' checked' : '';
+                                return '<input type="checkbox" class="belzona-lb-row-check" data-inbound-id="' + (row.inbound_id || '') + '" data-sheet="' + escapeHtml(row.sheet_name || '') + '" data-date-raw="' + escapeHtml(row.date_raw || '') + '"' + checked + '>';
+                            }
+                        },
+                        { data: 'date_raw' },
+                        { data: 'sheet_name' },
+                        { data: 'inbound_label' },
+                        { data: 'input', render: function (d) { return fmtNumber(d); } }
+                    ],
+                    language: { url: nxUrl('public/js/datatables-persian.json') }
+                });
+            }
+
+            $(document).off('change.belzonaLB', '#belzona-lb-settings-table').on('change.belzonaLB', '#belzona-lb-settings-table', '.belzona-lb-row-check', function () {
+                var id = $(this).data('inbound-id');
+                var sheet = $(this).data('sheet') || '';
+                var dateRaw = $(this).data('dateRaw') || '';
+                if ($(this).prop('checked')) {
+                    selectedRowsMap[id] = { inbound_id: id, sheet_name: sheet, date_raw: dateRaw };
+                } else {
+                    delete selectedRowsMap[id];
+                }
+            });
+
+            $('#belzona-lb-save').off('click.belzonaLB').on('click.belzonaLB', function () {
+                var rows = [];
+                for (var k in selectedRowsMap) {
+                    if (selectedRowsMap.hasOwnProperty(k) && selectedRowsMap[k]) {
+                        rows.push(selectedRowsMap[k]);
+                    }
+                }
+                setLastBatchSelection(rows);
+                $('#commonModalBody').html('<div id="belzona-lb-view">' + renderLastBatchViewMode(rows) + '</div>');
+                $(document).off('click.belzonaLB', '.belzona-open-coc-lb').on('click.belzonaLB', '.belzona-open-coc-lb', function (e) {
+                    e.preventDefault();
+                    openCocModal($(this).data('inbound-id'), $(this).data('sheet'), $(this).data('dateRaw'));
+                });
+            });
+        });
+    }
+
+    $('#belzona-last-batch-coc-open').off('click.belzonaInbounds').on('click.belzonaInbounds', function () {
+        openLastBatchCocModal();
+    });
+
     $('#belzona-latest-inbound-open')
         .off('click.belzonaInbounds')
         .on('click.belzonaInbounds', function () {

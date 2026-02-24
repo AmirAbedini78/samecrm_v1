@@ -56,6 +56,16 @@
                     </div>
                 </div>
                 <div class="card-body">
+                    <div class="row mb-3 align-items-center">
+                        <div class="col-auto">
+                            <button type="button" id="belzona-add-coc-btn" class="btn btn-outline-primary belzona-buttons">
+                                <i class="ti-plus"></i> افزودن COC
+                            </button>
+                        </div>
+                        <div class="col text-muted small belzona-page-text">
+                            رکورد را در مودال انتخاب کنید و فایل‌های COC را آپلود کنید.
+                        </div>
+                    </div>
                     <div class="row g-2 align-items-end belzona-inbounds-filters">
                         <div class="col-lg-4">
                             <label class="form-label mb-1 belzona-page-titles">فیلتر محصول (نام شیت)</label>
@@ -92,7 +102,7 @@
                     </div>
 
                     <div class="row mt-3 g-3">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="card border mb-0">
                                 <div class="card-body">
                                     <div class="text-muted belzona-page-text">جمع ورودی‌ها (بازه انتخابی)</div>
@@ -101,7 +111,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="card border mb-0">
                                 <div class="card-body d-flex justify-content-between align-items-center">
                                     <div>
@@ -117,12 +127,27 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="card border mb-0">
                                 <div class="card-body">
                                     <div class="text-muted belzona-page-text">آخرین مانده خروجی‌های پارت</div>
                                     <div class="h4 mb-0 belzona-datatable-text" id="belzona-last-outbound-balance">-</div>
                                     <small class="text-muted belzona-page-text">ماندهٔ آخرین رکورد خروجی در آخرین پارت ورود</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card border mb-0">
+                                <div class="card-body d-flex flex-column justify-content-between">
+                                    <div>
+                                        <div class="text-muted belzona-page-text">COC های آخرین پارت‌ها</div>
+                                        <small class="text-muted belzona-page-text">دسترسی سریع به COC رکوردهای منتخب شما</small>
+                                    </div>
+                                    <div class="mt-2">
+                                        <button type="button" class="btn btn-info belzona-buttons w-100" id="belzona-last-batch-coc-open">
+                                            <i class="ti-file"></i> مشاهده
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
