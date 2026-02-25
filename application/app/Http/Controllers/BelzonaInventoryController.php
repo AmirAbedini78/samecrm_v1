@@ -89,9 +89,18 @@ class BelzonaInventoryController extends Controller {
             return $this->getInboundDataTables();
         }
 
+        // Unique titles (عناوین یونیک) for «آخرین پارت‌های COC» — یک ردیف per عنوان
+        if (request()->get('action') === 'inbound_unique_titles') {
+            return $this->getInboundUniqueTitles();
+        }
+
         // COC documents (screenshots) for a given inbound — موقت: محصول 1111 و تاریخ 1404
         if (request()->get('action') === 'get_coc_documents') {
             return $this->getCocDocuments();
+        }
+
+        if (request()->get('action') === 'get_coc_documents_by_title') {
+            return $this->getCocDocumentsByTitle();
         }
 
         // Inbound summary (totals + latest inbound)
@@ -107,6 +116,16 @@ class BelzonaInventoryController extends Controller {
         // Expiry datatable (for تب تاریخ انقضا)
         if (request()->get('action') === 'datatables_expiry') {
             return $this->getDataTablesExpiry();
+        }
+
+        // Last batch selection (COC) — get saved list from DB
+        if (request()->get('action') === 'get_last_batch_selection') {
+            return $this->getLastBatchSelection();
+        }
+
+        // Last batch selection — save to DB (POST)
+        if (request()->get('action') === 'save_last_batch_selection' || request()->input('action') === 'save_last_batch_selection') {
+            return $this->saveLastBatchSelection();
         }
 
         //basic page settings
@@ -417,6 +436,79 @@ class BelzonaInventoryController extends Controller {
             'recordsFiltered' => $recordsFiltered,
             'data' => $data,
         ]);
+    }
+
+    /**
+     * Get saved "last batch" selection for COC (per-user, from DB).
+     */
+    private function getLastBatchSelection()
+    {
+        $userId = auth()->id();
+        if (!$userId) {
+            return response()->json(['rows' => []]);
+        }
+        if (!Schema::hasTable('belzona_user_settings')) {
+            return response()->json(['rows' => []]);
+        }
+        $row = DB::table('belzona_user_settings')
+            ->where('user_id', $userId)
+            ->where('setting_key', 'last_batch_selection')
+            ->first();
+        $rows = [];
+        if ($row && !empty($row->setting_value)) {
+            $decoded = json_decode($row->setting_value, true);
+            $rows = is_array($decoded) ? $decoded : [];
+        }
+        return response()->json(['rows' => $rows]);
+    }
+
+    /**
+     * Save "last batch" selection for COC (per-user, to DB).
+     */
+    private function saveLastBatchSelection()
+    {
+        $userId = auth()->id();
+        if (!$userId) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+        }
+        if (!Schema::hasTable('belzona_user_settings')) {
+            return response()->json(['success' => false, 'message' => 'Table not available'], 500);
+        }
+        $rows = request()->input('rows', []);
+        if (!is_array($rows)) {
+            $rows = [];
+        }
+        $normalized = [];
+        foreach ($rows as $r) {
+            if (is_array($r) && !empty($r['inbound_id'])) {
+                $normalized[] = [
+                    'title' => $r['title'] ?? '',
+                    'inbound_id' => $r['inbound_id'],
+                    'sheet_name' => $r['sheet_name'] ?? '',
+                    'date_raw' => $r['date_raw'] ?? '',
+                ];
+            }
+        }
+        $exists = DB::table('belzona_user_settings')
+            ->where('user_id', $userId)
+            ->where('setting_key', 'last_batch_selection')
+            ->exists();
+        $now = now();
+        if ($exists) {
+            DB::table('belzona_user_settings')
+                ->where('user_id', $userId)
+                ->where('setting_key', 'last_batch_selection')
+                ->update(['setting_value' => json_encode($normalized), 'updated_at' => $now]);
+        } else {
+            DB::table('belzona_user_settings')->insert([
+                'user_id' => $userId,
+                'setting_key' => 'last_batch_selection',
+                'setting_value' => json_encode($normalized),
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+        }
+        return response()->json(['success' => true, 'rows' => $normalized]);
     }
 
     /**
@@ -927,6 +1019,108 @@ class BelzonaInventoryController extends Controller {
     }
 
     /**
+     * لیست یونیک عناوین (inbound_label) برای «آخرین پارت‌های COC».
+     * هر عنوان یک ردیف؛ مرتب‌سازی بر اساس آخرین تاریخ ورود آن عنوان.
+     * خروجی سازگار با DataTables: یک ردیف per عنوان.
+     */
+    private function getInboundUniqueTitles()
+    {
+        if (
+            !Schema::hasTable('belzona_inventories') ||
+            !Schema::hasColumn('belzona_inventories', 'sheet_name') ||
+            !Schema::hasColumn('belzona_inventories', 'sheet_row_number') ||
+            !Schema::hasColumn('belzona_inventories', 'input')
+        ) {
+            return response()->json([
+                'draw' => (int) request('draw'),
+                'recordsTotal' => 0,
+                'recordsFiltered' => 0,
+                'data' => [],
+            ]);
+        }
+
+        $labelSql = "CASE
+            WHEN i.notes IS NOT NULL AND (i.notes LIKE '%واردات%' OR i.notes LIKE '%پرونده%' OR i.notes LIKE '%پارت%') THEN i.notes
+            WHEN i.customer_name IS NOT NULL AND (i.customer_name LIKE '%واردات%' OR i.customer_name LIKE '%پرونده%' OR i.customer_name LIKE '%پارت%') THEN i.customer_name
+            WHEN i.invoice_number IS NOT NULL AND (i.invoice_number LIKE '%واردات%' OR i.invoice_number LIKE '%پرونده%' OR i.invoice_number LIKE '%پارت%') THEN i.invoice_number
+            WHEN i.notes IS NOT NULL AND i.notes != '' THEN i.notes
+            ELSE 'ورود'
+        END";
+
+        $baseQuery = DB::table('belzona_inventories as i')
+            ->where('i.input', '>', 0)
+            ->select([
+                'i.belzona_inventory_id',
+                'i.sheet_name',
+                'i.date_raw',
+                'i.date',
+                'i.input',
+                DB::raw("($labelSql) as inbound_label"),
+            ]);
+
+        if (request()->filled('sheet_name')) {
+            $baseQuery->where('i.sheet_name', 'LIKE', '%' . request('sheet_name') . '%');
+        }
+        $fromDate = $this->normalizeFilterDate(request('filter_date_from'));
+        $toDate = $this->normalizeFilterDate(request('filter_date_to'));
+        if ($fromDate) {
+            $baseQuery->whereDate('i.date', '>=', $fromDate);
+        }
+        if ($toDate) {
+            $baseQuery->whereDate('i.date', '<=', $toDate);
+        }
+
+        $baseQuery->orderByRaw('CASE WHEN i.date IS NULL THEN 1 ELSE 0 END asc')
+            ->orderBy('i.date', 'desc')
+            ->orderBy('i.belzona_inventory_id', 'desc');
+
+        $rows = $baseQuery->limit(2000)->get();
+
+        $byTitle = [];
+        foreach ($rows as $r) {
+            $label = $r->inbound_label ?? 'ورود';
+            if (!isset($byTitle[$label])) {
+                $byTitle[$label] = [
+                    'title' => $label,
+                    'inbound_id' => $r->belzona_inventory_id,
+                    'sheet_name' => $r->sheet_name ?? '',
+                    'date_raw' => $r->date_raw ?? '',
+                    'input' => (float) $r->input,
+                ];
+            }
+        }
+        $uniqueList = array_values($byTitle);
+
+        $searchValue = trim((string) request('search.value', ''));
+        if ($searchValue !== '') {
+            $uniqueList = array_filter($uniqueList, function ($item) use ($searchValue) {
+                return (
+                    stripos($item['title'], $searchValue) !== false ||
+                    stripos($item['sheet_name'], $searchValue) !== false ||
+                    stripos($item['date_raw'], $searchValue) !== false
+                );
+            });
+            $uniqueList = array_values($uniqueList);
+        }
+
+        $recordsTotal = count($byTitle);
+        $recordsFiltered = count($uniqueList);
+        $start = (int) request('start', 0);
+        $length = (int) request('length', 25);
+        if ($length <= 0) {
+            $length = 25;
+        }
+        $data = array_slice($uniqueList, $start, $length);
+
+        return response()->json([
+            'draw' => (int) request('draw'),
+            'recordsTotal' => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered,
+            'data' => $data,
+        ]);
+    }
+
+    /**
      * لیست فایل‌های COC برای یک رکورد ورود (بر اساس inbound_id).
      * مسیر ذخیره: public/documents/coc/{inbound_id}/
      */
@@ -959,6 +1153,58 @@ class BelzonaInventoryController extends Controller {
         sort($urls);
 
         return response()->json(['success' => true, 'data' => ['urls' => $urls]]);
+    }
+
+    /**
+     * لیست همهٔ فایل‌های COC مربوط به یک عنوان (همهٔ رکوردهای ورودی با آن عنوان).
+     * برای بخش «COC های آخرین پارت‌ها» — با یک کلیک تمام COCهای آن عنوان نمایش داده می‌شود.
+     */
+    private function getCocDocumentsByTitle()
+    {
+        $title = trim((string) request('title', ''));
+        if ($title === '') {
+            return response()->json(['success' => true, 'data' => ['urls' => []]]);
+        }
+
+        $labelSql = "CASE
+            WHEN i.notes IS NOT NULL AND (i.notes LIKE '%واردات%' OR i.notes LIKE '%پرونده%' OR i.notes LIKE '%پارت%') THEN i.notes
+            WHEN i.customer_name IS NOT NULL AND (i.customer_name LIKE '%واردات%' OR i.customer_name LIKE '%پرونده%' OR i.customer_name LIKE '%پارت%') THEN i.customer_name
+            WHEN i.invoice_number IS NOT NULL AND (i.invoice_number LIKE '%واردات%' OR i.invoice_number LIKE '%پرونده%' OR i.invoice_number LIKE '%پارت%') THEN i.invoice_number
+            WHEN i.notes IS NOT NULL AND i.notes != '' THEN i.notes
+            ELSE 'ورود'
+        END";
+
+        $inboundIds = DB::table('belzona_inventories as i')
+            ->where('i.input', '>', 0)
+            ->whereRaw("($labelSql) = ?", [$title])
+            ->pluck('i.belzona_inventory_id')
+            ->toArray();
+
+        $baseDir = defined('BASE_DIR') ? BASE_DIR : base_path();
+        $extensions = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
+        $allUrls = [];
+
+        foreach ($inboundIds as $inboundId) {
+            $cocPath = $baseDir . '/public/documents/coc/' . $inboundId;
+            $cocPath = realpath($cocPath) ?: $cocPath;
+            if (!$cocPath || !is_dir($cocPath)) {
+                continue;
+            }
+            $files = @scandir($cocPath) ?: [];
+            foreach ($files as $filename) {
+                if ($filename === '.' || $filename === '..') {
+                    continue;
+                }
+                $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+                if (in_array($ext, $extensions)) {
+                    $allUrls[] = url('public/documents/coc/' . $inboundId . '/' . rawurlencode($filename));
+                }
+            }
+        }
+
+        sort($allUrls);
+
+        return response()->json(['success' => true, 'data' => ['urls' => $allUrls]]);
     }
 
     /**

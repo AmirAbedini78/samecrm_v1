@@ -1,7 +1,7 @@
 @extends('layout.wrapper')
 
 @section('content')
-<div class="container-fluid" id="belzona-inventory-page" data-belzona-ajax-url="{{ url('belzona-inventory') }}">
+<div class="container-fluid" id="belzona-inventory-page" data-belzona-ajax-url="{{ url('belzona-inventory/search') }}">
     <!-- Page Header -->
     <div class="row">
         <div class="col-12">
